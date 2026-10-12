@@ -1,0 +1,867 @@
+{
+  "board": {
+    "name": "PrepInMinutes Master Task Plan",
+    "slug": "prepinminutes",
+    "description": "Full lifecycle tracking of PrepInMinutes full-stack implementation across 8 architectural phases.",
+    "columns": [
+      "Backlog",
+      "In Progress",
+      "Testing & Verification",
+      "Done"
+    ],
+    "version": "1.0.0"
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Phase 1: Persistence Foundation",
+      "description": "Neon PostgreSQL, Prisma ORM, and pgvector extension setup."
+    },
+    {
+      "id": "phase-2",
+      "name": "Phase 2: Server Infrastructure Clients",
+      "description": "Prisma singleton, Upstash Redis, Cloudflare R2, and Gemini AI SDK."
+    },
+    {
+      "id": "phase-3",
+      "name": "Phase 3: Deterministic Domain Core",
+      "description": "Mathematical scoring, Bayesian readiness, and SuperMemo-2 algorithms."
+    },
+    {
+      "id": "phase-4",
+      "name": "Phase 4: Edge Security & Middleware",
+      "description": "Clerk route guards, Upstash rate limiting, and idempotency interceptor."
+    },
+    {
+      "id": "phase-5",
+      "name": "Phase 5: Onboarding & Vector Pipeline",
+      "description": "Candidate profiles, resume chunking, and personalized prep roadmap synthesis."
+    },
+    {
+      "id": "phase-6",
+      "name": "Phase 6: Session & Evaluation APIs",
+      "description": "Practice submission, mock interview evaluation, and revision sync APIs."
+    },
+    {
+      "id": "phase-7",
+      "name": "Phase 7: Real-Time Voice Gateway",
+      "description": "Deepgram STT, Cartesia TTS, and barge-in interruption controller."
+    },
+    {
+      "id": "phase-8",
+      "name": "Phase 8: Frontend-Backend Integration",
+      "description": "Connecting 43 static routes with live APIs and end-to-end verification."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-P1-01",
+      "phaseId": "phase-1",
+      "title": "Database Schema Design (prisma/schema.prisma)",
+      "column": "In Progress",
+      "assignee": "database-architect",
+      "priority": "HIGH",
+      "scope": "Author the full production schema in prisma/schema.prisma with Neon dual connection (DATABASE_URL, DIRECT_URL), pgvector(1536) extension, and 15 relational models covering: (1) User, CandidateProfile, PreparationPlan, (2) Knowledge Graph: CurriculumDomain, CurriculumCategory, CurriculumTopic, CurriculumQuestion, TopicEmbedding, (3) Candidate Understanding: CandidateTopicMastery (cognitive stages, SM-2 decay timestamps, rubric running averages), and (4) Multimodal Sessions: PracticeSession, MockInterviewSession, EvaluationReport, RubricScore, RevisionItem, DocumentEmbedding.",
+      "deliverables": [
+        "prisma/schema.prisma"
+      ],
+      "clearance": "Passes `npx prisma validate` cleanly with 0 errors. References docs/architecture/layers/06-persistence-storage-layer.md.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "database-architect",
+        "unitTest": false,
+        "integrationTest": false,
+        "staticValidation": "npx prisma validate",
+        "featureValidation": "Schema audit against docs/architecture/layers/06-persistence-storage-layer.md (15 models + pgvector)",
+        "commands": [
+          "npx prisma validate"
+        ]
+      },
+      "status": "DONE",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/3",
+      "completedAt": "2026-10-05T19:00:00Z"
+    },
+    {
+      "id": "TASK-P1-02",
+      "phaseId": "phase-1",
+      "title": "Dual Connection Configuration & Prisma Adapters",
+      "column": "Backlog",
+      "assignee": "infrastructure-engineer",
+      "priority": "HIGH",
+      "scope": "Configure Neon pooled connection (DATABASE_URL) with @prisma/adapter-neon and direct connection (DIRECT_URL) for advisory lock migration safety.",
+      "deliverables": [
+        "src/server/db/client.ts"
+      ],
+      "clearance": "Database connection smoke test returns live timestamp from Neon.",
+      "dependencies": [
+        "TASK-P1-01"
+      ],
+      "requiredProcesses": {
+        "agentRole": "infrastructure-engineer",
+        "unitTest": false,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Neon pooled vs direct compute connection switching verified via live timestamp query",
+        "commands": [
+          "npm run typecheck",
+          "npx tsx scripts/verify-infra.ts"
+        ]
+      },
+      "status": "DONE",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/3",
+      "completedAt": "2026-10-05T19:00:00Z"
+    },
+    {
+      "id": "TASK-P1-03",
+      "phaseId": "phase-1",
+      "title": "Database Migration Push to Neon PostgreSQL",
+      "column": "Backlog",
+      "assignee": "database-architect",
+      "priority": "HIGH",
+      "scope": "Execute `npx prisma db push` to synchronize 10 tables and vector extension with live Neon cloud instance.",
+      "deliverables": [
+        "Neon schema public tables"
+      ],
+      "clearance": "SELECT tablename FROM pg_tables WHERE schemaname = public; verifies all 10 tables.",
+      "dependencies": [
+        "TASK-P1-01",
+        "TASK-P1-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "database-architect",
+        "unitTest": false,
+        "integrationTest": true,
+        "staticValidation": "PostgreSQL pgvector extension loaded in catalog",
+        "featureValidation": "Neon public schema table verification (15 tables present)",
+        "commands": [
+          "npx prisma db push"
+        ]
+      },
+      "status": "DONE",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/3",
+      "completedAt": "2026-10-05T19:00:00Z"
+    },
+    {
+      "id": "TASK-P1-04",
+      "phaseId": "phase-1",
+      "title": "Curriculum Catalog Seeding (prisma/seed.ts)",
+      "column": "Backlog",
+      "assignee": "content-engineer",
+      "priority": "MEDIUM",
+      "scope": "Seed 135+ topics across System Design (40+), Algorithms (50+), Behavioral (20+), and Cloud (25+).",
+      "deliverables": [
+        "prisma/seed.ts"
+      ],
+      "clearance": "`npx prisma db seed` inserts >135 records without constraint errors.",
+      "dependencies": [
+        "TASK-P1-03"
+      ],
+      "requiredProcesses": {
+        "agentRole": "content-engineer",
+        "unitTest": false,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Seed script populates >135 topics across 4 domains without foreign key constraint errors",
+        "commands": [
+          "npm run typecheck",
+          "npx prisma db seed"
+        ]
+      },
+      "status": "DONE",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/3",
+      "completedAt": "2026-10-05T19:00:00Z"
+    },
+    {
+      "id": "TASK-P2-01",
+      "phaseId": "phase-2",
+      "title": "Prisma Client Singleton with Tenant Isolation",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Build withCandidateContext(clerkUserId) helper ensuring all queries are tenant-scoped.",
+      "deliverables": [
+        "src/server/db/client.ts"
+      ],
+      "clearance": "Queries from Tenant A cannot access records from Tenant B.",
+      "dependencies": [
+        "TASK-P1-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck && npm run lint",
+        "featureValidation": "Tenant isolation wrapper: Tenant A queries strictly blocked from Tenant B data",
+        "commands": [
+          "npm test tests/unit/db-tenant.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:15:00Z",
+      "completedAt": "2026-10-05T19:25:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/4"
+    },
+    {
+      "id": "TASK-P2-02",
+      "phaseId": "phase-2",
+      "title": "Upstash Redis Client Singleton",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Centralized REST client with automatic retry and rate-limiting wrapper.",
+      "deliverables": [
+        "src/server/redis/client.ts"
+      ],
+      "clearance": "`redis.ping()` returns PONG in <50ms.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Upstash Redis REST ping roundtrip <50ms with automatic retry logic",
+        "commands": [
+          "npm test tests/unit/redis.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:15:00Z",
+      "completedAt": "2026-10-05T19:25:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/4"
+    },
+    {
+      "id": "TASK-P2-03",
+      "phaseId": "phase-2",
+      "title": "Cloudflare R2 Object Storage S3 Client",
+      "column": "Backlog",
+      "assignee": "storage-engineer",
+      "priority": "MEDIUM",
+      "scope": "Presigned URL generator and multipart upload handler for whiteboard PNGs and audio.",
+      "deliverables": [
+        "src/server/storage/r2.ts"
+      ],
+      "clearance": "Successfully generates presigned PUT URLs for whiteboard PNG uploads.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "storage-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Presigned PUT URL generated for Cloudflare R2; test 1-byte buffer uploaded and verified",
+        "commands": [
+          "npm test tests/unit/r2-storage.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:15:00Z",
+      "completedAt": "2026-10-05T19:25:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/4"
+    },
+    {
+      "id": "TASK-P2-04",
+      "phaseId": "phase-2",
+      "title": "Google Gemini SDK Singleton",
+      "column": "Backlog",
+      "assignee": "ai-engineer",
+      "priority": "HIGH",
+      "scope": "Client wrapper for gemini-2.0-flash / gemini-3.1-flash-lite and text-embedding-004.",
+      "deliverables": [
+        "src/server/ai/gemini.ts"
+      ],
+      "clearance": "Returns typed JSON without Markdown formatting tags.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "ai-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Google Gemini 2.0 Flash returns structured JSON conforming to schema without markdown backticks",
+        "commands": [
+          "npm test tests/unit/gemini.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:15:00Z",
+      "completedAt": "2026-10-05T19:25:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/4"
+    },
+    {
+      "id": "TASK-P3-01",
+      "phaseId": "phase-3",
+      "title": "5-Dimension Rubric Scoring Engine",
+      "column": "Backlog",
+      "assignee": "math-engineer",
+      "priority": "HIGH",
+      "scope": "Pure mathematical calculation of 0\u2013100 overall score using weighted harmonic mean.",
+      "deliverables": [
+        "src/server/domain/scoring.ts"
+      ],
+      "clearance": "100% unit test assertions pass across boundary conditions.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "math-engineer",
+        "unitTest": true,
+        "integrationTest": false,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "100% boundary assertions for 5-dimension rubric scoring; harmonic mean and verdict boundaries verified",
+        "commands": [
+          "npm test tests/unit/scoring.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:35:00Z",
+      "completedAt": "2026-10-05T19:50:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/5"
+    },
+    {
+      "id": "TASK-P3-02",
+      "phaseId": "phase-3",
+      "title": "Bayesian Candidate Readiness Engine",
+      "column": "Backlog",
+      "assignee": "math-engineer",
+      "priority": "HIGH",
+      "scope": "Prior readiness score updated via Bayesian evidence weighting per completed session.",
+      "deliverables": [
+        "src/server/domain/readiness.ts"
+      ],
+      "clearance": "Mathematical assertions verify convergence stability without unbounded drifts.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "math-engineer",
+        "unitTest": true,
+        "integrationTest": false,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Bayesian readiness momentum: cold-start alpha (0.40) vs converged alpha (0.15) verified over 20 iterations",
+        "commands": [
+          "npm test tests/unit/readiness.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:35:00Z",
+      "completedAt": "2026-10-05T19:50:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/5"
+    },
+    {
+      "id": "TASK-P3-03",
+      "phaseId": "phase-3",
+      "title": "SuperMemo-2 Spaced Repetition Engine",
+      "column": "Backlog",
+      "assignee": "math-engineer",
+      "priority": "HIGH",
+      "scope": "Calculates next review intervals and ease factor decay based on candidate grade.",
+      "deliverables": [
+        "src/server/domain/spaced-repetition.ts"
+      ],
+      "clearance": "Unit tests assert EF floor (1.30) and future UTC review timestamps.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "math-engineer",
+        "unitTest": true,
+        "integrationTest": false,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "SuperMemo-2 interval decay: EF floor (1.30) and future UTC nextReviewDate timestamps verified",
+        "commands": [
+          "npm test tests/unit/spaced-repetition.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T19:35:00Z",
+      "completedAt": "2026-10-05T19:50:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/5"
+    },
+    {
+      "id": "TASK-P4-01",
+      "phaseId": "phase-4",
+      "title": "Clerk Edge Authentication Route Guard",
+      "column": "Backlog",
+      "assignee": "security-engineer",
+      "priority": "HIGH",
+      "scope": "Sub-10ms edge middleware enforcing authentication on private routes.",
+      "deliverables": [
+        "src/middleware.ts"
+      ],
+      "clearance": "Unauthenticated calls to protected routes receive 401 Unauthorized or redirect to sign-in.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "security-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Edge middleware route guard: public routes bypass, protected routes enforce Clerk token in <10ms",
+        "commands": [
+          "npm test tests/unit/middleware-auth.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:00:00Z",
+      "completedAt": "2026-10-05T20:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/6"
+    },
+    {
+      "id": "TASK-P4-02",
+      "phaseId": "phase-4",
+      "title": "Upstash Sliding Window Rate Limiter",
+      "column": "Backlog",
+      "assignee": "security-engineer",
+      "priority": "HIGH",
+      "scope": "Sliding window rate limits: 60 req/min general, 10 req/min heavy LLM endpoints.",
+      "deliverables": [
+        "src/server/edge/rate-limiter.ts"
+      ],
+      "clearance": "Exceeding threshold returns HTTP 429 Too Many Requests with Retry-After header.",
+      "dependencies": [
+        "TASK-P2-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "security-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Sliding window rate limiter: trips at 60 req/min general and 10 req/min AI endpoints with Retry-After header",
+        "commands": [
+          "npm test tests/unit/rate-limiter.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:00:00Z",
+      "completedAt": "2026-10-05T20:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/6"
+    },
+    {
+      "id": "TASK-P4-03",
+      "phaseId": "phase-4",
+      "title": "Idempotency Key Interceptor",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "MEDIUM",
+      "scope": "Prevent duplicate LLM calls on double clicks using Redis key idempotency:{sessionId}:{attempt} with 24h TTL.",
+      "deliverables": [
+        "src/server/edge/idempotency.ts"
+      ],
+      "clearance": "Repeated submission within TTL returns cached result in <10ms.",
+      "dependencies": [
+        "TASK-P2-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Submission idempotency: repeated request within 24h short-circuits LLM call in <10ms",
+        "commands": [
+          "npm test tests/unit/idempotency.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:00:00Z",
+      "completedAt": "2026-10-05T20:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/6"
+    },
+    {
+      "id": "TASK-P5-01",
+      "phaseId": "phase-5",
+      "title": "Candidate Profile API (/api/onboarding/profile)",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Save target role, seniority level, target companies, and weekly goal hours.",
+      "deliverables": [
+        "src/app/api/onboarding/profile/route.ts"
+      ],
+      "clearance": "POST /api/onboarding/profile persists record and returns 201 Created.",
+      "dependencies": [
+        "TASK-P1-03",
+        "TASK-P2-01"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck && npm run lint",
+        "featureValidation": "POST /api/onboarding/profile validates payload via Zod, saves to Neon DB, returns 201 Created",
+        "commands": [
+          "npm test tests/integration/api-profile.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:25:00Z",
+      "completedAt": "2026-10-05T20:45:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/7"
+    },
+    {
+      "id": "TASK-P5-02",
+      "phaseId": "phase-5",
+      "title": "Resume PDF Parser & 1536-dim Embedding Pipeline",
+      "column": "Backlog",
+      "assignee": "ai-engineer",
+      "priority": "HIGH",
+      "scope": "Parse resume PDF, chunk text into 500-word segments, compute 1536-dim embeddings via Gemini, and insert into DocumentEmbedding.",
+      "deliverables": [
+        "src/app/api/onboarding/resume/route.ts"
+      ],
+      "clearance": "Cosine distance lookup retrieves relevant chunks matching sample job requirements.",
+      "dependencies": [
+        "TASK-P1-03",
+        "TASK-P2-04"
+      ],
+      "requiredProcesses": {
+        "agentRole": "ai-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Resume PDF parser chunks text into 500-word segments and inserts 1536-dim vector into pgvector",
+        "commands": [
+          "npm test tests/integration/api-resume-embedding.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:25:00Z",
+      "completedAt": "2026-10-05T20:45:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/7"
+    },
+    {
+      "id": "TASK-P5-03",
+      "phaseId": "phase-5",
+      "title": "Personalized Prep Roadmap Synthesis API",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Synthesize adaptive multi-week syllabus mapped to target timeline and weak areas.",
+      "deliverables": [
+        "src/app/api/plan/generate/route.ts"
+      ],
+      "clearance": "Returns valid JSON matching PreparationPlan schema with accurate week distribution.",
+      "dependencies": [
+        "TASK-P5-01",
+        "TASK-P5-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "POST /api/plan/generate synthesizes personalized multi-week syllabus matching domain weighting rules",
+        "commands": [
+          "npm test tests/integration/api-plan-generate.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T20:25:00Z",
+      "completedAt": "2026-10-05T20:45:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/7"
+    },
+    {
+      "id": "TASK-P6-01",
+      "phaseId": "phase-6",
+      "title": "Practice Session Submit & Evaluate API",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Evaluate code or whiteboard submission, generate structured EvaluationReport, save RubricScores, and update candidate readiness.",
+      "deliverables": [
+        "src/app/api/practice/session/submit/route.ts"
+      ],
+      "clearance": "Returns 200 OK with valid EvaluationReport JSON and updated readinessDelta.",
+      "dependencies": [
+        "TASK-P2-04",
+        "TASK-P3-01",
+        "TASK-P3-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "POST /api/practice/session/submit generates EvaluationReport, updates CandidateTopicMastery, returns readinessDelta",
+        "commands": [
+          "npm test tests/integration/api-practice-submit.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T21:05:00Z",
+      "completedAt": "2026-10-05T21:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/8"
+    },
+    {
+      "id": "TASK-P6-02",
+      "phaseId": "phase-6",
+      "title": "Mock Interview Session End & Grading API",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "HIGH",
+      "scope": "Ingest full conversational transcript, score 5 dimensions, and produce overall interview report.",
+      "deliverables": [
+        "src/app/api/mock-interview/session/end/route.ts"
+      ],
+      "clearance": "Evaluation report maps correctly to mock interview session with verified hiring verdict.",
+      "dependencies": [
+        "TASK-P2-04",
+        "TASK-P3-01",
+        "TASK-P3-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "POST /api/mock-interview/session/end ingests multi-turn transcript, computes 6 rubric scores, outputs hiring verdict",
+        "commands": [
+          "npm test tests/integration/api-mock-end.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T21:05:00Z",
+      "completedAt": "2026-10-05T21:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/8"
+    },
+    {
+      "id": "TASK-P6-03",
+      "phaseId": "phase-6",
+      "title": "Evaluation Report Retrieval API",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "MEDIUM",
+      "scope": "Fetch candidate-scoped evaluation report with rubric breakdowns.",
+      "deliverables": [
+        "src/app/api/evaluation/[reportId]/route.ts"
+      ],
+      "clearance": "Returns report data for owner candidate; 403 Forbidden for another candidate.",
+      "dependencies": [
+        "TASK-P2-01"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "GET /api/evaluation/[reportId] returns tenant-scoped report; strictly returns 403 Forbidden for unauthorized user",
+        "commands": [
+          "npm test tests/integration/api-evaluation-report.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T21:05:00Z",
+      "completedAt": "2026-10-05T21:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/8"
+    },
+    {
+      "id": "TASK-P6-04",
+      "phaseId": "phase-6",
+      "title": "Revision Queue Synchronization API",
+      "column": "Backlog",
+      "assignee": "backend-developer",
+      "priority": "MEDIUM",
+      "scope": "Fetch overdue revision topics (nextReviewDate <= NOW()) and update candidate review history.",
+      "deliverables": [
+        "src/app/api/revision/items/route.ts"
+      ],
+      "clearance": "Returns sorted list of due items and updates intervals upon submission.",
+      "dependencies": [
+        "TASK-P3-03"
+      ],
+      "requiredProcesses": {
+        "agentRole": "backend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "GET /api/revision/items returns overdue items (nextReviewDate <= NOW()); POST recalculates intervals",
+        "commands": [
+          "npm test tests/integration/api-revision-sync.test.ts"
+        ]
+      },
+      "status": "DONE",
+      "startedAt": "2026-10-05T21:05:00Z",
+      "completedAt": "2026-10-05T21:15:00Z",
+      "pr": "https://github.com/imsauravsingh/prepinminutes/pull/8"
+    },
+    {
+      "id": "TASK-P7-01",
+      "phaseId": "phase-7",
+      "title": "Deepgram Nova-2 Streaming STT Bridge",
+      "column": "Backlog",
+      "assignee": "voice-engineer",
+      "priority": "HIGH",
+      "scope": "Bidirectional streaming microphone audio transcription with Nova-2 model (<80ms latency).",
+      "deliverables": [
+        "src/server/voice/stt.ts"
+      ],
+      "clearance": "Live audio chunks produce interim and final transcripts with sub-100ms latency.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "voice-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Deepgram Nova-2 streaming STT bridge outputs interim and final transcripts with <80ms latency",
+        "commands": [
+          "npm test tests/integration/voice-stt.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P7-02",
+      "phaseId": "phase-7",
+      "title": "Cartesia Sonic Streaming TTS Bridge",
+      "column": "Backlog",
+      "assignee": "voice-engineer",
+      "priority": "HIGH",
+      "scope": "Ultra-low-latency voice synthesis with Sonic model (<50ms TTFB).",
+      "deliverables": [
+        "src/server/voice/tts.ts"
+      ],
+      "clearance": "TTS audio stream starts playing within 60ms of text arrival.",
+      "dependencies": [],
+      "requiredProcesses": {
+        "agentRole": "voice-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Cartesia Sonic streaming TTS bridge outputs PCM audio chunks with <50ms first-byte latency",
+        "commands": [
+          "npm test tests/integration/voice-tts.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P7-03",
+      "phaseId": "phase-7",
+      "title": "Voice Turn-Taking & Barge-In Controller",
+      "column": "Backlog",
+      "assignee": "voice-engineer",
+      "priority": "HIGH",
+      "scope": "Cut AI speech output within 100ms when candidate starts speaking (Voice Activity Detection barge-in).",
+      "deliverables": [
+        "src/server/voice/gateway.ts"
+      ],
+      "clearance": "Barge-in signal interrupts audio playback cleanly without audio artifacts.",
+      "dependencies": [
+        "TASK-P7-01",
+        "TASK-P7-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "voice-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Voice turn-taking controller cuts AI speech output within 100ms upon candidate speech detection (VAD barge-in)",
+        "commands": [
+          "npm test tests/integration/voice-bargein.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P8-01",
+      "phaseId": "phase-8",
+      "title": "Wire Onboarding & Preparation Plan Screens",
+      "column": "Backlog",
+      "assignee": "frontend-developer",
+      "priority": "HIGH",
+      "scope": "Connect /onboarding/* and /preparation-plan to live backend APIs.",
+      "deliverables": [
+        "src/app/dashboard/*",
+        "src/app/preparation-plan/*"
+      ],
+      "clearance": "Form submission persists profile to database and loads synthesized plan.",
+      "dependencies": [
+        "TASK-P5-01",
+        "TASK-P5-03"
+      ],
+      "requiredProcesses": {
+        "agentRole": "frontend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run lint && npm run typecheck",
+        "featureValidation": "Wire /onboarding/* and /preparation-plan: form submission hydrates live profile and loads synthesized plan",
+        "commands": [
+          "npm test tests/e2e/onboarding-flow.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P8-02",
+      "phaseId": "phase-8",
+      "title": "Wire Practice, Whiteboard & Coding Workspaces",
+      "column": "Backlog",
+      "assignee": "frontend-developer",
+      "priority": "HIGH",
+      "scope": "Connect /practice/* and interactive canvas components to live submission endpoints.",
+      "deliverables": [
+        "src/app/practice/*"
+      ],
+      "clearance": "Submit confirmation modal triggers live evaluation and redirects to evaluation report.",
+      "dependencies": [
+        "TASK-P6-01"
+      ],
+      "requiredProcesses": {
+        "agentRole": "frontend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run lint && npm run typecheck",
+        "featureValidation": "Wire /practice/*: submit confirmation modal triggers /api/practice/session/submit and redirects to evaluation report",
+        "commands": [
+          "npm test tests/e2e/practice-flow.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P8-03",
+      "phaseId": "phase-8",
+      "title": "Wire Evaluation & Revision Hubs",
+      "column": "Backlog",
+      "assignee": "frontend-developer",
+      "priority": "HIGH",
+      "scope": "Connect /evaluation and /revision to live report and queue APIs.",
+      "deliverables": [
+        "src/app/evaluation/*",
+        "src/app/revision/*"
+      ],
+      "clearance": "Live evaluations render dynamic gauges; revision drills update spaced intervals.",
+      "dependencies": [
+        "TASK-P6-03",
+        "TASK-P6-04"
+      ],
+      "requiredProcesses": {
+        "agentRole": "frontend-developer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run lint && npm run typecheck",
+        "featureValidation": "Wire /evaluation and /revision: dynamic gauges render live score; recall drill modal updates spaced intervals",
+        "commands": [
+          "npm test tests/e2e/evaluation-revision.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "TASK-P8-04",
+      "phaseId": "phase-8",
+      "title": "Full Platform End-to-End Verification",
+      "column": "Backlog",
+      "assignee": "qa-engineer",
+      "priority": "HIGH",
+      "scope": "Compile 100% clean Turbopack build across all 43 static routes with zero errors and verify automated smoke tests.",
+      "deliverables": [
+        "Test report",
+        "Production build bundle"
+      ],
+      "clearance": "npm run build passes with exit code 0; all 43 routes render cleanly.",
+      "dependencies": [
+        "TASK-P8-01",
+        "TASK-P8-02",
+        "TASK-P8-03"
+      ],
+      "requiredProcesses": {
+        "agentRole": "qa-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run lint && npm run typecheck",
+        "featureValidation": "Full production build verification: npm run build passes with 0 errors across all 43 static routes; all smoke tests 100% green",
+        "commands": [
+          "npm run lint",
+          "npm run typecheck",
+          "npm test",
+          "npm run build"
+        ]
+      }
+    }
+  ]
+}
