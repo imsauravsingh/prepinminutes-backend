@@ -34,7 +34,16 @@ export interface AppSecrets {
   GOOGLE_AI_PROJECT_ID: string;
   GOOGLE_AI_PROJECT_NUMBER: string;
 
-  // Auth (Clerk)
+  // Auth (SSO Provider Control: Google SSO enabled by default, Clerk disabled by default)
+  AUTH_PROVIDER: string; // "google" | "clerk" | "both" (default: "google")
+  GOOGLE_SSO_FLOW: string; // "redirect" | "id_token" | "both" (default: "both")
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_REDIRECT_URI: string;
+  FRONTEND_URL: string;
+  JWT_SECRET: string;
+
+  // Legacy / Optional Clerk Auth (disabled when AUTH_PROVIDER="google")
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
   CLERK_SECRET_KEY: string;
 }
@@ -48,11 +57,21 @@ let cachedSecrets: AppSecrets | null = null;
 function loadLocalEnvFallback(): Record<string, string> {
   const map: Record<string, string> = {};
   try {
+    if (typeof process === "undefined" || typeof process.cwd !== "function") {
+      return map;
+    }
+    const cwd = process.cwd();
+    if (!cwd) return map;
+
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const path = require('path');
-    const envPath = path.resolve(process.cwd(), '.env');
+    if (!fs || !path || typeof path.resolve !== "function" || typeof fs.existsSync !== "function") {
+      return map;
+    }
+
+    const envPath = path.resolve(cwd, '.env');
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, 'utf8');
       for (const line of content.split('\n')) {
@@ -103,6 +122,29 @@ export function getSecrets(): AppSecrets {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || localEnv.GEMINI_API_KEY || '',
     GOOGLE_AI_PROJECT_ID: process.env.GOOGLE_AI_PROJECT_ID || localEnv.GOOGLE_AI_PROJECT_ID || '',
     GOOGLE_AI_PROJECT_NUMBER: process.env.GOOGLE_AI_PROJECT_NUMBER || localEnv.GOOGLE_AI_PROJECT_NUMBER || '',
+    AUTH_PROVIDER: process.env.AUTH_PROVIDER || localEnv.AUTH_PROVIDER || 'google',
+    GOOGLE_SSO_FLOW: process.env.GOOGLE_SSO_FLOW || localEnv.GOOGLE_SSO_FLOW || 'both',
+    GOOGLE_CLIENT_ID:
+      process.env.GOOGLE_CLIENT_ID ||
+      localEnv.GOOGLE_CLIENT_ID ||
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+      localEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+      '',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || localEnv.GOOGLE_CLIENT_SECRET || '',
+    GOOGLE_REDIRECT_URI:
+      process.env.GOOGLE_REDIRECT_URI ||
+      localEnv.GOOGLE_REDIRECT_URI ||
+      (isProduction
+        ? 'https://api.prepinminutes.com/api/auth/google/callback'
+        : 'http://localhost:8787/api/auth/google/callback'),
+    FRONTEND_URL:
+      process.env.FRONTEND_URL ||
+      localEnv.FRONTEND_URL ||
+      (isProduction ? 'https://prepinminutes.com' : 'http://localhost:3000'),
+    JWT_SECRET:
+      process.env.JWT_SECRET ||
+      localEnv.JWT_SECRET ||
+      'prepinminutes-dev-jwt-secret-change-in-production',
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || localEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || localEnv.CLERK_SECRET_KEY || '',
   };

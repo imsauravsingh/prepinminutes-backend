@@ -38,14 +38,28 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
 
     const data = validated.data;
 
-    const user = await db.user.upsert({
-      where: { clerkId },
-      update: {},
-      create: {
-        clerkId,
-        email: `${clerkId}@placeholder.local`,
+    let user = await db.user.findFirst({
+      where: {
+        OR: [{ id: clerkId }, { googleId: clerkId }, { clerkId }],
       },
     });
+
+    if (!user) {
+      const isClerkId = clerkId.startsWith("user_") || clerkId.startsWith("test_clerk");
+      user = await db.user.create({
+        data: isClerkId
+          ? {
+              clerkId,
+              authProvider: "clerk",
+              email: `${clerkId}@placeholder.local`,
+            }
+          : {
+              googleId: clerkId,
+              authProvider: "google",
+              email: `${clerkId}@placeholder.local`,
+            },
+      });
+    }
 
     const profile = await db.candidateProfile.upsert({
       where: { userId: user.id },
@@ -87,8 +101,10 @@ export async function handleGetProfile(req: ApiRequest): Promise<Response> {
       return ApiResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { clerkId },
+    const user = await db.user.findFirst({
+      where: {
+        OR: [{ id: clerkId }, { googleId: clerkId }, { clerkId }],
+      },
       include: {
         profile: {
           include: {

@@ -4,7 +4,7 @@ import { generate1536Embedding } from "../server/ai/gemini";
 import { uploadAsset } from "../server/storage/r2";
 import { checkRateLimit } from "../server/edge/rate-limiter";
 import { resolveCandidateClerkId } from "../server/edge/cors";
-import { PDFParse } from "pdf-parse";
+import { extractTextFromPdf } from "../server/edge/pdf-extractor";
 
 function chunkText(text: string, chunkSize = 1200, overlap = 200): string[] {
   const chunks: string[] = [];
@@ -65,9 +65,7 @@ export async function handlePostResume(req: ApiRequest): Promise<Response> {
       console.warn("R2 upload warning (proceeding with text extraction):", r2Error);
     }
 
-    const parser = new PDFParse({ data: buffer });
-    const parsedPdf = await parser.getText();
-    const cleanText = (parsedPdf.text || "").replace(/\s+/g, " ").trim();
+    const cleanText = await extractTextFromPdf(buffer);
 
     if (!cleanText || cleanText.length < 20) {
       return ApiResponse.json(

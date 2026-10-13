@@ -138,6 +138,11 @@
   - **Column**: `Done`
   - **Deliverable**: `src/server/edge/idempotency.ts`
 
+- [ ] **`TASK-P4-04`**: **Admin SSO Control Panel & Dynamic Provider Switcher (Google SSO / Clerk)**
+  - **Column**: `Backlog` (Future Phase)
+  - **Scope**: Build runtime admin control panel to toggle between Google SSO (`redirect`, `id_token`, `both`) and Clerk, with live sync to Upstash Redis and edge API gateway.
+  - **Deliverables**: `src/routes/auth.ts` (`PUT /api/auth/config`), frontend admin UI at `/admin/sso`
+
 ---
 
 ### Phase 5: Onboarding & Vector Pipeline

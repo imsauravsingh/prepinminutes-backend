@@ -22,4 +22,6 @@ export const RedisKeys = {
   voiceTranscriptBuffer: (sessionId: string) =>
     `session:${sessionId}:transcripts`,
   userReadinessCache: (userId: string) => `candidate:${userId}:readiness`,
+  otpVerify: (email: string) => `otp:verify:${email.toLowerCase()}`,
+  otpCooldown: (email: string) => `otp:cooldown:${email.toLowerCase()}`,
 } as const;

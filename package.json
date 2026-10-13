@@ -15,7 +15,8 @@
     "test:domain": "tsx scripts/test-phase3-domain.ts",
     "test:security": "tsx scripts/test-phase4-security.ts",
     "test:onboarding": "tsx scripts/test-phase5-onboarding.ts",
-    "test:eval": "tsx scripts/test-phase6-session-eval.ts"
+    "test:eval": "tsx scripts/test-phase6-session-eval.ts",
+    "test:sso": "tsx scripts/test-sso-login.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",

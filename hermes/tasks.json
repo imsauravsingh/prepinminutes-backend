@@ -458,6 +458,35 @@
       "pr": "https://github.com/imsauravsingh/prepinminutes/pull/6"
     },
     {
+      "id": "TASK-P4-04",
+      "phaseId": "phase-4",
+      "title": "Admin SSO Control Panel & Dynamic Provider Switcher (Google SSO / Clerk)",
+      "column": "Backlog",
+      "assignee": "security-engineer",
+      "priority": "MEDIUM",
+      "scope": "Build Admin Control Panel UI and backend configuration endpoints (PUT /api/auth/config) to dynamically toggle between Google SSO (OAuth redirect, GIS ID token, both) and Clerk, synced with Upstash Redis and edge gateway.",
+      "deliverables": [
+        "src/routes/auth.ts",
+        "src/app/admin/sso/page.tsx"
+      ],
+      "clearance": "Admin can toggle between Google SSO and Clerk at runtime; settings propagate to edge within 1s.",
+      "dependencies": [
+        "TASK-P4-01",
+        "TASK-P2-02"
+      ],
+      "requiredProcesses": {
+        "agentRole": "security-engineer",
+        "unitTest": true,
+        "integrationTest": true,
+        "staticValidation": "npm run typecheck",
+        "featureValidation": "Dynamic SSO provider switching: changes in admin settings immediately update /api/auth/config and frontend sign-in views without redeploy",
+        "commands": [
+          "npm run typecheck"
+        ]
+      },
+      "status": "TODO"
+    },
+    {
       "id": "TASK-P5-01",
       "phaseId": "phase-5",
       "title": "Candidate Profile API (/api/onboarding/profile)",

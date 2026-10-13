@@ -16,13 +16,19 @@ generator client {
 // -------------------------------------------------------------
 
 model User {
-  id        String            @id @default(cuid())
-  clerkId   String            @unique
-  email     String            @unique
-  fullName  String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  profile   CandidateProfile?
+  id            String            @id @default(cuid())
+  clerkId       String?           @unique
+  googleId      String?           @unique
+  username      String?           @unique
+  passwordHash  String?
+  email         String            @unique
+  emailVerified Boolean           @default(false)
+  fullName      String?
+  avatarUrl     String?
+  authProvider  String            @default("google") // "google" | "credentials" | "clerk"
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  profile       CandidateProfile?
 }
 
 model CandidateProfile {

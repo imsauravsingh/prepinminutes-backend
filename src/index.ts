@@ -1,3 +1,4 @@
+import "./server/edge/polyfills";
 import { ApiRequest, ApiResponse } from "./lib/http";
 import { getCorsHeaders, withCors } from "./server/edge/cors";
 import { handleGetProfile, handlePostProfile } from "./routes/onboarding-profile";
@@ -8,6 +9,18 @@ import { handlePostMockInterviewEnd } from "./routes/mock-interview-end";
 import { handleGetEvaluationReport } from "./routes/evaluation-report";
 import { handleGetRevisionItems, handlePostRevisionItems } from "./routes/revision-items";
 import { handlePostMockInterviewStart, handlePostVoiceSynthesize } from "./routes/voice-gateway";
+import {
+  handleGetAuthConfig,
+  handleGetAuthMe,
+  handleGetGoogleOAuthCallback,
+  handleGetGoogleOAuthRedirect,
+  handlePostAuthLogout,
+  handlePostGoogleIdToken,
+  handlePostLogin,
+  handlePostRegister,
+  handlePostResendVerification,
+  handlePostVerifyEmail,
+} from "./routes/auth";
 
 export type BackendEnv = Record<string, string | undefined>;
 
@@ -49,6 +62,31 @@ const worker = {
           runtime: "cloudflare-workers",
           timestamp: new Date().toISOString(),
         });
+      }
+      // Authentication & Google Single Sign-On (OAuth 2.0 Redirect + Google ID Token Verification)
+      else if (pathname === "/api/auth/config" && method === "GET") {
+        response = await handleGetAuthConfig();
+      } else if (pathname === "/api/auth/google" && method === "GET") {
+        response = await handleGetGoogleOAuthRedirect(req);
+      } else if (pathname === "/api/auth/google/callback" && method === "GET") {
+        response = await handleGetGoogleOAuthCallback(req);
+      } else if (
+        (pathname === "/api/auth/google/token" || pathname === "/api/auth/google") &&
+        method === "POST"
+      ) {
+        response = await handlePostGoogleIdToken(req);
+      } else if (pathname === "/api/auth/me" && method === "GET") {
+        response = await handleGetAuthMe(req);
+      } else if (pathname === "/api/auth/logout" && method === "POST") {
+        response = await handlePostAuthLogout();
+      } else if (pathname === "/api/auth/register" && method === "POST") {
+        response = await handlePostRegister(req);
+      } else if (pathname === "/api/auth/login" && method === "POST") {
+        response = await handlePostLogin(req);
+      } else if (pathname === "/api/auth/verify-email" && method === "POST") {
+        response = await handlePostVerifyEmail(req);
+      } else if (pathname === "/api/auth/resend-verification" && method === "POST") {
+        response = await handlePostResendVerification(req);
       }
       // Onboarding Profile
       else if (pathname === "/api/onboarding/profile" && method === "GET") {

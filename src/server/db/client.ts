@@ -30,30 +30,42 @@ if (process.env.NODE_ENV !== "production") {
 
 /**
  * Enforces candidate tenant isolation on every downstream query.
- * Throws an unauthorized error if clerkUserId is absent or invalid.
+ * Resolves the candidate User record by internal `id`, `googleId` (Google SSO), or `clerkId` (Clerk).
  */
-export async function withCandidateContext(clerkUserId: string) {
-  if (!clerkUserId || clerkUserId.trim() === "") {
+export async function withCandidateContext(candidateIdentifier: string) {
+  if (!candidateIdentifier || candidateIdentifier.trim() === "") {
     throw new Error(
-      "UNAUTHORIZED: Candidate context requires a valid Clerk user ID.",
+      "UNAUTHORIZED: Candidate context requires a valid user identifier.",
     );
   }
 
-  const user = await db.user.findUnique({
-    where: { clerkId: clerkUserId },
+  const trimmed = candidateIdentifier.trim();
+
+  const user = await db.user.findFirst({
+    where: {
+      OR: [
+        { id: trimmed },
+        { googleId: trimmed },
+        { username: trimmed },
+        { clerkId: trimmed },
+      ],
+    },
     include: { profile: true },
   });
 
   if (!user) {
     throw new Error(
-      `NOT_FOUND: No registered candidate profile found for Clerk ID: ${clerkUserId}`,
+      `NOT_FOUND: No registered candidate profile found for identifier: ${trimmed}`,
     );
   }
 
   return {
     userId: user.id,
+    googleId: user.googleId ?? null,
+    username: user.username ?? null,
     clerkId: user.clerkId,
     email: user.email,
     profile: user.profile,
   };
 }
+
