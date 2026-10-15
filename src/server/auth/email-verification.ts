@@ -1,4 +1,5 @@
 import { redis, RedisKeys } from "../redis/client";
+import { getSecrets } from "../config/secrets";
 
 export const OTP_TTL_SECONDS = 600; // 10 minutes
 export const OTP_COOLDOWN_SECONDS = 60; // 60 seconds between resends
@@ -142,17 +143,28 @@ export async function sendVerificationEmail(
   username?: string
 ): Promise<{ sent: boolean; devCode?: string }> {
   const isProd = process.env.NODE_ENV === "production";
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const senderEmail = process.env.EMAIL_FROM || "PrepInMinutes <onboarding@prepinminutes.com>";
+  const secrets = getSecrets();
+  const resendApiKey = process.env.RESEND_API_KEY || secrets.RESEND_API_KEY;
+  const senderEmail =
+    process.env.EMAIL_FROM ||
+    secrets.EMAIL_FROM ||
+    "PrepInMinutes <onboarding@resend.dev>";
 
   // Beautiful console banner for developer/staging visibility
   console.log("\n" + "=".repeat(64));
-  console.log("   ✉️   PREPINMINUTES EMAIL VERIFICATION CODE");
+  console.log("   ✉️   PREPINMINUTES EMAIL VERIFICATION");
   console.log("=".repeat(64));
   console.log(`  Recipient: ${email}`);
   if (username) console.log(`  Candidate: ${username}`);
   console.log(`  OTP Code:  >>> ${code} <<<`);
   console.log(`  Validity:  10 minutes (${OTP_TTL_SECONDS}s)`);
+  if (resendApiKey) {
+    console.log(`  Delivery:  Real Email (Resend API -> ${senderEmail})`);
+  } else {
+    console.log(`  Delivery:  Local Simulated Mode (No RESEND_API_KEY in .env)`);
+    console.log(`  Tip:       To deliver real emails to your inbox from localhost,`);
+    console.log(`             add RESEND_API_KEY="re_..." to prepinminutes-backend/.env`);
+  }
   console.log("=".repeat(64) + "\n");
 
   if (resendApiKey) {

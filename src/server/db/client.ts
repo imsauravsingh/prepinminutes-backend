@@ -1,32 +1,48 @@
-import "dotenv/config";
+import { getSecrets } from "../config/secrets";
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { PrismaNeonHttp } from "@prisma/adapter-neon";
 
 declare global {
   // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined;
 }
 
-function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL!;
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaPg(pool);
+let prismaInstance: PrismaClient | null = null;
 
-  return new PrismaClient({
+export function getDb(): PrismaClient {
+  if (global.__prisma) return global.__prisma;
+  if (prismaInstance) return prismaInstance;
+
+  const secrets = getSecrets();
+  const connectionString = secrets.DATABASE_URL || process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  const adapter = new PrismaNeonHttp(connectionString, {});
+
+  prismaInstance = new PrismaClient({
     adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
   });
+
+  if (process.env.NODE_ENV !== "production") {
+    global.__prisma = prismaInstance;
+  }
+
+  return prismaInstance;
 }
 
-export const db = global.__prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  global.__prisma = db;
-}
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getDb();
+    const val = (client as unknown as Record<string, unknown>)[prop as string];
+    return typeof val === "function" ? val.bind(client) : val;
+  },
+});
 
 /**
  * Enforces candidate tenant isolation on every downstream query.

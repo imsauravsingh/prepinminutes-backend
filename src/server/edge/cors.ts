@@ -11,14 +11,33 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:3000",
 ]);
 
-export function getCorsHeaders(originHeader: string | null): Record<string, string> {
-  const isAllowed =
-    originHeader &&
-    (ALLOWED_ORIGINS.has(originHeader) ||
-      originHeader.endsWith(".prepinminutes.com") ||
-      originHeader.endsWith(".workers.dev"));
+export function isAllowedOrigin(originHeader: string | null): boolean {
+  if (!originHeader) return false;
+  if (
+    ALLOWED_ORIGINS.has(originHeader) ||
+    originHeader.endsWith(".prepinminutes.com") ||
+    originHeader.endsWith(".workers.dev")
+  ) {
+    return true;
+  }
+  try {
+    const url = new URL(originHeader);
+    if (
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname.startsWith("192.168.") ||
+      url.hostname.startsWith("10.") ||
+      url.hostname.startsWith("172.")
+    ) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
 
-  const allowedOrigin = isAllowed ? originHeader : "https://prepinminutes.com";
+export function getCorsHeaders(originHeader: string | null): Record<string, string> {
+  const allowed = isAllowedOrigin(originHeader);
+  const allowedOrigin = allowed && originHeader ? originHeader : "http://localhost:3000";
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin,

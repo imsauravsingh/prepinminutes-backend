@@ -46,6 +46,10 @@ export interface AppSecrets {
   // Legacy / Optional Clerk Auth (disabled when AUTH_PROVIDER="google")
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
   CLERK_SECRET_KEY: string;
+
+  // Transactional Email Service (Resend)
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
 }
 
 let cachedSecrets: AppSecrets | null = null;
@@ -147,6 +151,8 @@ export function getSecrets(): AppSecrets {
       'prepinminutes-dev-jwt-secret-change-in-production',
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || localEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || localEnv.CLERK_SECRET_KEY || '',
+    RESEND_API_KEY: process.env.RESEND_API_KEY || localEnv.RESEND_API_KEY || '',
+    EMAIL_FROM: process.env.EMAIL_FROM || localEnv.EMAIL_FROM || 'PrepInMinutes <onboarding@resend.dev>',
   };
 
   if (isProduction && process.env.DATABASE_URL) {

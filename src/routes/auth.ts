@@ -345,6 +345,8 @@ export async function handleGetAuthMe(req: ApiRequest): Promise<Response> {
           avatarUrl: (user as { avatarUrl?: string | null }).avatarUrl ?? null,
           authProvider:
             (user as { authProvider?: string }).authProvider ?? "google",
+          createdAt: user.createdAt,
+          hasPassword: Boolean(user.passwordHash),
         },
         profile: user.profile,
       });
@@ -498,16 +500,6 @@ export async function handlePostRegister(req: ApiRequest): Promise<Response> {
         passwordHash,
         fullName: cleanUsername,
         authProvider: "credentials",
-        profile: {
-          create: {
-            targetRole: "Software Engineer",
-            experienceLevel: "3-5",
-            targetCompanies: ["Google", "Meta"],
-          },
-        },
-      },
-      include: {
-        profile: true,
       },
     });
 
@@ -764,7 +756,6 @@ export async function handlePostVerifyEmail(req: ApiRequest): Promise<Response> 
     const updatedUser = await db.user.update({
       where: { id: user.id },
       data: { emailVerified: true },
-      include: { profile: true },
     });
 
     // Issue edge session JWT
@@ -793,7 +784,7 @@ export async function handlePostVerifyEmail(req: ApiRequest): Promise<Response> 
           fullName: updatedUser.fullName,
           avatarUrl: updatedUser.avatarUrl,
           authProvider: updatedUser.authProvider,
-          hasCompletedOnboarding: Boolean(updatedUser.profile),
+          hasCompletedOnboarding: Boolean(user.profile),
         },
       },
       {

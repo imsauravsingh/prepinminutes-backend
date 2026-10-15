@@ -21,6 +21,10 @@ import {
   handlePostResendVerification,
   handlePostVerifyEmail,
 } from "./routes/auth";
+import {
+  handlePatchUserProfile,
+  handlePostChangePassword,
+} from "./routes/user-profile";
 
 export type BackendEnv = Record<string, string | undefined>;
 
@@ -87,6 +91,10 @@ const worker = {
         response = await handlePostVerifyEmail(req);
       } else if (pathname === "/api/auth/resend-verification" && method === "POST") {
         response = await handlePostResendVerification(req);
+      } else if (pathname === "/api/user/profile" && method === "PATCH") {
+        response = await handlePatchUserProfile(req);
+      } else if (pathname === "/api/auth/change-password" && method === "POST") {
+        response = await handlePostChangePassword(req);
       }
       // Onboarding Profile
       else if (pathname === "/api/onboarding/profile" && method === "GET") {
