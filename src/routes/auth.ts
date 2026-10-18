@@ -26,6 +26,14 @@ import {
   storeVerificationOtp,
   verifyVerificationOtp,
 } from "../server/auth/email-verification";
+import {
+  checkPasswordResetCooldown,
+  generatePasswordResetOtp,
+  sendPasswordResetEmail,
+  setPasswordResetCooldown,
+  storePasswordResetOtp,
+  verifyPasswordResetOtp,
+} from "../server/auth/password-reset";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
@@ -881,5 +889,257 @@ export async function handlePostResendVerification(req: ApiRequest): Promise<Res
     );
   }
 }
+
+/**
+ * POST /api/auth/forgot-password
+ * Initiates the candidate password reset flow.
+ * Dispatches a 6-digit OTP code to the candidate's email with a 60-second cooldown.
+ */
+export async function handlePostForgotPassword(req: ApiRequest): Promise<Response> {
+  try {
+    const body = (await req.json().catch(() => null)) as { email?: string } | null;
+
+    if (!body || !body.email) {
+      return ApiResponse.json(
+        { error: "INVALID_REQUEST", message: "Email is required." },
+        { status: 400 }
+      );
+    }
+
+    const cleanEmail = body.email.trim().toLowerCase();
+    if (!validateEmail(cleanEmail)) {
+      return ApiResponse.json(
+        { error: "INVALID_EMAIL", message: "Please provide a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    const user = await db.user.findFirst({
+      where: { email: cleanEmail },
+    });
+
+    // If user does not exist, return generic success to prevent account enumeration
+    if (!user) {
+      return ApiResponse.json(
+        {
+          success: true,
+          message: "If an account exists with this email address, a password reset code has been sent.",
+        },
+        { status: 200 }
+      );
+    }
+
+    const cooldown = await checkPasswordResetCooldown(cleanEmail);
+    if (!cooldown.allowed) {
+      return ApiResponse.json(
+        {
+          error: "RATE_LIMITED",
+          retryAfterSeconds: cooldown.retryAfterSeconds,
+          message: `Please wait ${cooldown.retryAfterSeconds} seconds before requesting a new code.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const otp = generatePasswordResetOtp();
+    await storePasswordResetOtp(cleanEmail, otp);
+    await setPasswordResetCooldown(cleanEmail, 60);
+    const emailResult = await sendPasswordResetEmail(
+      cleanEmail,
+      otp,
+      user.username ?? user.fullName ?? undefined
+    );
+
+    return ApiResponse.json(
+      {
+        success: true,
+        message: "A password reset code has been sent to your email address.",
+        ...(emailResult.devCode ? { devCode: emailResult.devCode } : {}),
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Forgot password request error:", error);
+    return ApiResponse.json(
+      {
+        error: "FORGOT_PASSWORD_FAILED",
+        message: error instanceof Error ? error.message : "Failed to process password reset request.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/auth/verify-reset-code
+ * Validates the candidate's 6-digit password reset OTP code before asking for the new password.
+ */
+export async function handlePostVerifyResetCode(req: ApiRequest): Promise<Response> {
+  try {
+    const body = (await req.json().catch(() => null)) as {
+      email?: string;
+      code?: string;
+    } | null;
+
+    if (!body || !body.email || !body.code) {
+      return ApiResponse.json(
+        { error: "INVALID_REQUEST", message: "Email and reset code are required." },
+        { status: 400 }
+      );
+    }
+
+    const cleanEmail = body.email.trim().toLowerCase();
+    const cleanCode = body.code.trim();
+
+    const verification = await verifyPasswordResetOtp(cleanEmail, cleanCode, true);
+    if (!verification.valid) {
+      return ApiResponse.json(
+        { error: "INVALID_RESET_CODE", message: verification.error },
+        { status: 400 }
+      );
+    }
+
+    return ApiResponse.json(
+      {
+        success: true,
+        valid: true,
+        message: "Reset code verified successfully.",
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Verify reset code error:", error);
+    return ApiResponse.json(
+      {
+        error: "VERIFY_CODE_FAILED",
+        message: error instanceof Error ? error.message : "Failed to verify reset code.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Verifies candidate's 6-digit OTP code and sets their new password.
+ * Issues a session token and signs the candidate in upon success.
+ */
+export async function handlePostResetPassword(req: ApiRequest): Promise<Response> {
+  try {
+    const body = (await req.json().catch(() => null)) as {
+      email?: string;
+      code?: string;
+      newPassword?: string;
+      confirmPassword?: string;
+    } | null;
+
+    if (!body || !body.email || !body.code || !body.newPassword) {
+      return ApiResponse.json(
+        { error: "INVALID_REQUEST", message: "Email, reset code, and new password are required." },
+        { status: 400 }
+      );
+    }
+
+    const cleanEmail = body.email.trim().toLowerCase();
+    const cleanCode = body.code.trim();
+    const { newPassword, confirmPassword } = body;
+
+    // Validate new password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      return ApiResponse.json(
+        { error: "INVALID_NEW_PASSWORD", message: passwordValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Validate confirmation
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return ApiResponse.json(
+        { error: "PASSWORD_MISMATCH", message: "New password and Confirm password do not match." },
+        { status: 400 }
+      );
+    }
+
+    // Verify OTP against Redis (deletes OTP upon success)
+    const verification = await verifyPasswordResetOtp(cleanEmail, cleanCode, false);
+    if (!verification.valid) {
+      return ApiResponse.json(
+        { error: "INVALID_RESET_CODE", message: verification.error },
+        { status: 400 }
+      );
+    }
+
+    // Find candidate in database
+    const user = await db.user.findFirst({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return ApiResponse.json(
+        { error: "USER_NOT_FOUND", message: "No candidate account found with this email." },
+        { status: 404 }
+      );
+    }
+
+    // Hash and update password, marking email as verified
+    const passwordHash = hashPassword(newPassword);
+    const updated = await db.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        emailVerified: true,
+      },
+    });
+
+    // Sign session token so candidate is automatically logged in
+    const token = signSessionJwt({
+      sub: updated.id,
+      userId: updated.id,
+      googleId: updated.googleId ?? null,
+      clerkId: updated.clerkId ?? null,
+      username: updated.username ?? null,
+      email: updated.email,
+      name: updated.fullName ?? updated.username ?? null,
+      picture: updated.avatarUrl ?? null,
+      provider: (updated.authProvider as "google" | "credentials" | "clerk") || "credentials",
+    });
+
+    const headers = new Headers();
+    headers.append("Set-Cookie", buildSessionCookieHeader(token));
+
+    return ApiResponse.json(
+      {
+        success: true,
+        message: "Your password has been reset successfully.",
+        token,
+        user: {
+          id: updated.id,
+          username: updated.username,
+          googleId: updated.googleId,
+          clerkId: updated.clerkId,
+          email: updated.email,
+          emailVerified: updated.emailVerified,
+          fullName: updated.fullName,
+          avatarUrl: updated.avatarUrl,
+          authProvider: updated.authProvider,
+          createdAt: updated.createdAt,
+          hasPassword: true,
+        },
+      },
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return ApiResponse.json(
+      {
+        error: "RESET_PASSWORD_FAILED",
+        message: error instanceof Error ? error.message : "Failed to reset password.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
 
 

@@ -20,6 +20,9 @@ import {
   handlePostRegister,
   handlePostResendVerification,
   handlePostVerifyEmail,
+  handlePostForgotPassword,
+  handlePostVerifyResetCode,
+  handlePostResetPassword,
 } from "./routes/auth";
 import {
   handlePatchUserProfile,
@@ -91,6 +94,12 @@ const worker = {
         response = await handlePostVerifyEmail(req);
       } else if (pathname === "/api/auth/resend-verification" && method === "POST") {
         response = await handlePostResendVerification(req);
+      } else if (pathname === "/api/auth/forgot-password" && method === "POST") {
+        response = await handlePostForgotPassword(req);
+      } else if (pathname === "/api/auth/verify-reset-code" && method === "POST") {
+        response = await handlePostVerifyResetCode(req);
+      } else if (pathname === "/api/auth/reset-password" && method === "POST") {
+        response = await handlePostResetPassword(req);
       } else if (pathname === "/api/user/profile" && method === "PATCH") {
         response = await handlePatchUserProfile(req);
       } else if (pathname === "/api/auth/change-password" && method === "POST") {

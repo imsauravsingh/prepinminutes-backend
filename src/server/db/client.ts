@@ -1,6 +1,8 @@
 import { getSecrets } from "../config/secrets";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeonHttp } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -19,7 +21,11 @@ export function getDb(): PrismaClient {
     throw new Error("DATABASE_URL is not configured.");
   }
 
-  const adapter = new PrismaNeonHttp(connectionString, {});
+  // Use PrismaNeonHttp when connecting to Neon cloud endpoints (stateless HTTP fetch for edge),
+  // or PrismaPg connection pool when connecting to local PostgreSQL or standard Postgres.
+  const adapter = connectionString.includes("neon.tech")
+    ? new PrismaNeonHttp(connectionString, {})
+    : new PrismaPg(new Pool({ connectionString }));
 
   prismaInstance = new PrismaClient({
     adapter,

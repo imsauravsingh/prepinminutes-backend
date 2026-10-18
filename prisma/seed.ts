@@ -1,10 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
-import { PrismaNeonHttp } from "@prisma/adapter-neon";
-
-const connectionString = process.env.DATABASE_URL!;
-const adapter = new PrismaNeonHttp(connectionString, {} as any);
-const prisma = new PrismaClient({ adapter: adapter as any });
+import { db as prisma } from "../src/server/db/client";
 
 interface TopicData {
   slug: string;

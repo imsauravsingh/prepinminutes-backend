@@ -24,4 +24,6 @@ export const RedisKeys = {
   userReadinessCache: (userId: string) => `candidate:${userId}:readiness`,
   otpVerify: (email: string) => `otp:verify:${email.toLowerCase()}`,
   otpCooldown: (email: string) => `otp:cooldown:${email.toLowerCase()}`,
+  passwordResetOtp: (email: string) => `otp:reset_password:${email.toLowerCase()}`,
+  passwordResetCooldown: (email: string) => `otp:reset_password_cooldown:${email.toLowerCase()}`,
 } as const;
