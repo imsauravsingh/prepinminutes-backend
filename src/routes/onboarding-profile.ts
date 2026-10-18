@@ -6,20 +6,44 @@ import { z } from "zod";
 
 const ProfileSchema = z.object({
   targetRole: z.string().min(2, "Target role must be at least 2 characters"),
-  experienceLevel: z.enum(["0-2", "3-5", "6-9", "10+"]).default("3-5"),
-  targetCompanies: z.array(z.string()).default([]),
-  timelineWeeks: z.number().int().min(1).max(52).default(8),
+  experienceLevel: z.string().default("3-5 years"),
+  targetCompanies: z
+    .union([z.array(z.string()), z.string()])
+    .transform((val) => {
+      if (Array.isArray(val)) return val.map((s) => s.trim()).filter(Boolean);
+      if (typeof val === "string") {
+        return val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      return [];
+    })
+    .default([]),
+  timelineWeeks: z.number().int().min(1).max(52).optional(),
+  timelineLabel: z.string().default("1 month"),
+  jobDescriptionText: z.string().optional().nullable(),
   weeklyGoalHours: z.number().min(1).max(60).default(6),
 });
 
+function deriveWeeksFromLabel(label: string, fallbackWeeks = 4): number {
+  const clean = label.toLowerCase();
+  if (clean.includes("2 week")) return 2;
+  if (clean.includes("1 month") || clean.includes("4 week")) return 4;
+  if (clean.includes("2 month") || clean.includes("8 week")) return 8;
+  if (clean.includes("3 month") || clean.includes("12 week")) return 12;
+  if (clean.includes("6 month") || clean.includes("24 week")) return 24;
+  return fallbackWeeks;
+}
+
 export async function handlePostProfile(req: ApiRequest): Promise<Response> {
   try {
-    const clerkId = resolveCandidateClerkId(req);
-    if (!clerkId) {
-      return ApiResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    const candidateId = resolveCandidateClerkId(req);
+    if (!candidateId) {
+      return ApiResponse.json({ error: "UNAUTHORIZED", message: "Sign in required." }, { status: 401 });
     }
 
-    const rl = await checkRateLimit(clerkId, "general");
+    const rl = await checkRateLimit(candidateId, "general");
     if (!rl.allowed) {
       return ApiResponse.json(
         { error: "RATE_LIMIT_EXCEEDED", retryAfter: rl.resetSeconds },
@@ -37,51 +61,129 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
     }
 
     const data = validated.data;
+    const computedWeeks = data.timelineWeeks || deriveWeeksFromLabel(data.timelineLabel, 4);
 
     let user = await db.user.findFirst({
       where: {
-        OR: [{ id: clerkId }, { googleId: clerkId }, { clerkId }],
+        OR: [
+          { id: candidateId },
+          { googleId: candidateId },
+          { clerkId: candidateId },
+          { username: candidateId },
+          { email: candidateId },
+        ],
+      },
+      include: {
+        profile: {
+          include: {
+            plans: {
+              where: { isActive: true },
+              take: 1,
+            },
+          },
+        },
       },
     });
 
     if (!user) {
-      const isClerkId = clerkId.startsWith("user_") || clerkId.startsWith("test_clerk");
+      const isClerkId = candidateId.startsWith("user_") || candidateId.startsWith("test_clerk");
       user = await db.user.create({
         data: isClerkId
           ? {
-              clerkId,
+              clerkId: candidateId,
               authProvider: "clerk",
-              email: `${clerkId}@placeholder.local`,
+              email: `${candidateId}@placeholder.local`,
             }
           : {
-              googleId: clerkId,
+              googleId: candidateId,
               authProvider: "google",
-              email: `${clerkId}@placeholder.local`,
+              email: `${candidateId}@placeholder.local`,
             },
+        include: {
+          profile: {
+            include: {
+              plans: {
+                where: { isActive: true },
+                take: 1,
+              },
+            },
+          },
+        },
       });
     }
 
+    // 1. Upsert candidate profile
     const profile = await db.candidateProfile.upsert({
       where: { userId: user.id },
       update: {
         targetRole: data.targetRole,
         experienceLevel: data.experienceLevel,
         targetCompanies: data.targetCompanies,
-        timelineWeeks: data.timelineWeeks,
+        timelineWeeks: computedWeeks,
+        timelineLabel: data.timelineLabel,
+        jobDescriptionText: data.jobDescriptionText || null,
         weeklyGoalHours: data.weeklyGoalHours,
+        onboardingStep: 2,
       },
       create: {
         userId: user.id,
         targetRole: data.targetRole,
         experienceLevel: data.experienceLevel,
         targetCompanies: data.targetCompanies,
-        timelineWeeks: data.timelineWeeks,
+        timelineWeeks: computedWeeks,
+        timelineLabel: data.timelineLabel,
+        jobDescriptionText: data.jobDescriptionText || null,
         weeklyGoalHours: data.weeklyGoalHours,
+        onboardingStep: 2,
         readinessScore: 45,
       },
     });
 
-    return ApiResponse.json({ success: true, profile });
+    // 2. Multi-plan architecture: Upsert or create active preparation plan
+    const existingActivePlan = user.profile?.plans?.[0] || null;
+
+    let activePlan;
+    if (existingActivePlan) {
+      activePlan = await db.preparationPlan.update({
+        where: { id: existingActivePlan.id },
+        data: {
+          targetRole: data.targetRole,
+          title: `${data.targetRole} Prep`,
+          targetCompanies: data.targetCompanies,
+          timelineWeeks: computedWeeks,
+          timelineLabel: data.timelineLabel,
+          jobDescriptionText: data.jobDescriptionText || null,
+          isActive: true,
+        },
+      });
+    } else {
+      activePlan = await db.preparationPlan.create({
+        data: {
+          candidateId: profile.id,
+          title: `${data.targetRole} Prep`,
+          targetRole: data.targetRole,
+          targetCompanies: data.targetCompanies,
+          timelineWeeks: computedWeeks,
+          timelineLabel: data.timelineLabel,
+          jobDescriptionText: data.jobDescriptionText || null,
+          isActive: true,
+          status: "active",
+          readinessScore: 45,
+        },
+      });
+
+      // Point profile's activePlanId to the newly created plan
+      await db.candidateProfile.update({
+        where: { id: profile.id },
+        data: { activePlanId: activePlan.id },
+      });
+    }
+
+    return ApiResponse.json({
+      success: true,
+      profile,
+      activePlan,
+    });
   } catch (error) {
     console.error("Profile update error:", error);
     return ApiResponse.json(
@@ -96,32 +198,47 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
 
 export async function handleGetProfile(req: ApiRequest): Promise<Response> {
   try {
-    const clerkId = resolveCandidateClerkId(req);
-    if (!clerkId) {
-      return ApiResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    const candidateId = resolveCandidateClerkId(req);
+    if (!candidateId) {
+      return ApiResponse.json({ error: "UNAUTHORIZED", message: "Sign in required." }, { status: 401 });
     }
 
     const user = await db.user.findFirst({
       where: {
-        OR: [{ id: clerkId }, { googleId: clerkId }, { clerkId }],
+        OR: [
+          { id: candidateId },
+          { googleId: candidateId },
+          { clerkId: candidateId },
+          { username: candidateId },
+          { email: candidateId },
+        ],
       },
       include: {
         profile: {
           include: {
-            plan: true,
+            plans: {
+              where: { isActive: true },
+              take: 1,
+            },
           },
         },
       },
     });
 
     if (!user || !user.profile) {
-      return ApiResponse.json({ error: "PROFILE_NOT_FOUND" }, { status: 404 });
+      return ApiResponse.json({
+        success: true,
+        profile: null,
+        activePlan: null,
+      });
     }
+
+    const activePlan = user.profile.plans?.[0] || null;
 
     return ApiResponse.json({
       success: true,
       profile: user.profile,
-      plan: user.profile.plan,
+      activePlan,
     });
   } catch (error) {
     console.error("Profile fetch error:", error);

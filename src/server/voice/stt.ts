@@ -83,3 +83,40 @@ export function parseDeepgramFrame(rawJson: string): TranscriptSegment | null {
     return null;
   }
 }
+
+/**
+ * Transcribes an audio buffer or blob directly via Deepgram Nova-2 REST endpoint.
+ */
+export async function transcribeAudioBuffer(
+  audioBuffer: ArrayBuffer | Uint8Array,
+  mimeType = "audio/webm"
+): Promise<{ text: string; confidence: number }> {
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) {
+    throw new Error("MISSING_CONFIG: DEEPGRAM_API_KEY is not defined.");
+  }
+
+  const response = await fetch(
+    "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        "Content-Type": mimeType,
+      },
+      body: audioBuffer as BodyInit,
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "Unknown Deepgram error");
+    throw new Error(`DEEPGRAM_STT_ERROR (${response.status}): ${errText}`);
+  }
+
+  const data: any = await response.json();
+  const alt = data.results?.channels?.[0]?.alternatives?.[0];
+  return {
+    text: alt?.transcript?.trim() || "",
+    confidence: Number(alt?.confidence ?? 1.0),
+  };
+}

@@ -80,18 +80,28 @@ export async function handlePostResume(req: ApiRequest): Promise<Response> {
     const chunks = chunkText(cleanText, 1200, 200);
 
     const candidateId = context.profile.id;
+
+    // Save resume file metadata to CandidateProfile
+    await db.candidateProfile.update({
+      where: { id: candidateId },
+      data: {
+        resumeFileName: file.name,
+        resumeFileUrl: r2AssetUrl || undefined,
+      },
+    });
+
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       const embedding = await generate1536Embedding(chunk);
 
       await db.$executeRaw`
-        INSERT INTO "DocumentEmbedding" (
-          "id",
-          "candidateId",
-          "docType",
-          "content",
-          "embedding",
-          "createdAt"
+        INSERT INTO document_embeddings (
+          id,
+          candidate_id,
+          doc_type,
+          content,
+          embedding,
+          created_at
         )
         VALUES (
           gen_random_uuid()::text,
@@ -106,6 +116,7 @@ export async function handlePostResume(req: ApiRequest): Promise<Response> {
 
     return ApiResponse.json({
       success: true,
+      fileName: file.name,
       chunksProcessed: chunks.length,
       r2AssetUrl,
       extractedPreview: cleanText.slice(0, 300),

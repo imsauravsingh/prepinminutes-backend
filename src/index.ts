@@ -8,7 +8,12 @@ import { handlePostPracticeSubmit } from "./routes/practice-submit";
 import { handlePostMockInterviewEnd } from "./routes/mock-interview-end";
 import { handleGetEvaluationReport } from "./routes/evaluation-report";
 import { handleGetRevisionItems, handlePostRevisionItems } from "./routes/revision-items";
-import { handlePostMockInterviewStart, handlePostVoiceSynthesize } from "./routes/voice-gateway";
+import {
+  handlePostMockInterviewStart,
+  handlePostVoiceSynthesize,
+  handlePostVoiceTranscribe,
+} from "./routes/voice-gateway";
+import { handlePostAiAssessmentStart, handlePostAiAssessmentFinish } from "./routes/ai-assessment";
 import {
   handleGetAuthConfig,
   handleGetAuthMe,
@@ -129,9 +134,17 @@ const worker = {
       } else if (pathname === "/api/mock-interview/session/end" && method === "POST") {
         response = await handlePostMockInterviewEnd(req);
       }
-      // Voice TTS Synthesis
+      // AI Diagnostic Assessment (Option 1)
+      else if (pathname === "/api/ai-assessment/start" && method === "POST") {
+        response = await handlePostAiAssessmentStart(req);
+      } else if (pathname === "/api/ai-assessment/finish" && method === "POST") {
+        response = await handlePostAiAssessmentFinish(req);
+      }
+      // Voice TTS Synthesis & STT Transcription
       else if (pathname === "/api/voice/synthesize" && method === "POST") {
         response = await handlePostVoiceSynthesize(req);
+      } else if (pathname === "/api/voice/transcribe" && method === "POST") {
+        response = await handlePostVoiceTranscribe(req);
       }
       // Revision Queue Items
       else if (pathname === "/api/revision/items" && method === "GET") {

@@ -1,22 +1,32 @@
 import "dotenv/config";
 
 export interface CartesiaTTSConfig {
-  modelId: "sonic-english";
+  modelId: "sonic-3.6" | "sonic-3.5" | "sonic-3";
   voiceId: string;
   sampleRate: 24000 | 16000;
   encoding: "pcm_s16le" | "pcm_f32le";
+  container: "wav" | "raw";
 }
 
+// Curated high-fidelity voices for technical interviewer personas
+export const VOICES = {
+  sarah: "694f9389-aac1-45b6-b726-9d9369183238", // Sarah - Mindful Woman (Staff Engineer)
+  gareth: "3a01612e-07da-4a85-bba8-ce10481df477", // Gareth - Conversational Specialist
+  cillian: "15a13943-32a7-49a9-b944-d6062129c5a3", // Cillian - Corporate Presenter
+  harlow: "6c756032-11c3-4be8-a120-74f9673fb700", // Harlow - Warm Support
+};
+
 export const DEFAULT_CARTESIA_CONFIG: CartesiaTTSConfig = {
-  modelId: "sonic-english",
-  // Default professional technical interviewer voice
-  voiceId: "a0e99841-438c-4a64-b679-ae501e7d6091",
+  modelId: "sonic-3.6",
+  voiceId: VOICES.sarah,
   sampleRate: 24000,
   encoding: "pcm_s16le",
+  container: "wav",
 };
 
 /**
- * Synthesizes ultra-low-latency PCM audio chunks (<50ms TTFB) via Cartesia Sonic API.
+ * Synthesizes ultra-low-latency speech audio (<60ms TTFB) via Cartesia Sonic-3.6.
+ * Outputs standard browser-playable WAV audio by default.
  */
 export async function synthesizeInterviewerSpeech(
   transcriptText: string,
@@ -27,7 +37,7 @@ export async function synthesizeInterviewerSpeech(
     throw new Error("MISSING_CONFIG: CARTESIA_API_KEY is not defined.");
   }
 
-  const cfg = { ...DEFAULT_CARTESIA_CONFIG, ...config };
+  const cfg: CartesiaTTSConfig = { ...DEFAULT_CARTESIA_CONFIG, ...config };
 
   const response = await fetch("https://api.cartesia.ai/tts/bytes", {
     method: "POST",
@@ -44,7 +54,7 @@ export async function synthesizeInterviewerSpeech(
         id: cfg.voiceId,
       },
       output_format: {
-        container: "raw",
+        container: cfg.container,
         encoding: cfg.encoding,
         sample_rate: cfg.sampleRate,
       },

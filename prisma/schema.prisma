@@ -51,11 +51,12 @@ model CandidateProfile {
   completedHours     Float    @default(0.0) @map("completed_hours")
   streakDays         Int      @default(1) @map("streak_days")
 
+  activePlanId       String?  @map("active_plan_id")
   resumeFileName     String?  @map("resume_file_name")
   resumeFileUrl      String?  @map("resume_file_url")
   jobDescriptionText String?  @db.Text @map("job_description_text")
 
-  plan               PreparationPlan?
+  plans              PreparationPlan[]
   practiceSessions   PracticeSession[]
   mockSessions       MockInterviewSession[]
   revisionItems      RevisionItem[]
@@ -70,21 +71,30 @@ model CandidateProfile {
 }
 
 model PreparationPlan {
-  id               String           @id @default(cuid())
-  candidateId      String           @unique(map: "uq_preparation_plans_candidate_id") @map("candidate_id")
-  candidate        CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_preparation_plans_candidate_id")
-  targetRole       String           @map("target_role")
-  targetSeniority  String           @map("target_seniority")
-  timelineWeeks    Int              @map("timeline_weeks")
-  activePhaseId    String           @default("phase-1") @map("active_phase_id")
-  weeklyMilestones Json             @map("weekly_milestones") // Detailed weekly breakdown of phases and topics
-  domainWeights    Json             @map("domain_weights") // e.g. {"system-design": 0.40, "coding": 0.35, "behavioral": 0.15, "cloud": 0.10}
+  id                 String           @id @default(cuid())
+  candidateId        String           @map("candidate_id")
+  candidate          CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_preparation_plans_candidate_id")
+  title              String           @default("Primary Preparation Plan")
+  isActive           Boolean          @default(true) @map("is_active")
+  status             String           @default("active") @map("status") // "active" | "completed" | "archived"
+  targetRole         String           @map("target_role")
+  targetSeniority    String           @default("Mid-Senior") @map("target_seniority")
+  targetCompanies    String[]         @default([]) @map("target_companies")
+  timelineWeeks      Int              @default(4) @map("timeline_weeks")
+  timelineLabel      String           @default("1 month") @map("timeline_label")
+  jobDescriptionText String?          @db.Text @map("job_description_text")
+  readinessScore     Int              @default(45) @map("readiness_score")
+  activePhaseId      String           @default("phase-1") @map("active_phase_id")
+  weeklyMilestones   Json?            @map("weekly_milestones") // Detailed weekly breakdown of phases and topics
+  domainWeights      Json?            @map("domain_weights") // e.g. {"system-design": 0.40, "coding": 0.35, "behavioral": 0.15, "cloud": 0.10}
 
-  dailyTasks       DailyPlanTask[]
+  dailyTasks         DailyPlanTask[]
 
-  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  @@index([candidateId], map: "idx_preparation_plans_candidate_id")
+  @@index([candidateId, isActive], map: "idx_preparation_plans_candidate_active")
   @@map("preparation_plans")
 }
 

@@ -97,32 +97,55 @@ Ensure there are exactly ${profile.timelineWeeks} milestones (one per week). Ret
 
     const planJson = JSON.parse(response.text || "{}");
 
-    const plan = await db.preparationPlan.upsert({
-      where: { candidateId: profile.id },
-      update: {
-        targetRole: profile.targetRole,
-        targetSeniority: profile.experienceLevel,
-        timelineWeeks: profile.timelineWeeks,
-        weeklyMilestones: planJson.weeklyMilestones || [],
-        domainWeights: planJson.domainWeights || {
-          "system-design": 0.35,
-          coding: 0.35,
-          behavioral: 0.15,
-          cloud: 0.15,
+    const existingActivePlan = await db.preparationPlan.findFirst({
+      where: { candidateId: profile.id, isActive: true },
+    });
+
+    let plan;
+    if (existingActivePlan) {
+      plan = await db.preparationPlan.update({
+        where: { id: existingActivePlan.id },
+        data: {
+          targetRole: profile.targetRole,
+          targetSeniority: profile.experienceLevel,
+          timelineWeeks: profile.timelineWeeks,
+          weeklyMilestones: planJson.weeklyMilestones || [],
+          domainWeights: planJson.domainWeights || {
+            "system-design": 0.35,
+            coding: 0.35,
+            behavioral: 0.15,
+            cloud: 0.15,
+          },
+          isActive: true,
         },
-      },
-      create: {
-        candidateId: profile.id,
-        targetRole: profile.targetRole,
-        targetSeniority: profile.experienceLevel,
-        timelineWeeks: profile.timelineWeeks,
-        weeklyMilestones: planJson.weeklyMilestones || [],
-        domainWeights: planJson.domainWeights || {
-          "system-design": 0.35,
-          coding: 0.35,
-          behavioral: 0.15,
-          cloud: 0.15,
+      });
+    } else {
+      plan = await db.preparationPlan.create({
+        data: {
+          candidateId: profile.id,
+          title: `${profile.targetRole} Prep`,
+          targetRole: profile.targetRole,
+          targetSeniority: profile.experienceLevel,
+          timelineWeeks: profile.timelineWeeks,
+          weeklyMilestones: planJson.weeklyMilestones || [],
+          domainWeights: planJson.domainWeights || {
+            "system-design": 0.35,
+            coding: 0.35,
+            behavioral: 0.15,
+            cloud: 0.15,
+          },
+          isActive: true,
+          status: "active",
         },
+      });
+    }
+
+    await db.candidateProfile.update({
+      where: { id: profile.id },
+      data: {
+        activePlanId: plan.id,
+        isOnboardingDone: true,
+        onboardingStep: 3,
       },
     });
 
