@@ -145,8 +145,12 @@ export async function handlePostVoiceTranscribe(req: ApiRequest): Promise<Respon
       mimeType = contentType;
     }
 
-    if (!audioBuffer || audioBuffer.byteLength === 0) {
-      return ApiResponse.json({ error: "EMPTY_AUDIO_PAYLOAD" }, { status: 400 });
+    if (!audioBuffer || audioBuffer.byteLength < 500) {
+      return ApiResponse.json({
+        success: true,
+        transcript: "",
+        confidence: 1.0,
+      });
     }
 
     const result = await transcribeAudioBuffer(audioBuffer, mimeType);
@@ -160,6 +164,8 @@ export async function handlePostVoiceTranscribe(req: ApiRequest): Promise<Respon
     console.error("Voice transcription failed:", error);
     return ApiResponse.json(
       {
+        success: false,
+        transcript: "",
         error: "TRANSCRIPTION_FAILED",
         message: error instanceof Error ? error.message : "Unknown error",
       },

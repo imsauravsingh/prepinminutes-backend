@@ -88,7 +88,7 @@ export function parseDeepgramFrame(rawJson: string): TranscriptSegment | null {
  * Transcribes an audio buffer or blob directly via Deepgram Nova-2 REST endpoint.
  */
 export async function transcribeAudioBuffer(
-  audioBuffer: ArrayBuffer | Uint8Array,
+  audioBuffer: ArrayBuffer | Uint8Array | Buffer,
   mimeType = "audio/webm"
 ): Promise<{ text: string; confidence: number }> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -96,27 +96,57 @@ export async function transcribeAudioBuffer(
     throw new Error("MISSING_CONFIG: DEEPGRAM_API_KEY is not defined.");
   }
 
-  const response = await fetch(
-    "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${apiKey}`,
-        "Content-Type": mimeType,
-      },
-      body: audioBuffer as BodyInit,
-    }
-  );
+  // Convert to Node.js Buffer for accurate byte length and non-chunked HTTP body
+  const buffer: Buffer = Buffer.isBuffer(audioBuffer)
+    ? audioBuffer
+    : Buffer.from(audioBuffer as any);
 
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "Unknown Deepgram error");
-    throw new Error(`DEEPGRAM_STT_ERROR (${response.status}): ${errText}`);
+  // Return empty transcript for ultra-short or empty buffers (under 500 bytes)
+  if (buffer.length < 500) {
+    return { text: "", confidence: 1.0 };
   }
 
-  const data: any = await response.json();
-  const alt = data.results?.channels?.[0]?.alternatives?.[0];
-  return {
-    text: alt?.transcript?.trim() || "",
-    confidence: Number(alt?.confidence ?? 1.0),
-  };
+  // Strip codec parameters for standard MIME type (e.g. "audio/webm" instead of "audio/webm;codecs=opus")
+  const cleanMimeType = (mimeType.split(";")[0] || "audio/webm").trim();
+
+  try {
+    const response = await fetch(
+      "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          "Content-Type": cleanMimeType,
+          "Content-Length": String(buffer.length),
+        },
+        body: buffer as unknown as BodyInit,
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "Unknown Deepgram error");
+      console.warn(`Deepgram STT warning (${response.status}):`, errText);
+
+      // Gracefully handle slow uploads or client timeouts without crashing session
+      if (response.status === 408 || response.status === 400) {
+        return { text: "", confidence: 0 };
+      }
+
+      throw new Error(`DEEPGRAM_STT_ERROR (${response.status}): ${errText}`);
+    }
+
+    const data: any = await response.json();
+    const alt = data.results?.channels?.[0]?.alternatives?.[0];
+    return {
+      text: alt?.transcript?.trim() || "",
+      confidence: Number(alt?.confidence ?? 1.0),
+    };
+  } catch (error: any) {
+    if (error.name === "TimeoutError" || error.message?.includes("408") || error.message?.includes("SLOW_UPLOAD")) {
+      console.warn("Deepgram transcription upload timeout (408); recovering gracefully with empty transcript.");
+      return { text: "", confidence: 0 };
+    }
+    throw error;
+  }
 }

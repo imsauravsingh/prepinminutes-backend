@@ -13,26 +13,125 @@ generator client {
 }
 
 // -------------------------------------------------------------
-// 1. Core Authentication & Candidate Profiles
+// 1. Core Authentication, RBAC & Subscriptions
 // -------------------------------------------------------------
 
+enum AdminRole {
+  SUPER_ADMIN
+  HOD
+  CURRICULUM_MANAGER
+  STAFF_ENGINEER
+  CONTENT_REVIEWER
+  CANDIDATE
+}
+
+enum AdminApprovalStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO_MONTHLY
+  PRO_QUARTERLY
+  LIFETIME
+  CAMPUS_ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
 model User {
-  id            String            @id @default(cuid())
-  clerkId       String?           @unique(map: "uq_users_clerk_id") @map("clerk_id")
-  googleId      String?           @unique(map: "uq_users_google_id") @map("google_id")
-  username      String?           @unique(map: "uq_users_username") @map("username")
-  passwordHash  String?           @map("password_hash")
-  email         String            @unique(map: "uq_users_email")
-  emailVerified Boolean           @default(false) @map("is_email_verified")
-  fullName      String?           @map("full_name")
-  avatarUrl     String?           @map("avatar_url")
-  authProvider  String            @default("google") @map("auth_provider") // "google" | "credentials" | "clerk"
-  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String               @id @default(cuid())
+  clerkId             String?              @unique(map: "uq_users_clerk_id") @map("clerk_id")
+  googleId            String?              @unique(map: "uq_users_google_id") @map("google_id")
+  username            String?              @unique(map: "uq_users_username") @map("username")
+  passwordHash        String?              @map("password_hash")
+  email               String               @unique(map: "uq_users_email")
+  emailVerified       Boolean              @default(false) @map("is_email_verified")
+  fullName            String?              @map("full_name")
+  avatarUrl           String?              @map("avatar_url")
+  authProvider        String               @default("google") @map("auth_provider") // "google" | "credentials" | "clerk"
+  role                AdminRole            @default(CANDIDATE) @map("role")
+  adminApprovalStatus AdminApprovalStatus  @default(NONE) @map("admin_approval_status")
 
-  profile       CandidateProfile?
+  // Account Status & Universal Blocking (Applies to both Candidates & Staff)
+  isBlocked           Boolean              @default(false) @map("is_blocked")
+  blockedReason       String?              @map("blocked_reason")
+  blockedAt           DateTime?            @map("blocked_at") @db.Timestamptz(6)
+  blockedBy           String?              @map("blocked_by")
 
+  // Access Request Details (for Internal Staff)
+  requestedRole       String?              @map("requested_role") // "CURRICULUM_MANAGER" | "STAFF_ENGINEER" | "CONTENT_REVIEWER"
+  requestReason       String?              @db.Text @map("request_reason") // Written justification for HOD review
+  requestedAt         DateTime?            @map("requested_at") @db.Timestamptz(6)
+
+  approvedBy          String?              @map("approved_by") // imsauravsingh@gmail.com
+  approvedAt          DateTime?            @map("approved_at") @db.Timestamptz(6)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile             CandidateProfile?
+  subscription        Subscription?
+  auditLogs           AdminAuditLog[]
+
+  @@index([role], map: "idx_users_role")
+  @@index([adminApprovalStatus], map: "idx_users_admin_approval_status")
+  @@index([isBlocked], map: "idx_users_is_blocked")
   @@map("users")
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @unique(map: "uq_subscriptions_user_id") @map("user_id")
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                   SubscriptionTier   @default(FREE) @map("tier")
+  status                 SubscriptionStatus @default(INACTIVE) @map("status")
+  planName               String             @default("Free Plan") @map("plan_name")
+  isPlanOpted            Boolean            @default(false) @map("is_plan_opted") // True if paid plan chosen
+  pricePaid              Float              @default(0.0) @map("price_paid")
+  currency               String             @default("USD") @map("currency")
+  currentPeriodStart     DateTime           @default(now()) @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz(6)
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  paymentProvider        String?            @map("payment_provider") // "stripe" | "razorpay" | "manual_admin"
+  
+  // Usage tracking
+  voiceMinutesUsed       Float              @default(0.0) @map("voice_minutes_used")
+  voiceMinutesLimit      Float              @default(30.0) @map("voice_minutes_limit")
+  mockInterviewsUsed     Int                @default(0) @map("mock_interviews_used")
+  mockInterviewsLimit    Int                @default(1) @map("mock_interviews_limit")
+  
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tier, status], map: "idx_subscriptions_tier_status")
+  @@index([isPlanOpted], map: "idx_subscriptions_is_plan_opted")
+  @@map("subscriptions")
+}
+
+model AdminAuditLog {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String    @map("action") // "APPROVE_ADMIN_USER" | "ASSIGN_ROLE" | "BLOCK_USER" | "UNBLOCK_USER" | "UPDATE_CATEGORY"
+  targetType  String    @map("target_type") // "User" | "Category" | "Topic" | "Question" | "Subscription"
+  targetId    String    @map("target_id")
+  changeDiff  Json?     @map("change_diff")
+  ipAddress   String?   @map("ip_address")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt], map: "idx_admin_audit_logs_user_created")
+  @@map("admin_audit_logs")
 }
 
 model CandidateProfile {

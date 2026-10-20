@@ -33,6 +33,52 @@ import {
   handlePatchUserProfile,
   handlePostChangePassword,
 } from "./routes/user-profile";
+import {
+  handlePostAdminLogin,
+  handlePostAdminGoogle,
+  handlePostAdminRequestAccess,
+  handleGetAdminMe,
+  handlePostAdminLogout,
+} from "./routes/admin-auth";
+import {
+  handleGetNeo4jOverview,
+  handleGetNeo4jDomains,
+  handleGetNeo4jCategories,
+  handlePostNeo4jCategory,
+  handlePutNeo4jCategory,
+  handleDeleteNeo4jCategory,
+  handleGetNeo4jTopics,
+  handlePostNeo4jTopic,
+  handlePutNeo4jTopic,
+  handleDeleteNeo4jTopic,
+  handleGetNeo4jQuestions,
+  handlePostNeo4jQuestion,
+  handlePutNeo4jQuestion,
+  handleDeleteNeo4jQuestion,
+} from "./routes/admin-curriculum";
+import {
+  handleGetNeo4jPending,
+  handlePostNeo4jApprove,
+  handlePostNeo4jReject,
+} from "./routes/admin-approvals";
+import {
+  handleGetAdminCandidates,
+  handleGetAdminCandidateDetail,
+  handlePatchAdminCandidateSubscription,
+  handlePostAdminBlockCandidate,
+  handlePostAdminUnblockCandidate,
+  handlePostAdminResetQuota,
+} from "./routes/admin-candidates";
+import {
+  handleGetAdminTeam,
+  handleGetAdminTeamPending,
+  handlePatchAdminTeamApprove,
+  handlePatchAdminTeamReject,
+  handlePatchAdminTeamRole,
+  handlePostAdminTeamBlock,
+  handlePostAdminTeamUnblock,
+  handleGetAdminAuditLogs,
+} from "./routes/admin-team";
 
 export type BackendEnv = Record<string, string | undefined>;
 
@@ -78,6 +124,104 @@ const worker = {
       // Authentication & Google Single Sign-On (OAuth 2.0 Redirect + Google ID Token Verification)
       else if (pathname === "/api/auth/config" && method === "GET") {
         response = await handleGetAuthConfig();
+      }
+      // Admin Control Plane Authentication
+      else if (pathname === "/api/admin/auth/login" && method === "POST") {
+        response = await handlePostAdminLogin(req);
+      } else if (pathname === "/api/admin/auth/google" && method === "POST") {
+        response = await handlePostAdminGoogle(req);
+      } else if (pathname === "/api/admin/auth/request-access" && method === "POST") {
+        response = await handlePostAdminRequestAccess(req);
+      } else if (pathname === "/api/admin/auth/me" && method === "GET") {
+        response = await handleGetAdminMe(req);
+      } else if (pathname === "/api/admin/auth/logout" && method === "POST") {
+        response = await handlePostAdminLogout();
+      }
+      // Admin Neo4j Knowledge Graph Curriculum & Overview
+      else if (pathname === "/api/admin/neo4j/overview" && method === "GET") {
+        response = await handleGetNeo4jOverview(req);
+      } else if (pathname === "/api/admin/neo4j/domains" && method === "GET") {
+        response = await handleGetNeo4jDomains(req);
+      } else if (pathname === "/api/admin/neo4j/categories" && method === "GET") {
+        response = await handleGetNeo4jCategories(req);
+      } else if (pathname === "/api/admin/neo4j/categories" && method === "POST") {
+        response = await handlePostNeo4jCategory(req);
+      } else if (pathname.startsWith("/api/admin/neo4j/categories/") && method === "PUT") {
+        const slug = pathname.replace("/api/admin/neo4j/categories/", "").replace(/\/$/, "");
+        response = await handlePutNeo4jCategory(req, slug);
+      } else if (pathname.startsWith("/api/admin/neo4j/categories/") && method === "DELETE") {
+        const slug = pathname.replace("/api/admin/neo4j/categories/", "").replace(/\/$/, "");
+        response = await handleDeleteNeo4jCategory(req, slug);
+      } else if (pathname === "/api/admin/neo4j/topics" && method === "GET") {
+        response = await handleGetNeo4jTopics(req);
+      } else if (pathname === "/api/admin/neo4j/topics" && method === "POST") {
+        response = await handlePostNeo4jTopic(req);
+      } else if (pathname.startsWith("/api/admin/neo4j/topics/") && method === "PUT") {
+        const slug = pathname.replace("/api/admin/neo4j/topics/", "").replace(/\/$/, "");
+        response = await handlePutNeo4jTopic(req, slug);
+      } else if (pathname.startsWith("/api/admin/neo4j/topics/") && method === "DELETE") {
+        const slug = pathname.replace("/api/admin/neo4j/topics/", "").replace(/\/$/, "");
+        response = await handleDeleteNeo4jTopic(req, slug);
+      } else if (pathname === "/api/admin/neo4j/questions" && method === "GET") {
+        response = await handleGetNeo4jQuestions(req);
+      } else if (pathname === "/api/admin/neo4j/questions" && method === "POST") {
+        response = await handlePostNeo4jQuestion(req);
+      } else if (pathname.startsWith("/api/admin/neo4j/questions/") && method === "PUT") {
+        const id = pathname.replace("/api/admin/neo4j/questions/", "").replace(/\/$/, "");
+        response = await handlePutNeo4jQuestion(req, id);
+      } else if (pathname.startsWith("/api/admin/neo4j/questions/") && method === "DELETE") {
+        const id = pathname.replace("/api/admin/neo4j/questions/", "").replace(/\/$/, "");
+        response = await handleDeleteNeo4jQuestion(req, id);
+      }
+      // Admin Neo4j Staging & Approval Gate
+      else if (pathname === "/api/admin/neo4j/pending" && method === "GET") {
+        response = await handleGetNeo4jPending(req);
+      } else if (pathname === "/api/admin/neo4j/approve" && method === "POST") {
+        response = await handlePostNeo4jApprove(req);
+      } else if (pathname === "/api/admin/neo4j/reject" && method === "POST") {
+        response = await handlePostNeo4jReject(req);
+      }
+      // Module A: Admin Candidate Directory & Subscriptions
+      else if (pathname === "/api/admin/candidates" && method === "GET") {
+        response = await handleGetAdminCandidates(req);
+      } else if (pathname.startsWith("/api/admin/candidates/") && pathname.endsWith("/subscription") && method === "PATCH") {
+        const id = pathname.replace("/api/admin/candidates/", "").replace("/subscription", "");
+        response = await handlePatchAdminCandidateSubscription(req, id);
+      } else if (pathname.startsWith("/api/admin/candidates/") && pathname.endsWith("/block") && method === "POST") {
+        const id = pathname.replace("/api/admin/candidates/", "").replace("/block", "");
+        response = await handlePostAdminBlockCandidate(req, id);
+      } else if (pathname.startsWith("/api/admin/candidates/") && pathname.endsWith("/unblock") && method === "POST") {
+        const id = pathname.replace("/api/admin/candidates/", "").replace("/unblock", "");
+        response = await handlePostAdminUnblockCandidate(req, id);
+      } else if (pathname.startsWith("/api/admin/candidates/") && pathname.endsWith("/reset-quota") && method === "POST") {
+        const id = pathname.replace("/api/admin/candidates/", "").replace("/reset-quota", "");
+        response = await handlePostAdminResetQuota(req, id);
+      } else if (pathname.startsWith("/api/admin/candidates/") && method === "GET") {
+        const id = pathname.replace("/api/admin/candidates/", "").replace(/\/$/, "");
+        response = await handleGetAdminCandidateDetail(req, id);
+      }
+      // Module B: Admin HOD Team Management & Staff Approvals (Root HOD Only)
+      else if (pathname === "/api/admin/team" && method === "GET") {
+        response = await handleGetAdminTeam(req);
+      } else if (pathname === "/api/admin/team/pending" && method === "GET") {
+        response = await handleGetAdminTeamPending(req);
+      } else if (pathname === "/api/admin/team/audit-logs" && method === "GET") {
+        response = await handleGetAdminAuditLogs(req);
+      } else if (pathname.startsWith("/api/admin/team/") && pathname.endsWith("/approve") && method === "PATCH") {
+        const id = pathname.replace("/api/admin/team/", "").replace("/approve", "");
+        response = await handlePatchAdminTeamApprove(req, id);
+      } else if (pathname.startsWith("/api/admin/team/") && pathname.endsWith("/reject") && method === "PATCH") {
+        const id = pathname.replace("/api/admin/team/", "").replace("/reject", "");
+        response = await handlePatchAdminTeamReject(req, id);
+      } else if (pathname.startsWith("/api/admin/team/") && pathname.endsWith("/role") && method === "PATCH") {
+        const id = pathname.replace("/api/admin/team/", "").replace("/role", "");
+        response = await handlePatchAdminTeamRole(req, id);
+      } else if (pathname.startsWith("/api/admin/team/") && pathname.endsWith("/block") && method === "POST") {
+        const id = pathname.replace("/api/admin/team/", "").replace("/block", "");
+        response = await handlePostAdminTeamBlock(req, id);
+      } else if (pathname.startsWith("/api/admin/team/") && pathname.endsWith("/unblock") && method === "POST") {
+        const id = pathname.replace("/api/admin/team/", "").replace("/unblock", "");
+        response = await handlePostAdminTeamUnblock(req, id);
       } else if (pathname === "/api/auth/google" && method === "GET") {
         response = await handleGetGoogleOAuthRedirect(req);
       } else if (pathname === "/api/auth/google/callback" && method === "GET") {

@@ -193,7 +193,11 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
       `
       MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
       WHERE q.status = 'PUBLISHED'
+        AND coalesce(q.isLive, false) = true
+        AND coalesce(t.isLive, false) = true
+        AND coalesce(c.isLive, false) = true
         AND (toLower(c.slug) STARTS WITH $langPrefix OR toLower(t.slug) STARTS WITH $langPrefix)
+        AND q.difficulty IN $allowedDifficulties
       RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
       LIMIT 1
       `,
@@ -205,6 +209,9 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
       `
       MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
       WHERE q.status = 'PUBLISHED'
+        AND coalesce(q.isLive, false) = true
+        AND coalesce(t.isLive, false) = true
+        AND coalesce(c.isLive, false) = true
         AND t.slug IN ['distributed-cache', 'database-sharding', 'b-tree-indexing', 'database-transactions', 'lru-cache-design']
         AND q.difficulty IN $allowedDifficulties
       RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
@@ -218,6 +225,9 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
       `
       MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
       WHERE q.status = 'PUBLISHED'
+        AND coalesce(q.isLive, false) = true
+        AND coalesce(t.isLive, false) = true
+        AND coalesce(c.isLive, false) = true
         AND t.slug IN ['url-shortener', 'rate-limiter', 'circuit-breakers', 'message-queues']
         AND q.difficulty IN $allowedDifficulties
       RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
