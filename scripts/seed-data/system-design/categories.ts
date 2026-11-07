@@ -43,6 +43,13 @@ export const SYSTEM_DESIGN_CATEGORIES: CategorySeed[] = [
     pillar: 'principles',
     sortOrder: 5
   },
+  {
+    slug: 'security-fundamentals',
+    name: 'Security in System Design',
+    description: 'Authentication, authorization (OAuth2/JWT/RBAC), encryption (TLS/mTLS/KMS), and threat defense (DDoS/WAF/Zero-Trust).',
+    pillar: 'principles',
+    sortOrder: 6
+  },
 
   // Pillar 2: Components & Patterns
   {
@@ -50,35 +57,35 @@ export const SYSTEM_DESIGN_CATEGORIES: CategorySeed[] = [
     name: 'Traffic Management & Networking Components',
     description: 'Load balancing, API reverse proxies, CDN edge caching, and distributed admission control rate limiters.',
     pillar: 'components',
-    sortOrder: 6
+    sortOrder: 7
   },
   {
     slug: 'database-storage-components',
     name: 'Database & Storage Components',
     description: 'Database index structures, primary-replica replication, sharding, and in-memory distributed caches.',
     pillar: 'components',
-    sortOrder: 7
+    sortOrder: 8
   },
   {
     slug: 'messaging-event-driven-components',
     name: 'Messaging & Event-Driven Components',
     description: 'High-throughput event logs (Kafka), pub/sub messaging brokers, and the transactional outbox pattern.',
     pillar: 'components',
-    sortOrder: 8
+    sortOrder: 9
   },
   {
     slug: 'distributed-coordination-components',
     name: 'Distributed Coordination Components',
     description: 'Distributed locking leases, leader election consensus (Raft), and dynamic service discovery registries.',
     pillar: 'components',
-    sortOrder: 9
+    sortOrder: 10
   },
   {
     slug: 'reliability-resilience-patterns',
     name: 'Reliability & Resilience Patterns',
     description: 'Circuit breakers, exponential backoff retries, thread bulkheads, and Saga distributed workflows.',
     pillar: 'components',
-    sortOrder: 10
+    sortOrder: 11
   },
 
   // Pillar 3: Problems & Case Studies
@@ -87,42 +94,42 @@ export const SYSTEM_DESIGN_CATEGORIES: CategorySeed[] = [
     name: 'Basic Application Design',
     description: 'High-signal fundamental systems: URL shorteners, pastebins, and multi-part blob upload services.',
     pillar: 'case-studies',
-    sortOrder: 11
+    sortOrder: 12
   },
   {
     slug: 'communication-systems',
     name: 'Communication & Media Systems',
     description: 'Real-time duplex chat, multi-channel notification fan-out, email delivery, and WebRTC video conferencing.',
     pillar: 'case-studies',
-    sortOrder: 12
+    sortOrder: 13
   },
   {
     slug: 'commerce-transaction-systems',
     name: 'Commerce & Financial Systems',
     description: 'E-commerce catalogs, double-entry financial ledgers, flash ticket booking, and real-time fraud engines.',
     pillar: 'case-studies',
-    sortOrder: 13
+    sortOrder: 14
   },
   {
     slug: 'social-content-platforms',
     name: 'Social & Content Platforms',
     description: 'Fan-out timeline news feeds, distributed search engine crawlers, and trie autocomplete suggestion engines.',
     pillar: 'case-studies',
-    sortOrder: 14
+    sortOrder: 15
   },
   {
     slug: 'media-location-systems',
     name: 'Streaming, Media & Location Systems',
     description: 'Chunked adaptive video streaming, geospatial ride-sharing dispatch, and real-time gaming leaderboards.',
     pillar: 'case-studies',
-    sortOrder: 15
+    sortOrder: 16
   },
   {
     slug: 'distributed-infrastructure-systems',
     name: 'Distributed Infrastructure & Storage Systems',
     description: 'Distributed Dynamo key-value stores, Prometheus telemetry ingest, file sync, and collaborative editors.',
     pillar: 'case-studies',
-    sortOrder: 16
+    sortOrder: 17
   }
 ];
 

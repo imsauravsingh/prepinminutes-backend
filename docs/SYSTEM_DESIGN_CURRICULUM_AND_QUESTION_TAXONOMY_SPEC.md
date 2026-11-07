@@ -1,10 +1,17 @@
 # System Design Curriculum & Question Taxonomy Specification
-## The 5-5-5 Tiered Architecture (15 Questions Per Topic)
+## Classical Distributed Systems Taxonomy Standard (62 Topics, 17 Categories, 1,240 Questions)
 
-**Status:** Approved for Implementation  
-**Target Domain:** System Design  
+> [!NOTE]
+> **Curriculum v5.1 Alignment Notice**:  
+> The early 20-topic / 300-question prototype has evolved into the frozen **v5.1 Knowledge Graph Architecture** across **62 Topics, 17 Categories, and 1,240 Questions** stored in **Neo4j AuraDB**. For the complete topic-by-topic syllabus and component relationship catalog, refer directly to [`docs/domains/system-design.md`](./domains/system-design.md).
+
+**Domain Slug:** `system-design`  
+**Domain Name:** `System Design`  
+**Version:** 5.1.0  
 **Target Database:** Neo4j AuraDB Knowledge Graph  
-**Target Scale:** 20 Core Curated Topics × 15 Questions = **300 Benchmark Questions**
+**Target Scale:** 62 Curated Topics × 20 Questions = **1,240 Benchmark Questions**  
+**Priority Hierarchy:** **P0: 24 Core Must-Master | P1: 24 High-Frequency/Senior | P2: 14 Specialized/Staff+**  
+**Governing Excellence Standard:** [`docs/SYSTEM_DESIGN_CURRICULUM_EXCELLENCE_STANDARD.md`](./SYSTEM_DESIGN_CURRICULUM_EXCELLENCE_STANDARD.md)
 
 ---
 
@@ -13,61 +20,58 @@
 This specification defines the complete curriculum structure, question taxonomy, and data contracts for the **System Design** domain on PrepInMinutes.
 
 ### Core Objectives
-1. **15-Question Depth per Topic (5 Simple, 5 Medium, 5 Hard)**:
-   - Eliminates repetition fatigue.
+1. **20-Question Depth per Topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert)**:
+   - Eliminates repetition fatigue across repeated practice sessions.
    - Enables **Sarah (Staff AI Assessor)** to dynamically calibrate difficulty up or down in real time.
 2. **Zero Orphan Topics**:
-   - Every single topic has comprehensive, pre-curated interview questions with realistic prompts, scoring rubrics, hints, and dynamic follow-up probes.
+   - Every single topic has 20 pre-curated interview questions with realistic prompts, scoring rubrics, hints, and dynamic follow-up probes.
 3. **Real-World Engineering Depth**:
    - Moves beyond generic textbook theory into **production incident triage, back-of-the-envelope capacity constraints, and architectural trade-offs**.
+4. **Three-Tier Priority Triage (P0, P1, P2)**:
+   - Enables candidates with tight interview timelines (2–3 weeks) to fast-track through the 24 P0 must-master topics.
 
 ---
 
-## 2. The 5-5-5 Question Taxonomy Model
+## 2. The 20-Question Taxonomy Model
+
+Each of the 62 topics in Neo4j AuraDB is populated with exactly 20 questions distributed across four difficulty tiers:
 
 ```mermaid
 flowchart TD
-    subgraph TopicNode ["Topic Node (e.g. distributed-cache)"]
+    subgraph TopicNode ["Topic Node (e.g. distributed-caching-redis)"]
         T["Consistent Hashing / Distributed Caching / Rate Limiting"]
     end
 
-    subgraph Tier1 ["Tier 1: 5 Simple Questions (Junior / Concepts)"]
-        S1["Q1: Architecture Pattern Trade-offs"]
-        S2["Q2: Eviction & Memory Mechanics"]
-        S3["Q3: Expiration vs Active Invalidation"]
-        S4["Q4: In-Memory vs Distributed Trade-offs"]
-        S5["Q5: Key Hashing & Serialization"]
+    subgraph Tier1 ["Tier 1: 4 Beginner Questions (L1 / Foundations)"]
+        B1["Q1-Q4: Architectural Concepts, Boundaries & Basic Patterns"]
     end
 
-    subgraph Tier2 ["Tier 2: 5 Medium Questions (Mid-Level SDE-2)"]
-        M1["Q6: High QPS Stampede / Thundering Herd"]
-        M2["Q7: Penetration & Bloom Filters"]
-        M3["Q8: Hot Key Breakdown & Partitioning"]
-        M4["Q9: Dual-Write Consistency & Race Conditions"]
-        M5["Q10: Cold Cache Warming & Pre-heating"]
+    subgraph Tier2 ["Tier 2: 6 Intermediate Questions (L2-L3 / SDE-2)"]
+        I1["Q5-Q10: Implementation Mechanisms, Failure Detection, Caching & Throughput"]
     end
 
-    subgraph Tier3 ["Tier 3: 5 Hard Questions (Senior / Staff / Edge Cases)"]
-        H1["Q11: Multi-Region Active-Active Replication"]
-        H2["Q12: Hot-Key Mitigation (L1 Local + L2 Distributed)"]
-        H3["Q13: Distributed Lock Expiry under JVM GC Pauses"]
-        H4["Q14: Zero-Downtime Cluster Resharding at Scale"]
-        H5["Q15: Cascading Failure Recovery & Circuit Breakers"]
+    subgraph Tier3 ["Tier 3: 6 Advanced Questions (L3-L4 / Senior SDE)"]
+        A1["Q11-Q16: Concurrency Control, Sharding, Cascading Failures & Outbox CDC"]
+    end
+
+    subgraph Tier4 ["Tier 4: 4 Expert Questions (L5 / Staff & Principal)"]
+        E1["Q17-Q20: Multi-Region DR, Consensus Internals, Byzantine Failures & Chaos"]
     end
 
     T --> Tier1
     T --> Tier2
     T --> Tier3
+    T --> Tier4
 ```
 
 ---
 
-## 3. High-Signal Question Architecture (Key Suggestions & Enhancements)
+## 3. High-Signal Question Architecture (The 8-Layer Standard)
 
 To elevate questions from generic interview trivia to elite, high-signal assessments, every question adheres to four structural design principles:
 
 ### 3.1. Concrete Scale & Capacity Anchors
-Prompts must never be abstract (e.g., *"How do you design a cache?"*). They must include concrete capacity numbers:
+Prompts must never be abstract (e.g., *"How do you design a cache?"*). They include concrete capacity numbers:
 - **Traffic**: `100k read QPS`, `5k write QPS`
 - **Data Size**: `100 million active keys`, `1KB avg payload`
 - **SLA**: `p99 latency < 15ms`, `availability 99.99%`
@@ -91,88 +95,97 @@ Each question includes 2 **Dynamic Follow-Up Probes** stored in Neo4j. During th
 
 ---
 
-## 4. System Design Curriculum Taxonomy (20 Curated Topics)
+## 4. System Design Curriculum Taxonomy (62 Topics across 3 Pillars)
 
-The 20 core topics are divided across 5 coherent architectural categories:
+### Pillar 1: Fundamentals & Principles (21 Topics | 420 Questions)
+- **1.1 Foundations**: `FND001` (P0), `FND002` (P0), `FND003` (P1), `FND021` (P0)
+- **1.2 Networking**: `FND004` (P0), `FND005` (P1), `FND020` (P2)
+- **1.3 Database Fundamentals**: `FND006` (P0), `FND007` (P1), `FND017` (P1), `FND018` (P2)
+- **1.4 Scalability Principles**: `FND008` (P0), `FND009` (P1), `FND019` (P1)
+- **1.5 Distributed Systems Principles**: `FND010` (P0), `FND011` (P1), `FND012` (P1), `FND013` (P2)
+- **1.6 Security Fundamentals**: `FND014` (P0), `FND015` (P1), `FND016` (P2)
 
-### Category 1: Distributed Core Fundamentals (`distributed-fundamentals`)
-1. **`consistent-hashing`**: Consistent Hashing & Distributed Hash Tables (Virtual nodes, node ring, data migration).
-2. **`cap-pacelc-theorems`**: CAP & PACELC Theorems in Real-World Systems (CP vs AP trade-offs, network partition handling).
-3. **`distributed-consensus`**: Distributed Consensus & Leader Election (Raft, Paxos, Quorums, Split-Brain prevention).
-4. **`distributed-locking`**: Distributed Locking & Concurrency Control (Redlock, ZooKeeper ephemeral nodes, fencing tokens).
+### Pillar 2: Components & Patterns (17 Topics | 340 Questions)
+- **2.1 Traffic Management**: `CMP001` (P0), `CMP002` (P0), `CMP003` (P1), `CMP004` (P0)
+- **2.2 Storage Components**: `CMP005` (P0), `CMP006` (P0), `CMP007` (P0), `CMP008` (P2)
+- **2.3 Messaging & Streaming**: `CMP009` (P0), `CMP010` (P1), `CMP011` (P1)
+- **2.4 Distributed Coordination**: `CMP012` (P2), `CMP013` (P2), `CMP014` (P1), `CMP017` (P2)
+- **2.5 Reliability Patterns**: `CMP015` (P0), `CMP016` (P1)
 
-### Category 2: Data Architecture, Storage & Caching (`data-storage-scale`)
-5. **`distributed-cache`**: Distributed Caching Architecture (Memcached vs Redis, Stampede, Penetration, Multi-Region invalidation).
-6. **`database-sharding`**: Horizontal Database Sharding & Partitioning (Shard keys, cross-shard joins, resharding strategies).
-7. **`sql-vs-nosql-engines`**: Storage Engines: B-Trees vs LSM-Trees (Read-heavy vs Write-heavy, RocksDB, Cassandra vs PostgreSQL).
-8. **`event-sourcing-cqrs`**: Event Sourcing & CQRS Pattern (Append-only event stores, materialized read views, eventual consistency).
-
-### Category 3: Traffic Management, Networking & Edge (`traffic-networking`)
-9. **`rate-limiter`**: Rate Limiting & Throttling at Scale (Token Bucket, Leaky Bucket, Sliding Window Counter, Distributed Redis sync).
-10. **`load-balancing`**: Load Balancing & Layer 4 vs Layer 7 Traffic Routing (Consistent IP hash, Weighted round-robin, Health probes).
-11. **`websockets-realtime`**: Real-Time WebSockets & SSE Architecture (Connection pooling, sticky sessions, Redis Pub/Sub backplane).
-12. **`cdn-edge-architecture`**: CDN & Edge Caching Architecture (Cache headers, stale-while-revalidate, edge compute / Cloudflare Workers).
-
-### Category 4: Asynchronous Processing & Event Streaming (`asynchronous-streaming`)
-13. **`message-queues-kafka`**: Distributed Message Queues & Event Streaming (Apache Kafka, Partitioning, Consumer Groups, Log compaction).
-14. **`exactly-once-semantics`**: Idempotency & Exactly-Once Processing (Deduplication IDs, Two-Phase Commit, Outbox pattern).
-15. **`resiliency-circuit-breakers`**: Resiliency, Retries & Circuit Breakers (Bulkheads, Exponential backoff with jitter, Chaos recovery).
-16. **`unique-id-generation`**: High-Throughput Distributed ID Generation (Twitter Snowflake, UUIDv7, Ticket Servers).
-
-### Category 5: Modern 2026 Architectures & High-Scale Systems (`modern-ai-scale`)
-17. **`vector-search-rag`**: Vector Search & RAG Pipeline Architecture (Embeddings, HNSW / IVFFlat, Milvus/Qdrant, Chunking & Latency).
-18. **`multi-region-active-active`**: Multi-Region Active-Active DR (Cross-datacenter replication, Conflict-Free Replicated Data Types - CRDTs).
-19. **`high-concurrency-booking`**: High-Concurrency Flash Sale / Ticket Booking (Inventory locking, Redis atomic decrement, Oversell prevention).
-20. **`distributed-tracing-observability`**: Distributed Tracing & Telemetry (OpenTelemetry, Trace context propagation, Sampling strategies).
+### Pillar 3: Real-World Systems & Case Studies (24 Topics | 480 Questions)
+- **3.1 Foundations & Storage**: `SYS001` (P0), `SYS002` (P1), `SYS003` (P1)
+- **3.2 Communication Systems**: `SYS004` (P0), `SYS005` (P1), `SYS006` (P2), `SYS007` (P2), `SYS024` (P2)
+- **3.3 Commerce & Transactions**: `SYS008` (P0), `SYS009` (P0), `SYS010` (P1), `SYS011` (P2)
+- **3.4 Social & Content Platforms**: `SYS012` (P0), `SYS013` (P1), `SYS014` (P0)
+- **3.5 Streaming, Media & Location**: `SYS015` (P1), `SYS016` (P0), `SYS017` (P1)
+- **3.6 Distributed Infrastructure**: `SYS018` (P0), `SYS019` (P1), `SYS020` (P1), `SYS021` (P2), `SYS022` (P2), `SYS023` (P1)
 
 ---
 
 ## 5. TypeScript Data Contract
 
 ```typescript
+export type PriorityLevel = 'P0' | 'P1' | 'P2';
+export type DifficultyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+export type LearningProgressionLevel = 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
+export type QuestionArchetype =
+  | 'conceptual'
+  | 'mechanism'
+  | 'implementation'
+  | 'comparison'
+  | 'scenario-based'
+  | 'troubleshooting'
+  | 'architecture'
+  | 'trade-off'
+  | 'failure-analysis'
+  | 'follow-up-probe';
+
 export interface SystemDesignQuestion {
-  id: string;                      // e.g. "q_dist_cache_06"
-  title: string;                   // "Cache Stampede & Probabilistic Early Expiration"
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  scaleAnchor: string;             // "500k read QPS, 50k requests on single viral key"
+  id: string;                      // e.g. "q_fnd001_01"
+  title: string;                   // "Layer 4 vs Layer 7 Load Balancing Trade-Offs"
+  difficulty: DifficultyLevel;
+  learningLevel: LearningProgressionLevel;
+  archetype: QuestionArchetype;
+  scaleAnchor?: string;            // "500k read QPS, 50k requests on single viral key"
   prompt: string;                  // Full interview scenario prompt
   rubricGuide: string;             // Detailed grading guide for AI assessor
   rubricAtoms: string[];           // ["mutex-locking", "xfetch-algorithm", "stale-fallback"]
   hints: string[];                 // 2-3 progressive hints
   followUpProbes: string[];        // 2 real-time probing questions for Sarah
   expectedKeywords: string[];      // Key technical concepts expected in candidate transcript
-  failureScenario?: string;        // Active crisis or edge case condition
-  status: 'PUBLISHED';
-  isLive: true;
+  antiPatterns?: string[];         // Red-flag answers or common antipatterns
 }
 
 export interface SystemDesignTopic {
-  slug: string;                    // "distributed-cache"
-  title: string;                   // "Distributed Cache Architecture"
-  categorySlug: string;            // "data-storage-scale"
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  slug: string;                    // "distributed-caching-redis"
+  topicId: string;                 // "CMP007"
+  title: string;                   // "Distributed Caching: Redis & Memcached"
+  categorySlug: string;            // "database-storage-components"
+  pillar: 'principles' | 'components' | 'case-studies';
+  priority: PriorityLevel;         // "P0" | "P1" | "P2"
+  difficulty: DifficultyLevel;
   durationMin: number;             // 15
-  frequency: number;               // 0.92
+  frequency: number;               // 0.98
   weight: number;                  // 0.95
   trend: 'SURGING' | 'RISING' | 'STABLE' | 'FALLING';
+  description: string;             // 8-layer comprehensive overview
   rubricAtoms: string[];           // Atomic concepts covered across the topic
   prerequisites: string[];         // Slugs of required prerequisite topics
-  questions: SystemDesignQuestion[]; // Exactly 15 questions (5 Beginner, 5 Intermediate, 5 Advanced)
+  usedComponents?: string[];       // Slugs of component topics used (for Case Studies)
+  foundedOn?: string[];            // Slugs of fundamental principles founded on
+  questions: SystemDesignQuestion[]; // Exactly 20 questions
 }
 ```
 
 ---
 
-## 6. Execution & Safety Protocol
+## 6. Graph Synchronization & Seed Architecture
 
-1. **Safety Backup**: Run `scripts/backup-neo4j-current.ts` to generate `backups/neo4j-backup-2026-11-05.json`.
-2. **Modular File Structure**: Store seed data in clean modular files under `scripts/seed-data/system-design/`:
-   - `category-1-fundamentals.ts` (4 topics = 60 questions)
-   - `category-2-storage.ts` (4 topics = 60 questions)
-   - `category-3-networking.ts` (4 topics = 60 questions)
-   - `category-4-streaming.ts` (4 topics = 60 questions)
-   - `category-5-modern-scale.ts` (4 topics = 60 questions)
-3. **User Inspection Gate**: Present preview for review before executing the cleanup script.
-4. **Execution**: Wipe existing nodes via Cypher and seed the complete 300-question graph.
-5. **Validation**: Run verification script confirming 300 questions, 20 topics, and 5 categories with zero orphans.
-
+1. **Safety Backup**: Backups persisted under `prepinminutes-backend/backups/`.
+2. **Modular File Structure**: Seed data partitioned by pillar under `scripts/seed-data/system-design/`:
+   - `categories.ts` (17 categories)
+   - `pillar-1-fundamentals.ts` (21 topics = 420 questions)
+   - `pillar-2-components.ts` (17 topics = 340 questions)
+   - `pillar-3-case-studies.ts` (24 topics = 480 questions)
+3. **Execution**: Seeded via idempotent Cypher `MERGE` statements without wiping or duplicating existing nodes.
+4. **Validation**: All 62 topics, 1,240 questions, and 98 DAG prerequisite edges verified with zero cycles in Neo4j AuraDB.

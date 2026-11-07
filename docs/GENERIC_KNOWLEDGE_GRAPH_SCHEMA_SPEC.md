@@ -1,31 +1,31 @@
 # PrepInMinutes Generic Knowledge Graph Schema & Fetching Standard
 ## Universal Metamodel for Multi-Domain Curriculum (System Design, Coding, AI, DevOps)
 
-**Version:** 1.0.0  
-**Target Engine:** Neo4j AuraDB (Property Graph + Cypher)  
-**Governing Pattern:** Canonical Core Backbone + Domain-Specific Graph Extensions  
+**Version:** 1.1.0  
+**Target Engine:** Neo4j AuraDB (Property Graph + Cypher 5.x) & PostgreSQL (Relational Attempts & Plans)  
+**Governing Pattern:** Canonical Core Backbone + Domain-Specific Graph Extensions + Polyglot State Separation  
 **Status:** 🟢 **CANONICAL SPECIFICATION**
 
 ---
 
 ## 1. Architectural Philosophy: The "Canonical Core + Extension" Metamodel
 
-To support multiple domains (System Design, Coding & Algorithms, AI System Design, Cloud/DevOps) without fragmentation or code duplication, the PrepInMinutes Knowledge Graph is structured in two layers:
+To support multiple domains (System Design, Coding & Algorithms, AI System Design, Cloud/DevOps) without fragmentation or code duplication, the PrepInMinutes Knowledge Graph is structured in three architectural layers:
 
-1. **The Canonical Core Backbone (Universal across ALL domains)**:
-   Every domain shares the exact same 4-tier structural spine:
-   $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text{HAS\_TOPIC}} \text{Topic} \xrightarrow{\text{HAS\_QUESTION}} \text{Question}$$
-   This guarantees that:
-   - The same frontend UI components can render *any* domain curriculum.
-   - The learning engine, readiness tracker, and AI interviewer operate against a single, universal interface.
-   - Database queries for navigation, catalog generation, and breadcrumbs are 100% reusable.
+### 1.1 The Canonical Core Backbone (Universal across ALL domains)
+Every domain shares the exact same 4-tier structural spine:
+$$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text{HAS\_TOPIC}} \text{Topic} \xrightarrow{\text{HAS\_QUESTION}} \text{Question}$$
+This guarantees that:
+- The same frontend UI components can render *any* domain curriculum.
+- The learning engine, readiness tracker, and AI interviewer operate against a single, universal interface.
+- Database queries for navigation, catalog generation, and breadcrumbs are 100% reusable.
 
-2. **Domain-Specific Extensions (Custom to each engineering discipline)**:
-   Each domain specializes its graph with specialized node labels and relationship types without breaking the canonical spine:
-   - **System Design**: `[:PREREQUISITE_OF]`, `[:USES_COMPONENT]`, `[:FOUNDED_ON]`.
-   - **Coding & Algorithms**: `(:Pattern)`, `(:DataStructure)`, `[:USES_PATTERN]`, `[:HAS_VARIANT]`, `[:TIME_COMPLEXITY]`, `[:SPACE_COMPLEXITY]`.
-   - **AI System Design**: `(:ModelFamily)`, `(:OptimizationTechnique)`, `[:USES_TECHNIQUE]`, `[:OPTIMIZED_BY]`.
-   - **DevOps / Cloud Architecture**: `(:CloudService)`, `(:InfraPattern)`, `[:RUNS_ON]`, `[:DEPLOYS_VIA]`.
+### 1.2 Domain-Specific Extensions (Custom to each engineering discipline)
+Each domain specializes its graph with specialized node labels and relationship types without breaking the canonical spine:
+- **System Design**: `[:PREREQUISITE_OF]`, `[:USES_COMPONENT]`, `[:FOUNDED_ON]`.
+- **Coding & Algorithms**: `(:AlgorithmPattern)`, `(:DataStructure)`, `[:USES_PATTERN]`, `[:OPERATES_ON]`, `[:HAS_VARIANT]`, `[:TIME_COMPLEXITY]`, `[:SPACE_COMPLEXITY]`.
+- **AI System Design**: `(:ModelFamily)`, `(:OptimizationTechnique)`, `[:USES_MODEL]`, `[:OPTIMIZED_BY]`.
+- **DevOps / Cloud Architecture**: `(:CloudService)`, `(:InfraPattern)`, `[:RUNS_ON]`, `[:DEPLOYS_VIA]`.
 
 ```mermaid
 graph TD
@@ -62,6 +62,17 @@ graph TD
     end
 ```
 
+### 1.3 Polyglot Storage Architecture: Neo4j vs PostgreSQL Separation
+PrepInMinutes strictly bifurcates static curriculum knowledge from dynamic candidate execution state:
+
+| Layer | Primary Engine | Managed Entities | Access Characteristics | Isolation Guarantee |
+| :--- | :--- | :--- | :--- | :--- |
+| **Curriculum Knowledge Graph** | **Neo4j AuraDB** | `Domain`, `Category`, `Topic`, `Question`, `Concept`, Prerequisite DAGs (`[:PREREQUISITE_OF]`) | 95% Read-Heavy, Sub-10ms graph traversals, Cypher pattern queries | **Zero Candidate PII**, Shared across all users |
+| **Candidate Execution State** | **PostgreSQL (Neon)** | `CandidateProfile`, `QuestionAttempt`, `TopicMastery`, `PreparationPlan`, `DailyPlanTask` | Write-Heavy, ACID transactions, relational joins, row-level security | Private, strictly isolated per tenant |
+
+> [!IMPORTANT]
+> PostgreSQL stores **foreign-key references** (`topic_id` and `question_id` as strings) pointing to the canonical Neo4j graph nodes. The relational database **never duplicates** the curriculum hierarchy, topic descriptions, rubrics, or graph edges.
+
 ---
 
 ## 2. Canonical Core Node & Relationship Specifications
@@ -71,14 +82,14 @@ Unique business identifier: `slug`
 
 | Property | Type | Required | Description | Example |
 | :--- | :--- | :---: | :--- | :--- |
-| `slug` | `String` | **Yes** | Unique URL-safe identifier (Indexed / Unique) | `"system-design"`, `"coding-algorithms"` |
-| `name` | `String` | **Yes** | Human-readable domain name | `"System Design"`, `"Coding & Algorithms"` |
+| `slug` | `String` | **Yes** | Unique URL-safe identifier (Indexed / Unique) | `"system-design"`, `"ai-system-design"` |
+| `name` | `String` | **Yes** | Human-readable domain name | `"System Design"`, `"AI System Design"` |
 | `description` | `String` | **Yes** | Executive curriculum description | `"Classical distributed systems, high availability..."` |
 | `pillarCount` | `Integer` | No | Number of internal syllabus pillars/dimensions | `3` |
-| `categoryCount`| `Integer`| **Yes** | Total categories in domain | `16` |
-| `topicCount` | `Integer` | **Yes** | Total topics in domain | `54` |
-| `questionCount`| `Integer`| **Yes** | Total master questions | `1080` |
-| `version` | `String` | **Yes** | Semantic version of curriculum | `"5.0.0"` |
+| `categoryCount`| `Integer`| **Yes** | Total categories in domain | `17` |
+| `topicCount` | `Integer` | **Yes** | Total topics in domain | `62` |
+| `questionCount`| `Integer`| **Yes** | Total master questions | `1240` |
+| `version` | `String` | **Yes** | Semantic version of curriculum | `"5.1.0"` |
 | `updatedAt` | `DateTime`| **Yes** | Timestamp of last graph sync | `datetime()` |
 
 ---
@@ -102,11 +113,11 @@ Unique business identifier: `slug`
 
 | Property | Type | Required | Description | Example |
 | :--- | :--- | :---: | :--- | :--- |
-| `slug` | `String` | **Yes** | Unique identifier (Indexed / Unique) | `"load-balancers-traffic"` |
-| `topicId` | `String` | **Yes** | Human-readable catalog ID | `"CMP001"`, `"DSA042"`, `"AIS015"` |
+| `slug` | `String` | **Yes** | Unique URL-safe identifier (Indexed / Unique) | `"load-balancers-traffic"` |
+| `topicId` | `String` | **Yes** | Human-readable catalog ID | `"CMP001"`, `"FND001"`, `"SYS001"` |
 | `title` | `String` | **Yes** | Full display title | `"Load Balancers & Traffic Distribution"` |
 | `pillar` | `String` | No | Structural syllabus pillar | `"components"` |
-| `priority` | `String` | **Yes** | Market priority (`P1` \| `P2` \| `P3`) | `"P1"` |
+| `priority` | `String` | **Yes** | Preparation priority tier (`P0` \| `P1` \| `P2`) | `"P0"` (Must-Master Core) |
 | `difficulty` | `String` | **Yes** | Baseline entry level (`BEGINNER` \| `INTERMEDIATE` \| `ADVANCED` \| `EXPERT`) | `"BEGINNER"` |
 | `durationMin` | `Integer` | **Yes** | Target deep-dive study duration | `20`, `45` |
 | `frequency` | `Float` | **Yes** | Interview appearance probability ($0.0 \rightarrow 1.0$) | `0.92` |
@@ -115,6 +126,11 @@ Unique business identifier: `slug`
 | `description` | `String` | **Yes** | 8-layer comprehensive technical overview | `"L4 vs L7 balancing, consistent hashing..."` |
 | `rubricAtoms` | `List<String>`| **Yes** | Key technical concepts candidate must address | `["l4 vs l7", "consistent hashing"]` |
 | `updatedAt` | `DateTime`| **Yes** | Timestamp of update | `datetime()` |
+
+#### Priority Tiers:
+- **`P0` (Core Must-Master)**: Fast-track essentials (24 topics). Foundational principles, vital components, and iconic interview case studies.
+- **`P1` (High-Frequency & Senior Breadth)**: Standard interview loop breadth (24 topics). Enterprise patterns, consistency models, and advanced architectures.
+- **`P2` (Specialized & Staff/Principal Mastery)**: Staff/Principal deep dives (14 topics). Byzantine fault tolerance, Raft consensus internals, SWIM gossip, CRDT collaborative editors, and IoT OTA updates.
 
 ---
 
@@ -128,6 +144,9 @@ Unique business identifier: `id`
 | `difficulty` | `String` | **Yes** | `BEGINNER` \| `INTERMEDIATE` \| `ADVANCED` \| `EXPERT` | `"BEGINNER"` |
 | `learningLevel`| `String`| **Yes** | Progression depth `L1` \| `L2` \| `L3` \| `L4` \| `L5` | `"L1"` |
 | `archetype` | `String` | **Yes** | 10 Archetypes: `conceptual`, `mechanism`, `implementation`, `comparison`, `scenario-based`, `troubleshooting`, `architecture`, `trade-off`, `failure-analysis`, `follow-up-probe` | `"comparison"` |
+| `questionType` | `String` | No | Evaluation mode (`DESIGN_SCENARIO`, `DEEP_DIVE`, `INCIDENT_TRIAGE`, `TRADE_OFF`) | `"DESIGN_SCENARIO"` |
+| `expectedAnswerStructure` | `List<String>` | No | Expected response phases | `["requirements", "high-level-design", "deep-dive", "bottlenecks"]` |
+| `timeLimitSec` | `Integer` | No | Recommended timebox for assessment | `900` (15 min) |
 | `prompt` | `String` | **Yes** | Real-world scenario/interview prompt text | `"Contrast Layer 4 and Layer 7 load balancing..."` |
 | `scaleAnchor` | `String` | No | Quantitative scale constraint | `"50,000 QPS, p99 < 50ms"` |
 | `rubricGuide` | `String` | **Yes** | Evaluation guidelines for AI/human grader | `"Candidate must articulate that Layer 4..."` |
@@ -136,48 +155,63 @@ Unique business identifier: `id`
 | `followUpProbes`| `List<String>`| **Yes** | Deepening questions for Senior/Principal | `["How does TLS offload affect CPU usage?"]` |
 | `expectedKeywords`| `List<String>`| **Yes** | Keywords for semantic scoring | `["Layer 4", "Layer 7", "TCP", "SSL"]` |
 | `antiPatterns` | `List<String>`| No | Red-flag answers or common mistakes | `["Assuming L4 can inspect JWT headers"]` |
+| `isActive` | `Boolean` | No | Publication flag | `true` |
+| `version` | `String` | No | Question content revision | `"1.0"` |
 
 ---
 
 ## 3. Domain-Specific Extensions Schema
 
-### Domain 1: Coding & Algorithms (`coding-algorithms`)
+### Domain 1: System Design (`system-design`)
+* **Core Relationships**:
+  - `(:Topic)-[:PREREQUISITE_OF]->(:Topic)`: Enforces topological curriculum sequencing (DAG, 0 cycles).
+  - `(:Topic)-[:USES_COMPONENT]->(:Topic)`: Maps Problem/System case studies to constituent Component topics (e.g., `SYS008` Amazon uses `CMP001` Load Balancer, `CMP007` Redis, `CMP009` Kafka).
+  - `(:Topic)-[:FOUNDED_ON]->(:Topic)`: Connects Problem/System case studies to bedrock Principles (e.g., `SYS009` Payment Gateway founded on `FND007` ACID Transactions and `FND010` CAP Theorem).
+
+### Domain 2: Coding & Algorithms (`coding-algorithms`)
 * **Specialized Nodes**:
-  - `(:AlgorithmPattern {slug, name, category, timeComplexityBaseline, spaceComplexityBaseline})`  
-    *(e.g., Two Pointers, Sliding Window, Monotonic Stack, Backtracking, Union-Find)*
-  - `(:DataStructure {slug, name, memoryOverhead, traversalType})`  
-    *(e.g., Trie, Segment Tree, Disjoint Set, Min-Heap, Circular Queue)*
-* **Specialized Edges**:
+  - `(:AlgorithmPattern {slug, name, category, timeComplexity, spaceComplexity})`
+  - `(:DataStructure {slug, name, operations, memoryOverhead})`
+* **Specialized Relationships**:
   - `(t:Topic)-[:USES_PATTERN]->(p:AlgorithmPattern)`
   - `(t:Topic)-[:OPERATES_ON]->(ds:DataStructure)`
-  - `(t:Topic)-[:HAS_VARIANT {variationType: "OPTIMIZED_SPACE"}]->(t2:Topic)`
-  - `(t:Topic)-[:PREREQUISITE_OF]->(t2:Topic)`
+  - `(t:Topic)-[:HAS_VARIANT]->(t2:Topic)`
 
-### Domain 2: AI System Design (`ai-system-design`)
+### Domain 3: AI System Design (`ai-system-design`)
 * **Specialized Nodes**:
-  - `(:ModelFamily {slug, name, architectureType, memoryPerBillionParams})`  
-    *(e.g., Dense Transformer, Mixture of Experts, Latent Diffusion, Vector Embedding)*
-  - `(:OptimizationTechnique {slug, name, layerTarget, latencyReductionPct})`  
-    *(e.g., PagedAttention, KV-Cache Compression, FP8 Quantization, Speculative Decoding)*
-* **Specialized Edges**:
+  - `(:ModelFamily {slug, name, modality, architecture, contextWindow})`
+  - `(:OptimizationTechnique {slug, name, category, memorySavings})`
+* **Specialized Relationships**:
   - `(t:Topic)-[:USES_MODEL]->(mf:ModelFamily)`
   - `(t:Topic)-[:OPTIMIZED_BY]->(opt:OptimizationTechnique)`
-  - `(t:Topic)-[:PREREQUISITE_OF]->(t2:Topic)`
-  - `(t:Topic)-[:FOUNDED_ON]->(principle:Topic)`
-
-### Domain 3: System Design (`system-design`)
-* **Specialized Edges**:
-  - `(prereq:Topic)-[:PREREQUISITE_OF]->(target:Topic)`
-  - `(system:Topic)-[:USES_COMPONENT]->(component:Topic)`
-  - `(node:Topic)-[:FOUNDED_ON]->(principle:Topic)`
 
 ---
 
-## 4. Standard Fetching Queries (Cypher API Contracts)
+## 4. Graph Constraints & Indexes
 
-These standardized Cypher queries execute identically across any domain by passing `$domainSlug`.
+To ensure integrity and sub-10ms queries, the following constraints must be created in Neo4j AuraDB:
 
-### 1. Fetch Complete Domain Navigation Hierarchy
+```cypher
+// Canonical Core Constraints
+CREATE CONSTRAINT domain_slug_unique IF NOT EXISTS FOR (d:Domain) REQUIRE d.slug IS UNIQUE;
+CREATE CONSTRAINT category_slug_unique IF NOT EXISTS FOR (c:Category) REQUIRE c.slug IS UNIQUE;
+CREATE CONSTRAINT topic_slug_unique IF NOT EXISTS FOR (t:Topic) REQUIRE t.slug IS UNIQUE;
+CREATE CONSTRAINT topic_id_unique IF NOT EXISTS FOR (t:Topic) REQUIRE t.topicId IS UNIQUE;
+CREATE CONSTRAINT question_id_unique IF NOT EXISTS FOR (q:Question) REQUIRE q.id IS UNIQUE;
+
+// Performance Indexes
+CREATE INDEX topic_priority_idx IF NOT EXISTS FOR (t:Topic) ON (t.priority);
+CREATE INDEX topic_difficulty_idx IF NOT EXISTS FOR (t:Topic) ON (t.difficulty);
+CREATE INDEX question_difficulty_idx IF NOT EXISTS FOR (q:Question) ON (q.difficulty);
+CREATE INDEX question_learning_level_idx IF NOT EXISTS FOR (q:Question) ON (q.learningLevel);
+CREATE INDEX question_archetype_idx IF NOT EXISTS FOR (q:Question) ON (q.archetype);
+```
+
+---
+
+## 5. Universal Cypher Query Contracts
+
+### 1. Fetch Domain Navigation Hierarchy
 Returns nested JSON containing Domain $\rightarrow$ Categories (ordered by sortOrder) $\rightarrow$ Topics (with priority & difficulty).
 
 ```cypher
@@ -217,7 +251,7 @@ RETURN {
 ---
 
 ### 2. Fetch Topic Detail with Full 8-Layer Data & Questions
-Fetches a single topic, its questions (ordered by difficulty/level), and all inbound/outbound graph relationships.
+Fetches a single topic, its questions (ordered by difficulty/level), and all inbound/outbound graph relationships without Cartesian row multiplication:
 
 ```cypher
 MATCH (t:Topic {slug: $topicSlug})
@@ -230,7 +264,7 @@ OPTIONAL MATCH (prereq:Topic)-[:PREREQUISITE_OF]->(t)
 // Outbound Dependents
 OPTIONAL MATCH (t)-[:PREREQUISITE_OF]->(dependent:Topic)
 
-// Domain-Specific Edges (System Design / AI / DSA)
+// Domain-Specific Cross Edges
 OPTIONAL MATCH (t)-[:USES_COMPONENT]->(component:Topic)
 OPTIONAL MATCH (t)-[:FOUNDED_ON]->(principle:Topic)
 OPTIONAL MATCH (t)-[:USES_PATTERN]->(pattern)
@@ -239,11 +273,11 @@ OPTIONAL MATCH (t)-[:USES_PATTERN]->(pattern)
 OPTIONAL MATCH (t)-[:HAS_QUESTION]->(q:Question)
 
 WITH d, c, t,
-     collect(DISTINCT {slug: prereq.slug, title: prereq.title, topicId: prereq.topicId}) AS prerequisites,
-     collect(DISTINCT {slug: dependent.slug, title: dependent.title, topicId: dependent.topicId}) AS dependents,
-     collect(DISTINCT {slug: component.slug, title: component.title}) AS usedComponents,
-     collect(DISTINCT {slug: principle.slug, title: principle.title}) AS foundedOn,
-     collect(DISTINCT {slug: pattern.slug, name: pattern.name}) AS algorithmPatterns,
+     collect(DISTINCT {slug: prereq.slug, title: prereq.title, topicId: prereq.topicId}) AS rawPrereqs,
+     collect(DISTINCT {slug: dependent.slug, title: dependent.title, topicId: dependent.topicId}) AS rawDependents,
+     collect(DISTINCT {slug: component.slug, title: component.title}) AS rawComponents,
+     collect(DISTINCT {slug: principle.slug, title: principle.title}) AS rawPrinciples,
+     collect(DISTINCT {slug: pattern.slug, name: pattern.name}) AS rawPatterns,
      collect(DISTINCT {
        id: q.id,
        title: q.title,
@@ -258,7 +292,7 @@ WITH d, c, t,
        followUpProbes: q.followUpProbes,
        expectedKeywords: q.expectedKeywords,
        antiPatterns: q.antiPatterns
-     }) AS questions
+     }) AS rawQuestions
 
 RETURN {
   domain: { slug: d.slug, name: d.name },
@@ -278,13 +312,13 @@ RETURN {
     rubricAtoms: t.rubricAtoms
   },
   graphRelationships: {
-    prerequisites: [p IN prerequisites WHERE p.slug IS NOT NULL],
-    dependents: [d IN dependents WHERE d.slug IS NOT NULL],
-    usedComponents: [uc IN usedComponents WHERE uc.slug IS NOT NULL],
-    foundedOn: [fo IN foundedOn WHERE fo.slug IS NOT NULL],
-    algorithmPatterns: [ap IN algorithmPatterns WHERE ap.slug IS NOT NULL]
+    prerequisites: [p IN rawPrereqs WHERE p.slug IS NOT NULL],
+    dependents: [dep IN rawDependents WHERE dep.slug IS NOT NULL],
+    usedComponents: [uc IN rawComponents WHERE uc.slug IS NOT NULL],
+    foundedOn: [fo IN rawPrinciples WHERE fo.slug IS NOT NULL],
+    algorithmPatterns: [ap IN rawPatterns WHERE ap.slug IS NOT NULL]
   },
-  questions: questions
+  questions: [qn IN rawQuestions WHERE qn.id IS NOT NULL]
 } AS topicDetail;
 ```
 
@@ -304,10 +338,14 @@ RETURN q.id AS id,
        q.archetype AS archetype,
        q.prompt AS prompt,
        q.scaleAnchor AS scaleAnchor,
+       q.rubricGuide AS rubricGuide,
+       q.rubricAtoms AS rubricAtoms,
        q.hints AS hints,
-       q.rubricAtoms AS rubricAtoms
+       q.followUpProbes AS followUpProbes,
+       q.expectedKeywords AS expectedKeywords,
+       q.antiPatterns AS antiPatterns
 ORDER BY q.learningLevel, q.id
-LIMIT $limit;
+LIMIT toInteger($limit);
 ```
 
 ---
@@ -328,4 +366,3 @@ RETURN node.slug AS slug,
        node.durationMin AS durationMin
 ORDER BY node.priority, node.difficulty;
 ```
-

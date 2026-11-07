@@ -8,7 +8,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'Intro to System Design & Architectural Thinking',
     categorySlug: 'system-design-foundations',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'BEGINNER',
     durationMin: 15,
     frequency: 0.85,
@@ -52,7 +52,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'Functional & Non-Functional Requirements',
     categorySlug: 'system-design-foundations',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'BEGINNER',
     durationMin: 15,
     frequency: 0.92,
@@ -129,7 +129,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'HTTP, HTTPS, TCP, UDP, DNS & TLS',
     categorySlug: 'networking-fundamentals',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'BEGINNER',
     durationMin: 20,
     frequency: 0.90,
@@ -157,7 +157,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
   {
     topicId: 'FND005',
     slug: 'api-communication-fundamentals',
-    title: 'REST, RPC, gRPC, WebSockets & API Protocols',
+    title: 'REST, GraphQL, gRPC, WebSockets & API Protocols',
     categorySlug: 'networking-fundamentals',
     pillar: 'principles',
     priority: 'P1',
@@ -166,8 +166,8 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     frequency: 0.90,
     weight: 0.92,
     trend: 'STABLE',
-    description: 'Synchronous REST vs Protobuf binary gRPC, Server-Sent Events, bidirectional WebSockets, and API versioning.',
-    rubricAtoms: ['protobuf serialization', 'duplex websockets', 'server sent events', 'http2 multiplexing'],
+    description: 'Synchronous REST vs GraphQL vs Protobuf binary gRPC, Server-Sent Events, bidirectional WebSockets, and DataLoader N+1 query prevention.',
+    rubricAtoms: ['protobuf serialization', 'duplex websockets', 'graphql dataloader n+1', 'http2 multiplexing'],
     prerequisites: ['networking-protocols'],
     questions: [
       {
@@ -193,7 +193,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'Relational vs NoSQL & Access Patterns',
     categorySlug: 'database-fundamentals',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'BEGINNER',
     durationMin: 20,
     frequency: 0.92,
@@ -257,7 +257,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'Horizontal vs Vertical Scaling & Statelessness',
     categorySlug: 'scalability-performance-principles',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'BEGINNER',
     durationMin: 15,
     frequency: 0.90,
@@ -321,7 +321,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'CAP & PACELC Theorems in Practice',
     categorySlug: 'distributed-systems-principles',
     pillar: 'principles',
-    priority: 'P1',
+    priority: 'P0',
     difficulty: 'ADVANCED',
     durationMin: 25,
     frequency: 0.95,
@@ -396,7 +396,7 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
     title: 'Distributed Time, Ordering & Failure Models',
     categorySlug: 'distributed-systems-principles',
     pillar: 'principles',
-    priority: 'P2',
+    priority: 'P1',
     difficulty: 'ADVANCED',
     durationMin: 25,
     frequency: 0.80,
@@ -449,6 +449,264 @@ export const PILLAR_1_TOPICS: TopicSeed[] = [
         hints: ['What if f nodes go silent and another f nodes actively lie about the state?'],
         followUpProbes: ['How do cryptographic digital signatures in PBFT reduce message complexity?'],
         expectedKeywords: ['Byzantine', '3f+1', '2f+1', 'PBFT', 'quorum intersection', 'Raft vs PBFT', 'malicious']
+      }
+    ]
+  },
+
+  // 1.6 Security in System Design
+  {
+    topicId: 'FND014',
+    slug: 'authn-authz-identity',
+    title: 'Authentication, Authorization & Identity',
+    categorySlug: 'security-fundamentals',
+    pillar: 'principles',
+    priority: 'P0',
+    difficulty: 'INTERMEDIATE',
+    durationMin: 25,
+    frequency: 0.92,
+    weight: 0.90,
+    trend: 'RISING',
+    description: 'OAuth 2.0 grant flows (Authorization Code + PKCE), OpenID Connect (OIDC), JWT stateless verification vs revocation blacklists, and RBAC vs ABAC policy engines.',
+    rubricAtoms: ['oauth2 pkce authorization code', 'oidc id token vs access token', 'jwt signature verification stateless', 'rbac vs abac policy evaluation', 'token revocation blacklist'],
+    prerequisites: ['api-communication-fundamentals'],
+    questions: [
+      {
+        id: 'q_fnd014_01',
+        title: 'Stateless JWT Verification vs Instant Token Revocation',
+        difficulty: 'INTERMEDIATE',
+        learningLevel: 'L3',
+        archetype: 'trade-off',
+        prompt: 'In a microservices architecture, JSON Web Tokens (JWTs) allow downstream services to verify user identity cryptographically without querying an auth database. However, if an employee is terminated or a token is stolen, how do you revoke a stateless JWT immediately without turning the auth database into a centralized bottleneck?',
+        rubricGuide: 'Candidate must explain: 1) Short-lived Access Tokens (e.g. 5-15 mins) paired with long-lived Refresh Tokens (stored in DB); 2) Distributed token blacklist/denylist in Redis Cluster with TTL matching token expiration; 3) Token versioning / epoch timestamp on User record; 4) Trade-off: pure statelessness versus instant revocation latency.',
+        rubricAtoms: ['short lived access tokens', 'redis revocation blacklist ttl', 'refresh token rotation', 'token epoch user version'],
+        hints: ['If a JWT expires in 5 minutes, how large does a temporary revocation blacklist need to be in Redis?'],
+        followUpProbes: ['Why is asymmetric RS256 signature verification preferred over symmetric HS256 across independent microservice teams?'],
+        expectedKeywords: ['JWT', 'OAuth2', 'revocation', 'blacklist', 'Redis', 'short-lived token', 'Refresh Token', 'RS256']
+      }
+    ]
+  },
+  {
+    topicId: 'FND015',
+    slug: 'encryption-data-security',
+    title: 'Data Security: Encryption, Key Management & Secure Protocols',
+    categorySlug: 'security-fundamentals',
+    pillar: 'principles',
+    priority: 'P1',
+    difficulty: 'ADVANCED',
+    durationMin: 25,
+    frequency: 0.88,
+    weight: 0.92,
+    trend: 'RISING',
+    description: 'Symmetric (AES-256-GCM) vs Asymmetric (RSA/ECC) encryption, Envelope Encryption with Cloud KMS/HSM, TLS 1.3 zero-RTT handshake, mTLS mutual authentication, and Zero-Trust network perimeters.',
+    rubricAtoms: ['envelope encryption dek kek kms', 'symmetric vs asymmetric trade-offs', 'tls 1.3 handshake optimization', 'mtls zero trust service identity', 'key rotation zero downtime'],
+    prerequisites: ['networking-protocols'],
+    questions: [
+      {
+        id: 'q_fnd015_01',
+        title: 'Envelope Encryption Architecture: DEK vs KEK in Cloud KMS',
+        difficulty: 'ADVANCED',
+        learningLevel: 'L4',
+        archetype: 'architecture',
+        prompt: 'Why should a database or object storage service never send multi-gigabyte files to AWS KMS or Google Cloud KMS directly for encryption? Explain the mechanics of Envelope Encryption using Data Encryption Keys (DEK) and Key Encryption Keys (KEK).',
+        rubricGuide: 'Candidate must articulate: 1) KMS has strict payload size limits (typically 4KB) and request rate quotas; 2) Application calls KMS to generate a plaintext DEK and encrypted DEK; 3) Application encrypts large payload locally with plaintext DEK using high-speed symmetric AES-256-GCM; 4) Plaintext DEK is wiped from memory; 5) Encrypted DEK is stored alongside the ciphertext. Decryption reverses the flow via KMS Decrypt(encrypted DEK).',
+        rubricAtoms: ['envelope encryption pattern', 'dek data encryption key local', 'kek key encryption key kms', 'aes 256 gcm authenticated encryption'],
+        hints: ['How many network round trips to KMS occur when encrypting 10,000 files with envelope encryption?'],
+        followUpProbes: ['How do you rotate the Master KEK without re-encrypting petabytes of underlying data files?'],
+        expectedKeywords: ['Envelope Encryption', 'KMS', 'DEK', 'KEK', 'AES-256-GCM', 'key rotation', 'ciphertext']
+      }
+    ]
+  },
+  {
+    topicId: 'FND016',
+    slug: 'threat-modeling-defense',
+    title: 'System Threat Modeling & Defense Strategies',
+    categorySlug: 'security-fundamentals',
+    pillar: 'principles',
+    priority: 'P2',
+    difficulty: 'ADVANCED',
+    durationMin: 25,
+    frequency: 0.85,
+    weight: 0.88,
+    trend: 'RISING',
+    description: 'STRIDE threat modeling, Layer 3/4/7 DDoS mitigation (Anycast scrubbing, Cloudflare), Web Application Firewalls (WAF), SSRF/SQLi/XSS prevention, replay attack mitigation, and software supply-chain security (SBOM, artifact signing).',
+    rubricAtoms: ['stride threat modeling', 'layer 7 ddos mitigation waf', 'ssrf and sql injection defense', 'replay attack prevention nonce', 'supply chain sbom artifact signing'],
+    prerequisites: ['authn-authz-identity', 'encryption-data-security'],
+    questions: [
+      {
+        id: 'q_fnd016_01',
+        title: 'Layer 7 HTTP Flood DDoS Mitigation vs Volumetric L3/L4 Attacks',
+        difficulty: 'ADVANCED',
+        learningLevel: 'L4',
+        archetype: 'troubleshooting',
+        prompt: 'Contrast Layer 3/4 SYN floods with Layer 7 HTTP application floods. Why do standard firewall IP rate limits fail against a distributed botnet executing valid TLS handshakes and complex SQL search queries, and how does edge mitigation defend backend services?',
+        rubricGuide: 'Candidate must explain: L3/L4 attacks saturate network bandwidth and SYN queues (mitigated by BGP Anycast scrubbing centers and SYN cookies). L7 attacks exhaust backend CPU/DB connections using legitimate HTTP requests from thousands of residential IPs. Defense requires: 1) Edge WAF behavioral rate limiting; 2) Proof-of-work / JavaScript cryptographic challenges (Cloudflare Turnstile); 3) Cached origin shielding; 4) Dynamic query cost quotas.',
+        rubricAtoms: ['layer 3 vs layer 7 ddos', 'anycast scrubbing centers', 'edge waf behavioral analysis', 'turnstile js challenges'],
+        hints: ['What happens to database thread pools when 10,000 bots request un-cached search queries simultaneously?'],
+        followUpProbes: ['How do cryptographic Software Bill of Materials (SBOM) and container image signing (Sigstore/Cosign) protect production systems against supply-chain dependency injection attacks?'],
+        expectedKeywords: ['DDoS', 'Layer 7', 'WAF', 'Anycast', 'SYN flood', 'botnet', 'SBOM', 'supply-chain']
+      }
+    ]
+  },
+
+  // 1.3 Storage & Database Fundamentals Additions
+  {
+    topicId: 'FND017',
+    slug: 'block-file-object-storage',
+    title: 'Storage Systems: Block, File & Object Storage Architecture',
+    categorySlug: 'database-fundamentals',
+    pillar: 'principles',
+    priority: 'P1',
+    difficulty: 'INTERMEDIATE',
+    durationMin: 25,
+    frequency: 0.90,
+    weight: 0.92,
+    trend: 'STABLE',
+    description: 'Block Storage (EBS, SAN, NVMe) for DB volumes; File Storage (NFS, EFS) for shared POSIX files; Object Storage (S3, Ceph) for flat immutable blob namespaces; IOPS vs throughput trade-offs.',
+    rubricAtoms: ['block vs file vs object storage', 'iops vs sequential throughput', 'posix locking vs rest blob immutable', 'cloud storage volume sizing'],
+    prerequisites: ['intro-system-design'],
+    questions: [
+      {
+        id: 'q_fnd017_01',
+        title: 'Block vs File vs Object Storage: Workload Mapping & Trade-offs',
+        difficulty: 'INTERMEDIATE',
+        learningLevel: 'L3',
+        archetype: 'comparison',
+        prompt: 'Compare Block Storage (e.g. AWS EBS), File Storage (e.g. AWS EFS / NFS), and Object Storage (e.g. AWS S3). Which storage architecture should you select for: 1) High-performance transactional PostgreSQL data directory; 2) Shared multi-server configuration and media uploads; 3) 500 Terabytes of immutable video files? Justify based on latency, concurrency, and cost.',
+        rubricGuide: 'Must map: 1) PostgreSQL requires Block Storage for low-latency random I/O, OS page cache integration, and high provisioned IOPS without network file protocol overhead; 2) Shared server config/code assets use File Storage for POSIX file semantics, directory trees, and concurrent read/write mounting across multiple VMs; 3) Video archives use Object Storage for flat addressable namespaces, HTTP byte-range downloads, 99.999999999% durability, and 10x lower cost per gigabyte.',
+        rubricAtoms: ['block storage low latency iops', 'file storage posix shared mount', 'object storage blob cost scale', 'workload mapping accuracy'],
+        hints: ['Can you run a high-concurrency production MySQL database directly on top of an AWS S3 bucket? Why not?'],
+        followUpProbes: ['What is the difference between IOPS (Input/Output Operations Per Second) and Throughput (MB/s), and which matters more for OLTP databases?'],
+        expectedKeywords: ['Block Storage', 'File Storage', 'Object Storage', 'EBS', 'EFS', 'S3', 'IOPS', 'POSIX', 'durability']
+      }
+    ]
+  },
+  {
+    topicId: 'FND018',
+    slug: 'distributed-newsql-databases',
+    title: 'Distributed SQL & NewSQL Architecture',
+    categorySlug: 'database-fundamentals',
+    pillar: 'principles',
+    priority: 'P2',
+    difficulty: 'ADVANCED',
+    durationMin: 25,
+    frequency: 0.86,
+    weight: 0.90,
+    trend: 'RISING',
+    description: 'Google Spanner, CockroachDB, and TiDB architecture; distributed ACID transactions; Raft/Paxos-replicated range tablets; horizontal write scaling without manual sharding.',
+    rubricAtoms: ['distributed acid transactions', 'raft replicated range partitions', 'spanner external consistency', 'two phase commit over paxos'],
+    prerequisites: ['sql-vs-nosql-modeling', 'acid-transactions-consistency'],
+    questions: [
+      {
+        id: 'q_fnd018_01',
+        title: 'Distributed ACID: 2-Phase Commit Over Multi-Raft Consensus',
+        difficulty: 'ADVANCED',
+        learningLevel: 'L4',
+        archetype: 'mechanism',
+        prompt: 'Traditional NoSQL databases sacrifice cross-partition ACID transactions for horizontal scalability. How do modern Distributed SQL (NewSQL) systems like CockroachDB and Google Spanner achieve both horizontal sharding and cross-range ACID transactions without a single central coordinator becoming a failure point?',
+        rubricGuide: 'Candidate must explain: 1) Data is split into ordered key ranges (Ranges/Tablets); 2) Each Range is replicated by a dedicated Raft/Paxos group across multiple nodes for fault tolerance; 3) Local transactions within one Range commit via standard Raft quorum; 4) Cross-range transactions use 2-Phase Commit (2PC) where the transaction coordinator itself is replicated via Raft, eliminating coordinator single-point-of-failure; 5) Concurrency is managed via MVCC and hybrid/TrueTime timestamps.',
+        rubricAtoms: ['multi raft consensus groups', 'range tablet partitioning', '2pc over replicated consensus', 'mvcc concurrency control'],
+        hints: ['What happens in standard 2PC if the coordinator crashes? How does replicated consensus fix that flaw?'],
+        followUpProbes: ['Why does range-based sharding require automatic range splitting when a range grows beyond 64MB?'],
+        expectedKeywords: ['NewSQL', 'CockroachDB', 'Spanner', 'Raft', '2PC', 'Range', 'distributed ACID', 'MVCC']
+      }
+    ]
+  },
+
+  // 1.4 Scalability & Performance Principles Addition
+  {
+    topicId: 'FND019',
+    slug: 'os-concurrency-primitives',
+    title: 'OS & Execution Primitives: Processes, Threads, Concurrency & Memory',
+    categorySlug: 'scalability-performance-principles',
+    pillar: 'principles',
+    priority: 'P1',
+    difficulty: 'ADVANCED',
+    durationMin: 25,
+    frequency: 0.90,
+    weight: 0.92,
+    trend: 'STABLE',
+    description: 'Thread-per-request vs Event-driven single-thread loop vs Goroutines/Green threads; Mutex/CAS/Semaphores; OS Page Cache; I/O multiplexing (epoll/io_uring); Garbage Collection pauses.',
+    rubricAtoms: ['thread per request vs event loop', 'epoll io multiplexing', 'cas atomic compare and swap', 'os page cache dirty flush', 'gc pause tail latency'],
+    prerequisites: ['intro-system-design'],
+    questions: [
+      {
+        id: 'q_fnd019_01',
+        title: 'Thread-per-Request vs Event-Driven Event Loop vs Green Threads',
+        difficulty: 'ADVANCED',
+        learningLevel: 'L4',
+        archetype: 'comparison',
+        prompt: 'Compare the concurrency models of: 1) Traditional Thread-per-request (Apache Tomcat); 2) Single-threaded non-blocking Event Loop (Node.js, Nginx, Redis); 3) M:N Green Threads / Goroutines (Go). Why does Thread-per-request collapse under 100,000 concurrent idle WebSocket connections while epoll event loops scale smoothly?',
+        rubricGuide: 'Candidate must explain: 1) OS threads have significant stack memory overhead (typically 1MB–8MB per thread) and context-switching CPU penalty when scheduling thousands of threads; 2) 100k threads would consume 100GB+ RAM just for thread stacks; 3) Event loops use OS I/O multiplexing (epoll on Linux, kqueue on macOS) to monitor 100k file descriptors on a single thread with near-zero memory overhead; 4) Go M:N green threads start with tiny 2KB dynamic stacks scheduled in user space.',
+        rubricAtoms: ['thread stack memory overhead', 'context switch cpu cost', 'epoll non-blocking io', 'goroutine m n user space scheduler'],
+        hints: ['What is the memory size of an OS thread stack versus a Go goroutine stack?'],
+        followUpProbes: ['How does a CPU-intensive synchronous task block an event-loop server, and how do worker thread pools mitigate it?'],
+        expectedKeywords: ['epoll', 'thread-per-request', 'event loop', 'goroutines', 'context switch', 'I/O multiplexing', 'Node.js', 'Go']
+      }
+    ]
+  },
+
+  // 1.2 Networking & Communication Addition
+  {
+    topicId: 'FND020',
+    slug: 'data-serialization-schema',
+    title: 'Data Serialization, Binary Formats & Schema Evolution',
+    categorySlug: 'networking-fundamentals',
+    pillar: 'principles',
+    priority: 'P2',
+    difficulty: 'INTERMEDIATE',
+    durationMin: 20,
+    frequency: 0.88,
+    weight: 0.86,
+    trend: 'STABLE',
+    description: 'JSON vs Protocol Buffers vs Apache Avro vs MessagePack; compact wire encoding; Schema Registries; forward/backward/full compatibility rules; CPU serialization overhead.',
+    rubricAtoms: ['binary wire format efficiency', 'protobuf tag based encoding', 'schema registry evolution rules', 'forward vs backward compatibility'],
+    prerequisites: ['api-communication-fundamentals'],
+    questions: [
+      {
+        id: 'q_fnd020_01',
+        title: 'Protobuf Binary Wire Format vs JSON: Encoding and Compatibility',
+        difficulty: 'INTERMEDIATE',
+        learningLevel: 'L3',
+        archetype: 'mechanism',
+        prompt: 'Why does Protocol Buffers (Protobuf) serialize data 5x-10x smaller and 10x faster than JSON? How does Protobuf field tag numbering guarantee backward and forward compatibility when new fields are added or deprecated?',
+        rubricGuide: 'Candidate must explain: 1) JSON is text-based, repeating key names ("user_id": 12345) and quotes for every record; 2) Protobuf uses compact binary encoding (Varints, zigzag encoding, field number + wire type tags); field names are never transmitted over the wire; 3) Backward compatibility: newer consumers reading older payloads assign default values to missing field tags; 4) Forward compatibility: older consumers reading newer payloads safely skip unknown field tags.',
+        rubricAtoms: ['tag number wire format', 'varint binary compression', 'omission of field names', 'forward and backward compatibility rules'],
+        hints: ['Does Protobuf send the string "firstName" across the wire for every single message?'],
+        followUpProbes: ['Why is deleting or renumbering an existing tag number in a .proto file considered a breaking change?'],
+        expectedKeywords: ['Protobuf', 'binary encoding', 'Varint', 'tag number', 'JSON', 'backward compatibility', 'schema evolution']
+      }
+    ]
+  },
+
+  // 1.1 System Design Foundations Addition
+  {
+    topicId: 'FND021',
+    slug: 'tradeoffs-technology-selection',
+    title: 'System Design Trade-offs & Technology Selection Framework',
+    categorySlug: 'system-design-foundations',
+    pillar: 'principles',
+    priority: 'P0',
+    difficulty: 'INTERMEDIATE',
+    durationMin: 25,
+    frequency: 0.95,
+    weight: 0.94,
+    trend: 'STABLE',
+    description: 'The Scaling Decision Matrix: when to cache vs queue vs replicate vs shard; Build vs Buy; Open-source vs Cloud Managed Services; Total Cost of Ownership (TCO) evaluation.',
+    rubricAtoms: ['scaling decision matrix', 'when to cache queue replicate shard', 'build vs buy tco analysis', 'operational risk governance'],
+    prerequisites: ['requirements-engineering'],
+    questions: [
+      {
+        id: 'q_fnd021_01',
+        title: 'The Scaling Decision Matrix: Cache, Queue, Replicate, or Shard',
+        difficulty: 'INTERMEDIATE',
+        learningLevel: 'L3',
+        archetype: 'trade-off',
+        prompt: 'When an application database experiences severe latency bottlenecks under growing user traffic, how do you systematically decide whether to: 1) Add Redis caching; 2) Introduce Read Replicas; 3) Asynchronously decouple writes via Message Queues; or 4) Partition and shard the database? What is the architectural cost and limitation of each?',
+        rubricGuide: 'Candidate must provide a structured decision tree: 1) Read-heavy with static/infrequent updates -> Redis Cache (Trade-off: stale data, invalidation complexity); 2) Read-heavy with analytical/reporting queries -> Read Replicas (Trade-off: replication lag, read-your-writes violation); 3) Write-heavy bursty traffic with non-blocking dependencies -> Message Queues (Trade-off: eventual consistency, backpressure management); 4) Storage capacity exhausted or write throughput exceeds single-node primary hardware limit -> Sharding (Trade-off: non-sharded joins broken, resharding operational overhead).',
+        rubricAtoms: ['structured decision framework', 'cache for hot reads', 'replicas for reporting reads', 'queues for write bursts', 'sharding as last resort'],
+        hints: ['Why is database sharding considered the last resort rather than the first solution?'],
+        followUpProbes: ['How do you evaluate "Build vs Buy" for a messaging broker (e.g. self-hosting Kafka on EC2 vs AWS Amazon MSK / SQS) taking into account operational toil and engineer salaries?'],
+        expectedKeywords: ['decision matrix', 'caching', 'read replicas', 'message queues', 'sharding', 'Build vs Buy', 'TCO']
       }
     ]
   }

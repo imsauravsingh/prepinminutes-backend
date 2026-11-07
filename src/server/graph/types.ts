@@ -3,7 +3,7 @@
  * Supports multi-domain architectures: System Design, Coding, AI System Design, DevOps
  */
 
-export type PriorityLevel = 'P1' | 'P2' | 'P3';
+export type PriorityLevel = 'P0' | 'P1' | 'P2' | 'P3';
 export type DifficultyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
 export type LearningProgressionLevel = 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
 export type TrendDirection = 'SURGING' | 'RISING' | 'STABLE' | 'FALLING';
