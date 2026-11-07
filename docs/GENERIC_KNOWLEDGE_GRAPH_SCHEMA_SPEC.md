@@ -178,6 +178,10 @@ Unique business identifier: `id`
   - `(t:Topic)-[:HAS_VARIANT]->(t2:Topic)`
 
 ### Domain 3: AI System Design (`ai-system-design`)
+* **Core Relationships (Identical to System Design)**:
+  - `(:Topic)-[:PREREQUISITE_OF]->(:Topic)`: Enforces topological curriculum sequencing (DAG, 0 cycles).
+  - `(:Topic)-[:USES_COMPONENT]->(:Topic)`: Maps Problem/System case studies to constituent AI component topics (e.g., `AIS001` Copilot uses `AIC004` vLLM, `AIC005` KV-Cache, `AIC006` Speculative Decoding).
+  - `(:Topic)-[:FOUNDED_ON]->(:Topic)`: Connects Problem/System case studies to bedrock AI Principles (e.g., `AIS002` Voice AI founded on `AIP001` Tokens and `AIP003` Attention Mechanism).
 * **Specialized Nodes**:
   - `(:ModelFamily {slug, name, modality, architecture, contextWindow})`
   - `(:OptimizationTechnique {slug, name, category, memorySavings})`

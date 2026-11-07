@@ -133,6 +133,7 @@ const QUESTION_ARCHETYPE_TEMPLATES: ArchetypeTemplate[] = [
     difficulty: 'INTERMEDIATE',
     learningLevel: 'L2',
     archetype: 'scenario-based',
+    titleSuffix: 'Capacity Sizing & High-QPS Scaling',
     promptBuilder: (t) =>
       `Consider a system experiencing 50,000 requests/second with a strict SLA of p99 < 50ms. How does ${t.title} handle this load, and how do you size capacity?`,
     rubricBuilder: (t) =>

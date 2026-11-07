@@ -30,7 +30,7 @@ export interface TopicSeed {
   title: string;
   categorySlug: string;
   pillar: 'principles' | 'components' | 'case-studies';
-  priority: 'P1' | 'P2' | 'P3';
+  priority: 'P0' | 'P1' | 'P2' | 'P3';
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   durationMin: number;
   frequency: number;

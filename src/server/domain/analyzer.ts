@@ -11,7 +11,7 @@
 import { getNeo4jDriver } from "../graph/neo4j";
 
 export type CareerLevel = "ENTRY" | "MID" | "SENIOR" | "STAFF" | "ARCHITECT";
-export type Specialization = "FRONTEND" | "BACKEND" | "FULLSTACK" | "DEVOPS_CLOUD" | "SYSTEMS_ARCHITECT";
+export type Specialization = "FRONTEND" | "BACKEND" | "FULLSTACK" | "DEVOPS_CLOUD" | "SYSTEMS_ARCHITECT" | "AI_ENGINEER";
 
 export interface CandidateAnalysisInput {
   candidateName?: string | null;
@@ -68,6 +68,20 @@ function resolveCareerLevel(role: string, exp: string): CareerLevel {
 
 function resolveSpecialization(role: string, contextText: string): Specialization {
   const combined = `${role} ${contextText}`.toLowerCase();
+  if (
+    combined.includes("ai engineer") ||
+    combined.includes("genai") ||
+    combined.includes("generative ai") ||
+    combined.includes("llm") ||
+    combined.includes("machine learning") ||
+    combined.includes("ml engineer") ||
+    combined.includes("applied ai") ||
+    combined.includes("vllm") ||
+    combined.includes("rag") ||
+    combined.includes("prompt engineer")
+  ) {
+    return "AI_ENGINEER";
+  }
   if (combined.includes("frontend") || combined.includes("react") || combined.includes("ui engineer")) {
     return "FRONTEND";
   }
@@ -113,6 +127,17 @@ function detectTechStack(combinedText: string): { primaryLanguage: string; techn
     docker: "Docker",
     kubernetes: "Kubernetes",
     aws: "AWS",
+    pytorch: "PyTorch",
+    vllm: "vLLM",
+    langchain: "LangChain",
+    llamaindex: "LlamaIndex",
+    huggingface: "HuggingFace",
+    pinecone: "Pinecone",
+    milvus: "Milvus",
+    qdrant: "Qdrant",
+    weaviate: "Weaviate",
+    triton: "Triton Inference Server",
+    ollama: "Ollama",
   };
 
   const detected: string[] = [];
@@ -143,23 +168,41 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
   const specialization = resolveSpecialization(input.targetRole, combinedContext);
   const { primaryLanguage, technologies } = detectTechStack(combinedContext);
 
-  const targetCategories = [
-    {
-      name: `${primaryLanguage} Internals & Concurrency`,
-      description: `Language execution runtime, memory model, and concurrency primitives for ${primaryLanguage}.`,
-      expectedDepth: careerLevel === "SENIOR" || careerLevel === "STAFF" || careerLevel === "ARCHITECT" ? "ADVANCED" : "INTERMEDIATE",
-    },
-    {
-      name: "Data Modeling & Caching Trade-offs",
-      description: "Database indexing, schema normalization, caching layers (Redis), and read/write scaling.",
-      expectedDepth: "INTERMEDIATE",
-    },
-    {
-      name: "System Architecture & Scalability",
-      description: "High-level distributed architecture, rate limiting, and failure recovery trade-offs.",
-      expectedDepth: careerLevel === "ARCHITECT" ? "EXPERT" : "ADVANCED",
-    },
-  ];
+  const targetCategories = specialization === "AI_ENGINEER"
+    ? [
+        {
+          name: "RAG & Vector Storage Systems",
+          description: "Chunking strategies, dense embeddings, vector indexing (HNSW/IVF), and hybrid search.",
+          expectedDepth: careerLevel === "SENIOR" || careerLevel === "STAFF" || careerLevel === "ARCHITECT" ? "ADVANCED" : "INTERMEDIATE",
+        },
+        {
+          name: "LLM Serving & Inference Optimizations",
+          description: "Continuous batching, PagedAttention, KV cache sizing, quantization, and GPU scheduling.",
+          expectedDepth: "INTERMEDIATE",
+        },
+        {
+          name: "AI Agents & Production System Architecture",
+          description: "Tool calling, MCP protocols, multi-agent durable execution, evals, and enterprise safety.",
+          expectedDepth: careerLevel === "ARCHITECT" ? "EXPERT" : "ADVANCED",
+        },
+      ]
+    : [
+        {
+          name: `${primaryLanguage} Internals & Concurrency`,
+          description: `Language execution runtime, memory model, and concurrency primitives for ${primaryLanguage}.`,
+          expectedDepth: careerLevel === "SENIOR" || careerLevel === "STAFF" || careerLevel === "ARCHITECT" ? "ADVANCED" : "INTERMEDIATE",
+        },
+        {
+          name: "Data Modeling & Caching Trade-offs",
+          description: "Database indexing, schema normalization, caching layers (Redis), and read/write scaling.",
+          expectedDepth: "INTERMEDIATE",
+        },
+        {
+          name: "System Architecture & Scalability",
+          description: "High-level distributed architecture, rate limiting, and failure recovery trade-offs.",
+          expectedDepth: careerLevel === "ARCHITECT" ? "EXPERT" : "ADVANCED",
+        },
+      ];
 
   // Formulate human-friendly opening greeting from Sarah
   const firstName = input.candidateName ? input.candidateName.split(" ")[0] : "there";
@@ -177,78 +220,142 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
 
     const allowedDifficulties = careerLevel === "ENTRY" ? ["BEGINNER", "INTERMEDIATE"] : ["INTERMEDIATE", "ADVANCED"];
 
-    // 1. Pillar 1: Language Internals Question
-    const langSlugMap: Record<string, string> = {
-      Java: "java",
-      Go: "go-",
-      Python: "python",
-      TypeScript: "nodejs",
-      JavaScript: "nodejs",
-      "C#": "csharp",
-      PHP: "php",
-    };
-    const langPrefix = langSlugMap[primaryLanguage] || primaryLanguage.toLowerCase();
+    if (specialization === "AI_ENGINEER") {
+      // 1. Pillar 1: RAG & Vector Retrieval
+      const ragRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND t.slug IN ['rag-triad-chunking-reranking', 'vector-math-embeddings', 'vector-databases-sharding', 'hybrid-search-sparse-dense-fusion']
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { allowedDifficulties }
+      );
 
-    const langRes = await session.run(
-      `
-      MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
-      WHERE q.status = 'PUBLISHED'
-        AND coalesce(q.isLive, false) = true
-        AND coalesce(t.isLive, false) = true
-        AND coalesce(c.isLive, false) = true
-        AND (toLower(c.slug) STARTS WITH $langPrefix OR toLower(t.slug) STARTS WITH $langPrefix)
-        AND q.difficulty IN $allowedDifficulties
-      RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
-      LIMIT 1
-      `,
-      { langPrefix, allowedDifficulties }
-    );
+      // 2. Pillar 2: LLM Serving & Inference
+      const servingRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND t.slug IN ['llm-serving-vllm', 'quantization-awq-gptq-fp8', 'multi-gpu-tensor-pipeline-parallelism', 'gpu-capacity-sizing-cost']
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { allowedDifficulties }
+      );
 
-    // 2. Pillar 2: Data Modeling & Caching Question
-    const dataRes = await session.run(
-      `
-      MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
-      WHERE q.status = 'PUBLISHED'
-        AND coalesce(q.isLive, false) = true
-        AND coalesce(t.isLive, false) = true
-        AND coalesce(c.isLive, false) = true
-        AND t.slug IN ['distributed-cache', 'database-sharding', 'b-tree-indexing', 'database-transactions', 'lru-cache-design']
-        AND q.difficulty IN $allowedDifficulties
-      RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
-      LIMIT 1
-      `,
-      { allowedDifficulties }
-    );
+      // 3. Pillar 3: AI Agents & Production Architectures
+      const agentRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND t.slug IN ['ai-agent-tool-calling-mcp', 'enterprise-knowledge-rag-search', 'coding-copilot-autocomplete', 'ai-gateway-routing-resilience']
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { allowedDifficulties }
+      );
 
-    // 3. Pillar 3: Distributed System Architecture & Scale Question
-    const systemRes = await session.run(
-      `
-      MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
-      WHERE q.status = 'PUBLISHED'
-        AND coalesce(q.isLive, false) = true
-        AND coalesce(t.isLive, false) = true
-        AND coalesce(c.isLive, false) = true
-        AND t.slug IN ['url-shortener', 'rate-limiter', 'circuit-breakers', 'message-queues']
-        AND q.difficulty IN $allowedDifficulties
-      RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
-      LIMIT 1
-      `,
-      { allowedDifficulties }
-    );
+      const mapRecord = (r: any): DiagnosticQuestion => ({
+        id: r.get("id"),
+        category: r.get("category"),
+        title: r.get("title"),
+        prompt: r.get("prompt"),
+        difficulty: r.get("difficulty"),
+        rubricGuide: r.get("rubricGuide") || undefined,
+        hints: r.get("hints") || undefined,
+      });
 
-    const mapRecord = (r: any): DiagnosticQuestion => ({
-      id: r.get("id"),
-      category: r.get("category"),
-      title: r.get("title"),
-      prompt: r.get("prompt"),
-      difficulty: r.get("difficulty"),
-      rubricGuide: r.get("rubricGuide") || undefined,
-      hints: r.get("hints") || undefined,
-    });
+      if (ragRes.records.length > 0) diagnosticQuestions.push(mapRecord(ragRes.records[0]));
+      if (servingRes.records.length > 0) diagnosticQuestions.push(mapRecord(servingRes.records[0]));
+      if (agentRes.records.length > 0) diagnosticQuestions.push(mapRecord(agentRes.records[0]));
+    } else {
+      // 1. Pillar 1: Language Internals Question
+      const langSlugMap: Record<string, string> = {
+        Java: "java",
+        Go: "go-",
+        Python: "python",
+        TypeScript: "nodejs",
+        JavaScript: "nodejs",
+        "C#": "csharp",
+        PHP: "php",
+      };
+      const langPrefix = langSlugMap[primaryLanguage] || primaryLanguage.toLowerCase();
 
-    if (langRes.records.length > 0) diagnosticQuestions.push(mapRecord(langRes.records[0]));
-    if (dataRes.records.length > 0) diagnosticQuestions.push(mapRecord(dataRes.records[0]));
-    if (systemRes.records.length > 0) diagnosticQuestions.push(mapRecord(systemRes.records[0]));
+      const langRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND (toLower(c.slug) STARTS WITH $langPrefix OR toLower(t.slug) STARTS WITH $langPrefix)
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { langPrefix, allowedDifficulties }
+      );
+
+      // 2. Pillar 2: Data Modeling & Caching Question
+      const dataRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND t.slug IN ['distributed-cache', 'database-sharding', 'b-tree-indexing', 'database-transactions', 'lru-cache-design']
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { allowedDifficulties }
+      );
+
+      // 3. Pillar 3: Distributed System Architecture & Scale Question
+      const systemRes = await session.run(
+        `
+        MATCH (c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_QUESTION]->(q:Question)
+        WHERE q.status = 'PUBLISHED'
+          AND coalesce(q.isLive, false) = true
+          AND coalesce(t.isLive, false) = true
+          AND coalesce(c.isLive, false) = true
+          AND t.slug IN ['url-shortener', 'rate-limiter', 'circuit-breakers', 'message-queues']
+          AND q.difficulty IN $allowedDifficulties
+        RETURN c.name AS category, q.id AS id, q.title AS title, q.prompt AS prompt, q.difficulty AS difficulty, q.rubricGuide AS rubricGuide, q.hints AS hints
+        LIMIT 1
+        `,
+        { allowedDifficulties }
+      );
+
+      const mapRecord = (r: any): DiagnosticQuestion => ({
+        id: r.get("id"),
+        category: r.get("category"),
+        title: r.get("title"),
+        prompt: r.get("prompt"),
+        difficulty: r.get("difficulty"),
+        rubricGuide: r.get("rubricGuide") || undefined,
+        hints: r.get("hints") || undefined,
+      });
+
+      if (langRes.records.length > 0) diagnosticQuestions.push(mapRecord(langRes.records[0]));
+      if (dataRes.records.length > 0) diagnosticQuestions.push(mapRecord(dataRes.records[0]));
+      if (systemRes.records.length > 0) diagnosticQuestions.push(mapRecord(systemRes.records[0]));
+    }
 
     await session.close();
   } catch (neo4jError) {
@@ -257,29 +364,55 @@ export async function analyzeCandidate(input: CandidateAnalysisInput): Promise<C
 
   // Fallback diagnostic questions if Neo4j returned fewer than 3
   if (diagnosticQuestions.length < 3) {
-    diagnosticQuestions = [
-      {
-        id: "q_diag_lang_internals",
-        category: `${primaryLanguage} Internals`,
-        title: `${primaryLanguage} Concurrency & Runtime Behavior`,
-        difficulty: "INTERMEDIATE",
-        prompt: `In ${primaryLanguage}, how do you safely manage shared mutable state under concurrent multi-threaded or asynchronous load? Walk through memory visibility and race condition prevention.`,
-      },
-      {
-        id: "q_diag_data_modeling",
-        category: "Data Modeling & Caching",
-        title: "Relational Indexing & Distributed Caching",
-        difficulty: "INTERMEDIATE",
-        prompt: "When designing a high-traffic read-heavy service, how do you structure your database indexes and caching tier with Redis to avoid cache stampede and stale reads?",
-      },
-      {
-        id: "q_diag_system_design",
-        category: "System Design & Scalability",
-        title: "Rate Limiting & High-Throughput Ingress",
-        difficulty: "ADVANCED",
-        prompt: "How would you architect a distributed rate-limiting tier to handle 200,000 API requests per second across multiple regional data centers?",
-      },
-    ];
+    if (specialization === "AI_ENGINEER") {
+      diagnosticQuestions = [
+        {
+          id: "q_diag_ai_rag",
+          category: "RAG & Vector Retrieval",
+          title: "Hybrid Search & Vector Indexing Trade-offs",
+          difficulty: "INTERMEDIATE",
+          prompt: "How would you design a hybrid retrieval pipeline combining dense vector embeddings (HNSW) with sparse lexical search (BM25) using Reciprocal Rank Fusion, while keeping latency under 50ms at scale?",
+        },
+        {
+          id: "q_diag_ai_serving",
+          category: "LLM Serving & Optimization",
+          title: "Continuous Batching & PagedAttention KV Cache",
+          difficulty: "INTERMEDIATE",
+          prompt: "Explain how continuous (iteration-level) batching and PagedAttention in vLLM eliminate memory fragmentation in the KV cache compared to naive static batching during LLM generation.",
+        },
+        {
+          id: "q_diag_ai_agents",
+          category: "AI Agents & System Architecture",
+          title: "Autonomous Agent Tool Calling & Sandboxing via MCP",
+          difficulty: "ADVANCED",
+          prompt: "When designing an enterprise multi-agent workflow that executes external tools, how do you enforce privilege boundaries, handle tool failure idempotency, and sandbox arbitrary code execution?",
+        },
+      ];
+    } else {
+      diagnosticQuestions = [
+        {
+          id: "q_diag_lang_internals",
+          category: `${primaryLanguage} Internals`,
+          title: `${primaryLanguage} Concurrency & Runtime Behavior`,
+          difficulty: "INTERMEDIATE",
+          prompt: `In ${primaryLanguage}, how do you safely manage shared mutable state under concurrent multi-threaded or asynchronous load? Walk through memory visibility and race condition prevention.`,
+        },
+        {
+          id: "q_diag_data_modeling",
+          category: "Data Modeling & Caching",
+          title: "Relational Indexing & Distributed Caching",
+          difficulty: "INTERMEDIATE",
+          prompt: "When designing a high-traffic read-heavy service, how do you structure your database indexes and caching tier with Redis to avoid cache stampede and stale reads?",
+        },
+        {
+          id: "q_diag_system_design",
+          category: "System Design & Scalability",
+          title: "Rate Limiting & High-Throughput Ingress",
+          difficulty: "ADVANCED",
+          prompt: "How would you architect a distributed rate-limiting tier to handle 200,000 API requests per second across multiple regional data centers?",
+        },
+      ];
+    }
   }
 
   return {

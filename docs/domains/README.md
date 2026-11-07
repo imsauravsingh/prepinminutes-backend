@@ -21,7 +21,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | ID | Domain Name | Slug | Priority | Status | Categories | Topics | Questions | Spec File | Seed / Code Path |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
 | **D01** | **System Design (HLD & Distributed Systems)** | `system-design` | **P0** | 🟢 **LIVE IN NEO4J** | **17** | **62** | **1,240** | [`system-design.md`](./system-design.md) | `scripts/seed-data/system-design/` |
-| **D02** | **AI System Design & GenAI Infra** | `ai-system-design` | **P1** | 🟡 **SPEC FROZEN** | **5** | **20** | **400** | [`ai-system-design.md`](./ai-system-design.md) | Ready for seeding |
+| **D02** | **AI System Design & GenAI Infra** | `ai-system-design` | **P0** | 🟢 **LIVE IN NEO4J** | **7** | **28** | **560** | [`ai-system-design.md`](./ai-system-design.md) | `scripts/seed-data/ai-system-design/` |
 | **D03** | **Low-Level Design & Machine Coding** | `low-level-design` | **P0** | ⚪ *PLANNED* | *6* | *25* | *500* | Roadmap | Specification pending |
 | **D04** | **Data Structures & Algorithms** | `dsa` | **P0** | ⚪ *PLANNED* | *8* | *40* | *800* | Roadmap | Specification pending |
 | **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P1** | ⚪ *PLANNED* | *6* | *24* | *480* | Roadmap | Specification pending |
@@ -61,20 +61,26 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D02: AI System Design & GenAI Infrastructure
 * **Domain Slug:** `ai-system-design`
-* **Status:** 🟡 **SPECIFICATION FROZEN — READY FOR SEEDING**
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `2.0.0`)
 * **Target Interview Round:** AI Systems Engineer, Applied AI Lead, LLM Infrastructure Round.
 * **Target Audience:** AI Engineers, GenAI Tech Leads, ML Infrastructure Architects.
 * **Graph Breakdown:**
-  * **5 Categories**: 
-    1. *Retrieval, Embeddings & Vector Systems* (HNSW, Hybrid RAG, Multi-Modal Chunking, Vector Caches)
-    2. *LLM Inference Infrastructure & Serving* (vLLM, PagedAttention, KV-Cache, Speculative Decoding, Tensor Parallelism)
-    3. *Autonomous Agents & Durable Execution* (ReAct loop, Tool calling, State machines, LangGraph/Temporal durable execution)
-    4. *AI Safety, Evaluation & Observability* (Hallucination detection, RAG Triad, Guardrails, Red-teaming)
-    5. *End-to-End AI Product Case Studies* (Perplexity-like Search, Enterprise Code Assistant, Voice AI Agent, Document QA at Scale)
-  * **20 Topics**: 4 topics per category.
-  * **400 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **3 Pillars across 7 Categories**:
+    * *Pillar 1: Principles & Fundamentals* (2 Categories: GenAI Foundations, Indexing & Alignment — 8 Topics | 160 Qs)
+    * *Pillar 2: Components & Patterns* (4 Categories: Vector Storage, LLM Serving, Gateways/Evals, Agent Execution — 13 Topics | 260 Qs)
+    * *Pillar 3: Case Studies* (1 Category: Production AI Case Studies — 7 Topics | 140 Qs)
+  * **28 Topics**: 8 Principles (`AIP001`–`AIP008`), 13 Components (`AIC001`–`AIC013`), 7 Case Studies (`AIS001`–`AIS007`).
+  * **560 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (12 Core Must-Master)**, **P1 (12 High-Frequency Senior)**, **P2 (4 Staff+ Deep Dives)**.
+  * **Graph Edges**: 38 `[:PREREQUISITE_OF]` (DAG verified, 0 cycles), 19 `[:USES_COMPONENT]`, 14 `[:FOUNDED_ON]`.
 * **Specification File**: [`docs/domains/ai-system-design.md`](./ai-system-design.md)
-* **Next Action**: Create seed files under `scripts/seed-data/ai-system-design/` and run incremental sync to Neo4j.
+* **Code & Seeder Artifacts**:
+  * Category Seeder: [`prepinminutes-backend/scripts/seed-data/ai-system-design/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/ai-system-design/categories.ts)
+  * Pillar 1 Principles: [`prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-1-principles.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-1-principles.ts)
+  * Pillar 2 Components: [`prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-2-components.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-2-components.ts)
+  * Pillar 3 Case Studies: [`prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-3-case-studies.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/ai-system-design/pillar-3-case-studies.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/ai-system-design/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/ai-system-design/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-ai-system-design-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-ai-system-design-incremental.ts)
 
 ---
 
@@ -215,3 +221,4 @@ async function check() {
 check();
 '
 ```
+
