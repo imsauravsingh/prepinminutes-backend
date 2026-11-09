@@ -22,9 +22,9 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
 | **D01** | **System Design (HLD & Distributed Systems)** | `system-design` | **P0** | 🟢 **LIVE IN NEO4J** | **17** | **62** | **1,240** | [`system-design.md`](./system-design.md) | `scripts/seed-data/system-design/` |
 | **D02** | **AI System Design & GenAI Infra** | `ai-system-design` | **P0** | 🟢 **LIVE IN NEO4J** | **7** | **28** | **560** | [`ai-system-design.md`](./ai-system-design.md) | `scripts/seed-data/ai-system-design/` |
-| **D03** | **Low-Level Design & Machine Coding** | `low-level-design` | **P0** | ⚪ *PLANNED* | *6* | *25* | *500* | Roadmap | Specification pending |
-| **D04** | **Data Structures & Algorithms** | `dsa` | **P0** | ⚪ *PLANNED* | *8* | *40* | *800* | Roadmap | Specification pending |
-| **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P1** | ⚪ *PLANNED* | *6* | *24* | *480* | Roadmap | Specification pending |
+| **D03** | **Low-Level Design & Machine Coding** | `low-level-design` | **P0** | 🟢 **LIVE IN NEO4J** | **6** | **35** | **700** | [`low-level-design.md`](./low-level-design.md) | `scripts/seed-data/low-level-design/` |
+| **D04** | **Data Structures & Algorithms** | `dsa` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **40** | **800** | [`dsa.md`](./dsa.md) | `scripts/seed-data/dsa/` |
+| **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **29** | **580** | [`backend-engineering.md`](./backend-engineering.md) | `scripts/seed-data/backend-engineering/` |
 | **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P1** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
 | **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P1** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
 | **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
@@ -86,44 +86,69 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D03: Low-Level Design & Machine Coding
 * **Domain Slug:** `low-level-design`
-* **Status:** ⚪ **PLANNED — SPECIFICATION IN PROGRESS**
-* **Target Interview Round:** Low-Level Design (LLD), Object-Oriented Design (OOD), Machine Coding.
-* **Target Audience:** SDE-1, SDE-2 (Mandatory round at Amazon, Uber, Atlassian, Flipkart, Swiggy).
-* **Scope & Pillars**:
-  1. *SOLID Principles & Clean Code Architecture*
-  2. *Creational Patterns* (Factory, Builder, Singleton, Prototype)
-  3. *Structural Patterns* (Adapter, Decorator, Facade, Composite, Proxy)
-  4. *Behavioral Patterns* (Strategy, Observer, Command, State, Chain of Responsibility)
-  5. *In-Process Concurrency & Thread Safety* (Locks, Condition variables, Deadlock prevention, Producer-Consumer)
-  6. *Iconic Machine Coding Problems* (Parking Lot, Elevator/Lift System, Splitwise, In-Memory LRU Cache, Movie Ticket Booking, Chess/Snake-Ladder, Rate Limiter Class, Vending Machine).
-* **Target Scale:** 25 Topics | **500 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Low-Level Design (LLD), Object-Oriented Design (OOD), 90-Minute Machine Coding.
+* **Target Audience:** SDE-1, SDE-2, Senior SDE (Mandatory round at Amazon, Uber, Atlassian, Google, Microsoft, Flipkart, Swiggy).
+* **Graph Breakdown:**
+  * **3 Pillars across 6 Categories**:
+    * *Pillar 1: Principles & Concurrency Foundations* (Category 1: OOP Principles, Clean Code & Concurrency — 7 Topics | 140 Qs)
+    * *Pillar 2: Patterns & In-Memory Components* (Categories 2 & 3: GoF Patterns & In-Memory Utilities — 8 Topics | 160 Qs)
+    * *Pillar 3: Iconic Machine Coding Case Studies* (Categories 4, 5 & 6: Hardware/Games, Booking/Financial, Enterprise Apps — 20 Topics | 400 Qs)
+  * **35 Topics**: 7 Principles (`LLDP01`–`LLDP07`), 8 Patterns/Components (`LLDC01`–`LLDC08`), 20 Case Studies (`LLDS01`–`LLDS20`).
+  * **700 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (19 Core Must-Master)**, **P1 (12 High-Frequency Senior)**, **P2 (4 Specialized/Staff+)**.
+  * **Graph Edges**: 60 `[:PREREQUISITE_OF]` (DAG verified, 0 cycles), 30 `[:USES_COMPONENT]`, 34 `[:FOUNDED_ON]`.
+* **Specification File**: [`docs/domains/low-level-design.md`](./low-level-design.md)
+* **Code & Seeder Artifacts**:
+  * Category Seeder: [`prepinminutes-backend/scripts/seed-data/low-level-design/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/low-level-design/categories.ts)
+  * Pillar 1 Principles: [`prepinminutes-backend/scripts/seed-data/low-level-design/pillar-1-principles.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/low-level-design/pillar-1-principles.ts)
+  * Pillar 2 Components: [`prepinminutes-backend/scripts/seed-data/low-level-design/pillar-2-patterns-components.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/low-level-design/pillar-2-patterns-components.ts)
+  * Pillar 3 Case Studies: [`prepinminutes-backend/scripts/seed-data/low-level-design/pillar-3-case-studies.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/low-level-design/pillar-3-case-studies.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/low-level-design/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/low-level-design/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-low-level-design-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-low-level-design-incremental.ts)
 
 ---
 
 ### D04: Data Structures & Algorithms (Coding Round)
 * **Domain Slug:** `dsa`
-* **Status:** ⚪ **PLANNED — SPECIFICATION IN PROGRESS**
-* **Target Interview Round:** Technical Problem Solving / Coding Round (LeetCode-style).
-* **Target Audience:** All Software Engineering Candidates (SDE-1 through Senior SDE).
-* **Scope & Pattern Taxonomy**:
-  1. *Two Pointers & Sliding Window*
-  2. *Arrays, Hashing & String Manipulation*
-  3. *Linked Lists, Stacks & Monotonic Deques*
-  4. *Binary Search & Interval Scheduling*
-  5. *Trees, Binary Search Trees & Tries*
-  6. *Graphs & Topological Sorting* (BFS, DFS, Dijkstra, Union-Find)
-  7. *Dynamic Programming & Greedy* (1D DP, 2D Grid DP, Knapsack, Bitmask)
-  8. *Backtracking & Heaps / Priority Queues*
-* **Target Scale:** 40 Pattern Topics | **800 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Technical Problem Solving / Live Coding Round (LeetCode-style 45–60 min).
+* **Target Audience:** All Software Engineering Candidates (SDE-1 through Senior SDE at FAANG/Tier-1).
+* **Graph Breakdown:**
+  * **12 Thematic Categories**: Arrays & Two Pointers, Strings, Binary Search, Linked Lists, Stacks & Queues, Binary Trees, BSTs, Heaps & Greedy, Tries, Graphs, Dynamic Programming, Backtracking & Bits.
+  * **40 Pattern Topics**: Covering all 14 universal algorithmic patterns + all 178 canonical SDE Sheet problems.
+  * **800 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (30 Core Must-Master)**, **P1 (10 High-Frequency Senior)**, **P2 (0)**.
+  * **Curated Subsets**: **Top 150 Track (`isTop150`)**, **Blind 75 Sprint (`isBlind75`)**, **Dynamic Popularity (`frequencyScore`)**, and **Company Tags**.
+  * **Graph Edges**: 42 `[:PREREQUISITE_OF]` (DAG verified, 0 cycles).
+* **Specification File**: [`docs/domains/dsa.md`](./dsa.md)
+* **Code & Seeder Artifacts**:
+  * Category Seeder: [`prepinminutes-backend/scripts/seed-data/dsa/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/dsa/categories.ts)
+  * Topics Seeder: [`prepinminutes-backend/scripts/seed-data/dsa/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/dsa/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/dsa/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/dsa/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-dsa-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-dsa-incremental.ts)
 
 ---
 
 ### D05: Backend & Runtime Engineering
 * **Domain Slug:** `backend-engineering`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** Language Internals, Concurrency & Backend Fundamentals.
-* **Scope:** Language runtime models (Java JVM garbage collection/virtual threads, Go goroutines/scheduler, Node.js event loop/libuv, Python GIL/asyncio), API design (REST/gRPC/GraphQL), OS concurrency primitives, and query tuning.
-* **Target Scale:** 24 Topics | **480 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Backend Architecture, Language Runtime Internals & Concurrency Round.
+* **Target Audience:** All Backend & Fullstack Candidates (SDE-1 through Principal Engineer).
+* **Graph Breakdown:**
+  * **11 Categories**: 6 Universal Core (APIs, Databases, Caching, Concurrency/OS, Security, Observability) + 5 Language Ecosystems (Java, Node.js, Go, Python, PHP).
+  * **29 Topics**: 14 Universal Core + 15 Language Runtime Topics (3 per language across Fundamentals $\rightarrow$ Intermediate $\rightarrow$ Advanced).
+  * **580 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (21 Core Must-Master)**, **P1 (8 High-Frequency Senior)**, **P2 (0)**.
+  * **Extensibility**: Open-string language slug (`lang: "universal"` | `"java"` | `"nodejs"` | `"go"` | `"python"` | `"php"` | future languages like `"rust"`, `"csharp"`, `"kotlin"`).
+  * **Candidate Sizing**: Candidates prepare on **17 Topics (340 Questions)** = 14 Universal Core + 3 Tailored Language Topics.
+  * **Graph Edges**: 26 `[:PREREQUISITE_OF]` (DAG verified, 0 cycles).
+* **Specification File**: [`docs/domains/backend-engineering.md`](./backend-engineering.md)
+* **Code & Seeder Artifacts**:
+  * Category Seeder: [`prepinminutes-backend/scripts/seed-data/backend-engineering/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/backend-engineering/categories.ts)
+  * Topics Seeder: [`prepinminutes-backend/scripts/seed-data/backend-engineering/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/backend-engineering/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/backend-engineering/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/backend-engineering/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-backend-engineering-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-backend-engineering-incremental.ts)
 
 ---
 

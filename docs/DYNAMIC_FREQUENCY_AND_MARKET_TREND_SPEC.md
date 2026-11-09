@@ -255,13 +255,75 @@ Rubric Focus: cache-aside, write-through, stampede prevention
 
 ---
 
-## 8. Summary of Guarantees
+## 8. Question-Level Frequency & Curated Sprints Schema
+
+To keep the database schema strictly normalized and avoid data desynchronization, PrepInMinutes adheres to a **lean, Single-Source-of-Truth (SSOT)** model for every `(:Question)` node:
+
+```json
+{
+  "id": "q_arrays_two_sum",
+  "title": "Two Sum (Hash Map Lookup)",
+  "difficulty": "BEGINNER",
+  "learningLevel": "L1",
+  
+  // Single Source of Truth Popularity
+  "frequencyScore": 99,       // 0–100 integer/float: powers sorting and "Most Asked" threshold queries
+  "trend": "HOT",              // 'SURGING' | 'HOT' | 'STABLE' | 'COOLING'
+  
+  // Curated Fast-Track Sprints
+  "isTop150": true,           // Curated 150-question interview checklist
+  "isBlind75": true,          // Curated 75-question emergency sprint checklist
+  
+  // Direct Company Sighting Tags
+  "companies": ["Google", "Amazon", "Meta", "Apple", "Microsoft", "Uber", "Goldman Sachs"]
+}
+```
+
+### Architectural Guarantees:
+- **No Redundant `isMostAsked` Flag**: Filtered dynamically via `WHERE q.frequencyScore >= 80`. This eliminates synchronization bugs where boolean flags drift out of sync with numeric frequency scores.
+- **No Complex `curatedTracks` Arrays**: Avoids nested array bloat. Curated tracks are modeled directly as explicit boolean flags (`isTop150`, `isBlind75`).
+
+---
+
+## 9. The Monthly Maintenance Workflow (Operating Cadence)
+
+Question frequency and curated track memberships are governed by a **predictable, high-trust monthly cadence**:
+
+```mermaid
+flowchart LR
+    M1["1st of Each Month<br/>(Scheduled Maintenance)"] --> S1["1. Time-Decay Recomputation<br/>(Decay older sightings, boost 30-day reports)"]
+    S1 --> S2["2. Top 150 Review & Rotation<br/>(Rotate out fading questions, promote surging 90+ questions)"]
+    S2 --> S3["3. Blind 75 Stability Check<br/>(Verify 75 pattern anchors remain intact)"]
+    S3 --> S4["4. UI Freshness Stamp<br/>(Set lastVerifiedMonth = 'Current Month & Year')"]
+```
+
+### 9.1. Why a Monthly Cadence is Optimal
+- **Rejects Weekly Noise**: Interview question trends do not fluctuate drastically week-to-week. Updating weekly creates excessive churn and confuses candidates midway through a study plan.
+- **Prevents Annual Stagnation**: Updating once a year misses mid-season hiring surges (e.g. Q1 New Year hiring budgets, Q3 Fall campus hiring).
+- **Optimal Statistical Sample Size**: A 30-day window provides the exact balance of real-world reports to smooth out anomalies while catching genuine rising patterns.
+
+### 9.2. Step-by-Step Monthly Execution Plan
+1. **Recalculate `frequencyScore`**: Run the exponential time-decay Cypher job across all `(:Question)` nodes to decay sightings older than 30 days and increment scores for newly reported problems.
+2. **Top 150 Review & Rotation**:
+   - If a question currently tagged `isTop150 = true` has dropped below `frequencyScore < 60` and hasn't been sighted in 6+ months, it is evaluated for rotation.
+   - A surging question with `frequencyScore >= 90` is promoted (`isTop150 = true`), while the stale question is rotated out (`isTop150 = false`).
+   - The rotated question remains in the master library with 0 loss of content or user progress.
+3. **Candidate Freshness Stamp**:
+   - Updates the domain node property: `d.lastVerifiedMonth = "November 2026"`.
+   - Surfaces a high-trust verification badge in the candidate UI:
+     $$\mathbf{\text{[ ✓ Verified for Current Hiring Season — November 2026 ]}}$$
+
+---
+
+## 10. Summary of Guarantees
 
 | Metric / Feature | Implementation Guarantee |
 | :--- | :--- |
-| **No Candidate Inquiries** | Fully automated from external community ingestion; zero candidate prompts. |
-| **Time Decay** | Exponential half-life ($T_{1/2} = 180$ days); 2025 questions decay automatically. |
-| **Trend Awareness** | Distinguishes between `SURGING`, `RISING`, `STABLE`, and `FALLING` topics. |
-| **Graph Cleanliness** | Sightings older than 2 years are pruned automatically. |
-| **Deterministic Sorting** | Provides mathematical priority ranking for 1–3 week candidate crash courses. |
+| **No Redundant Flags** | Discards `isMostAsked` in favor of single-source `frequencyScore` (0–100). |
+| **Simple Track Booleans** | Uses clean `isTop150` and `isBlind75` flags rather than complex arrays. |
+| **Predictable Cadence** | Executed strictly on the **1st of every month** for statistical stability. |
+| **Time Decay** | Exponential half-life ($T_{1/2} = 180$ days); older questions decay smoothly. |
+| **Trend Awareness** | Distinguishes between `SURGING`, `HOT`, `STABLE`, and `COOLING` topics/questions. |
+| **Candidate Transparency** | Displays verified monthly freshness badges directly on the candidate UI. |
+
 

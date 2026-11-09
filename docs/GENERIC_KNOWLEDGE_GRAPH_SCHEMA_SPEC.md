@@ -155,6 +155,10 @@ Unique business identifier: `id`
 | `followUpProbes`| `List<String>`| **Yes** | Deepening questions for Senior/Principal | `["How does TLS offload affect CPU usage?"]` |
 | `expectedKeywords`| `List<String>`| **Yes** | Keywords for semantic scoring | `["Layer 4", "Layer 7", "TCP", "SSL"]` |
 | `antiPatterns` | `List<String>`| No | Red-flag answers or common mistakes | `["Assuming L4 can inspect JWT headers"]` |
+| `frequencyScore` | `Integer` | No | Popularity score ($0 \rightarrow 100$) governing sorting & "Most Asked" ($score \ge 80$) | `98` |
+| `isTop150` | `Boolean` | No | Curated Top 150 interview checklist membership | `true` |
+| `isBlind75` | `Boolean` | No | Curated Blind 75 emergency sprint membership | `true` |
+| `companies` | `List<String>` | No | Real-world company sighting tags | `["Google", "Amazon", "Meta"]` |
 | `isActive` | `Boolean` | No | Publication flag | `true` |
 | `version` | `String` | No | Question content revision | `"1.0"` |
 
