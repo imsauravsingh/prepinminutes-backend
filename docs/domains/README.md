@@ -26,7 +26,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | **D04** | **Data Structures & Algorithms** | `dsa` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **40** | **800** | [`dsa.md`](./dsa.md) | `scripts/seed-data/dsa/` |
 | **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **29** | **580** | [`backend-engineering.md`](./backend-engineering.md) | `scripts/seed-data/backend-engineering/` |
 | **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **34** | **680** | [`frontend-engineering.md`](./frontend-engineering.md) | `scripts/seed-data/frontend-engineering/` |
-| **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P1** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
+| **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P0** | 🟢 **LIVE IN NEO4J** | **18** | **50** | **1,000** | [`cloud-devops.md`](./cloud-devops.md) | `scripts/seed-data/cloud-devops/` |
 | **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
 | **D09** | **Data Engineering & Big Data** | `data-engineering` | **P2** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
 | **D10** | **Mobile Engineering (iOS / Android)** | `mobile-engineering` | **P2** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
@@ -174,10 +174,21 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D07: Cloud, DevOps & Site Reliability (SRE)
 * **Domain Slug:** `cloud-devops`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** Platform Engineering, SRE, Cloud Infrastructure.
-* **Scope:** Linux cgroups/namespaces, Docker image layers, Kubernetes control plane/CNI/CSI/HPA, Terraform GitOps (ArgoCD), CI/CD pipelines, Prometheus/OpenTelemetry, Error budgets & SLOs, Chaos engineering.
-* **Target Scale:** 20 Topics | **400 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Linux & Networking Internals, Kubernetes Platform Architecture, IaC & GitOps, Production SRE & Incident Command, Cloud Architecture (AWS/GCP/Azure).
+* **Target Audience:** Junior DevOps / Cloud Engineers up to Staff / Principal SRE & Cloud Infrastructure Architects.
+* **Graph Breakdown:**
+  * **18 Categories**: 15 Universal Platform & SRE Categories (Linux Internals, Systems Networking, Containers & Runtimes, K8s Control Plane, K8s Networking/Mesh, K8s Storage/Operators, IaC/Terraform, GitOps/ArgoCD, CI/CD, Supply Chain Security, Observability/PromQL, SRE Incident Ops, Chaos/DR, Cloud Identity/Zero Trust, Platform Engineering/FinOps) + 3 Dedicated Cloud Provider Stacks (AWS, GCP, Azure).
+  * **50 Topics**: 35 Universal Platform/SRE Topics (`OPS01`–`OPS35`) + 15 Cloud Provider Topics (`OPS36`–`OPS50`).
+  * **1,000 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (30 Core Must-Master)**, **P1 (20 High-Frequency Specialization)**, **P2 (0)**.
+  * **Candidate Sizing**: Tailored tracks (e.g. SRE: 22 Topics / 440 Qs; K8s Platform: 18 Topics / 360 Qs; AWS Architect: 27 Topics / 540 Qs; Cloud Security: 18 Topics / 360 Qs).
+* **Specification File:** [`docs/domains/cloud-devops.md`](./cloud-devops.md)
+* **Code & Seed Assets:**
+  * Categories: [`prepinminutes-backend/scripts/seed-data/cloud-devops/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/cloud-devops/categories.ts)
+  * Topics & Prerequisites: [`prepinminutes-backend/scripts/seed-data/cloud-devops/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/cloud-devops/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/cloud-devops/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/cloud-devops/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-cloud-devops-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-cloud-devops-incremental.ts)
 
 ---
 
