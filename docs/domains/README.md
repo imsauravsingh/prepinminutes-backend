@@ -27,7 +27,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **29** | **580** | [`backend-engineering.md`](./backend-engineering.md) | `scripts/seed-data/backend-engineering/` |
 | **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **34** | **680** | [`frontend-engineering.md`](./frontend-engineering.md) | `scripts/seed-data/frontend-engineering/` |
 | **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P0** | 🟢 **LIVE IN NEO4J** | **18** | **50** | **1,000** | [`cloud-devops.md`](./cloud-devops.md) | `scripts/seed-data/cloud-devops/` |
-| **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
+| **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | 🟢 **LIVE IN NEO4J** | **10** | **28** | **560** | [`behavioral-leadership.md`](./behavioral-leadership.md) | `scripts/seed-data/behavioral-leadership/` |
 | **D09** | **Data Engineering & Big Data** | `data-engineering` | **P2** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
 | **D10** | **Mobile Engineering (iOS / Android)** | `mobile-engineering` | **P2** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
 
@@ -194,10 +194,21 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D08: Behavioral, Leadership & Engineering Management
 * **Domain Slug:** `behavioral-leadership`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** Behavioral, Leadership Principles, Engineering Management & Staff+ Strategy.
-* **Scope:** STAR response framework, Amazon 16 Leadership Principles, Cross-functional conflict resolution, Production outage post-mortems (blameless RCAs), Mentorship, Engineering metrics, and Architectural governance.
-* **Target Scale:** 16 Topics | **320 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Behavioral, Leadership Principles, Culture Fit, Bar Raiser, Cross-Functional Influence, Staff+ Architectural Strategy, Engineering Management & People Leadership.
+* **Target Audience:** SDE-1 through SDE-2, Senior Engineer (L5), Staff / Principal Architect (L6+), and Engineering Manager (EM) through Director.
+* **Graph Breakdown:**
+  * **10 Categories**: Behavioral Storytelling, Ownership & Execution, Conflict/Collaboration/Ethics, Failure & Outages, Customer Obsession & Value, Company Behavioral Frameworks, Staff+ Strategy/Transformation, Mentorship & Culture, Team Health & Hiring, Performance/PIPs & Executive Communication.
+  * **28 Topics**: `BEH01` through `BEH28` with pure DAG topological prerequisites.
+  * **560 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (21 Core Must-Master)**, **P1 (7 High-Impact Specialization)**, **P2 (0)**.
+  * **Candidate Sizing**: Tailored tracks (Junior SDE-1: 10 Topics / 200 Qs; Mid SDE-2: 14 Topics / 280 Qs; Senior L5: 18 Topics / 360 Qs; Staff+ IC: 20 Topics / 400 Qs; EM/Director: 22 Topics / 440 Qs).
+* **Specification File:** [`docs/domains/behavioral-leadership.md`](./behavioral-leadership.md)
+* **Code & Seed Assets:**
+  * Categories: [`prepinminutes-backend/scripts/seed-data/behavioral-leadership/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/behavioral-leadership/categories.ts)
+  * Topics & Prerequisites: [`prepinminutes-backend/scripts/seed-data/behavioral-leadership/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/behavioral-leadership/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/behavioral-leadership/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/behavioral-leadership/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-behavioral-leadership-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-behavioral-leadership-incremental.ts)
 
 ---
 
