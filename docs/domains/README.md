@@ -25,7 +25,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | **D03** | **Low-Level Design & Machine Coding** | `low-level-design` | **P0** | 🟢 **LIVE IN NEO4J** | **6** | **35** | **700** | [`low-level-design.md`](./low-level-design.md) | `scripts/seed-data/low-level-design/` |
 | **D04** | **Data Structures & Algorithms** | `dsa` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **40** | **800** | [`dsa.md`](./dsa.md) | `scripts/seed-data/dsa/` |
 | **D05** | **Backend & Runtime Engineering** | `backend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **29** | **580** | [`backend-engineering.md`](./backend-engineering.md) | `scripts/seed-data/backend-engineering/` |
-| **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P1** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
+| **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **34** | **680** | [`frontend-engineering.md`](./frontend-engineering.md) | `scripts/seed-data/frontend-engineering/` |
 | **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P1** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
 | **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
 | **D09** | **Data Engineering & Big Data** | `data-engineering` | **P2** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
@@ -154,10 +154,21 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D06: Frontend & Web Architecture
 * **Domain Slug:** `frontend-engineering`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** Frontend Architecture, UI Machine Coding, Web Performance.
-* **Scope:** React/Next.js internals (Fiber, Reconciliation, RSC, Hydration), Browser rendering lifecycle (Reflow, Repaint, Compositing), State management, Micro-frontends, Web Vitals optimization, and Offline PWA architecture.
-* **Target Scale:** 20 Topics | **400 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `2.0.0`)
+* **Target Interview Round:** Frontend Architecture, UI System Design, Web Vitals Performance & UI Machine Coding Round.
+* **Target Audience:** All Frontend & Fullstack Candidates (SDE-1 through Principal UI Architect).
+* **Graph Breakdown:**
+  * **12 Categories**: 6 Universal Web Platform Categories (Browser Rendering, HTML/CSS, Web Vitals, Security, UI Machine Coding, Forms/Testing) + 6 Dedicated 3-Tier Technology Stacks (JavaScript, TypeScript, React, Next.js, Modern Angular, Vue.js/Nuxt).
+  * **34 Topics**: 16 Universal Core Topics + 18 Technology Stack Topics (3 Tiers each: Beginner $\rightarrow$ Intermediate $\rightarrow$ Advanced).
+  * **680 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (25 Core Must-Master)**, **P1 (9 High-Frequency Senior)**, **P2 (0)**.
+  * **Candidate Sizing**: Candidates prepare on tailored tracks (e.g. React+Next+TS: 28 Topics / 560 Qs; Angular+TS: 25 Topics / 500 Qs; Vanilla JS: 19 Topics / 380 Qs).
+* **Specification File:** [`docs/domains/frontend-engineering.md`](./frontend-engineering.md)
+* **Code & Seed Assets:**
+  * Categories: [`prepinminutes-backend/scripts/seed-data/frontend-engineering/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/frontend-engineering/categories.ts)
+  * Topics & Prerequisites: [`prepinminutes-backend/scripts/seed-data/frontend-engineering/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/frontend-engineering/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/frontend-engineering/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/frontend-engineering/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-frontend-engineering-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-frontend-engineering-incremental.ts)
 
 ---
 
