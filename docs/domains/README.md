@@ -28,7 +28,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | **D06** | **Frontend & Web Architecture** | `frontend-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **12** | **34** | **680** | [`frontend-engineering.md`](./frontend-engineering.md) | `scripts/seed-data/frontend-engineering/` |
 | **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P0** | 🟢 **LIVE IN NEO4J** | **18** | **50** | **1,000** | [`cloud-devops.md`](./cloud-devops.md) | `scripts/seed-data/cloud-devops/` |
 | **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | 🟢 **LIVE IN NEO4J** | **10** | **28** | **560** | [`behavioral-leadership.md`](./behavioral-leadership.md) | `scripts/seed-data/behavioral-leadership/` |
-| **D09** | **Data Engineering & Big Data** | `data-engineering` | **P2** | ⚪ *PLANNED* | *5* | *20* | *400* | Roadmap | Specification pending |
+| **D09** | **Data Engineering & Big Data** | `data-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **30** | **600** | [`data-engineering.md`](./data-engineering.md) | `scripts/seed-data/data-engineering/` |
 | **D10** | **Mobile Engineering (iOS / Android)** | `mobile-engineering` | **P2** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
 
 ---
@@ -214,10 +214,21 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ### D09: Data Engineering & Big Data Systems
 * **Domain Slug:** `data-engineering`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** Data Platform Engineer, Big Data Architect.
-* **Scope:** Kafka distributed log pipelines, Apache Spark transformations, Delta Lake / Iceberg table formats, Data warehouse dimensional modeling (Snowflake, BigQuery), Data orchestration (Airflow, Dagster).
-* **Target Scale:** 20 Topics | **400 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** SQL & Python Data Processing, Distributed Compute & Spark Internals, Real-Time Streaming & Kafka/Flink, Lakehouse Architecture, Data Modeling & Warehousing, Data Platform Architecture & FinOps.
+* **Target Audience:** Data Engineer, Analytics Engineer, Streaming / Real-Time Data Engineer, Data Platform Engineer, Enterprise Data Architect, and Principal Big Data Platform Engineer.
+* **Graph Breakdown:**
+  * **11 Categories**: Columnar Storage & Object Stores, Open Lakehouse Formats (Iceberg & Delta), Spark Architecture & Optimization, Kafka Distributed Logs, Stream Processing with Flink, Dimensional Modeling & Cloud Warehouses, Distributed Query Engines (Trino & DuckDB), Orchestration/Ingestion/dbt, Contracts/Quality/Observability/Security, Lakehouse Architecture/FinOps/Data Mesh, SQL & Python Programming.
+  * **30 Topics**: `DAT01` through `DAT30` with pure DAG topological prerequisites.
+  * **600 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (22 Core Must-Master)**, **P1 (8 High-Impact Specialization)**, **P2 (0)**.
+  * **Candidate Sizing**: Deterministic role tracks (Generalist Data Engineer: 17 Topics / 340 Qs; Analytics Engineer: 14 Topics / 280 Qs; Streaming Engineer: 14 Topics / 280 Qs; Data Platform Engineer: 21 Topics / 420 Qs; Data Architect: 20 Topics / 400 Qs; Principal: 30 Topics / 600 Qs).
+* **Specification File:** [`docs/domains/data-engineering.md`](./data-engineering.md)
+* **Code & Seed Assets:**
+  * Categories: [`prepinminutes-backend/scripts/seed-data/data-engineering/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/data-engineering/categories.ts)
+  * Topics & Prerequisites: [`prepinminutes-backend/scripts/seed-data/data-engineering/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/data-engineering/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/data-engineering/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/data-engineering/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-data-engineering-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data-engineering-incremental.ts)
 
 ---
 
