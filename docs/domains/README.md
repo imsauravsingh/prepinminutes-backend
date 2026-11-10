@@ -29,7 +29,7 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 | **D07** | **Cloud, DevOps & Site Reliability** | `cloud-devops` | **P0** | 🟢 **LIVE IN NEO4J** | **18** | **50** | **1,000** | [`cloud-devops.md`](./cloud-devops.md) | `scripts/seed-data/cloud-devops/` |
 | **D08** | **Behavioral, Leadership & Management** | `behavioral-leadership`| **P0** | 🟢 **LIVE IN NEO4J** | **10** | **28** | **560** | [`behavioral-leadership.md`](./behavioral-leadership.md) | `scripts/seed-data/behavioral-leadership/` |
 | **D09** | **Data Engineering & Big Data** | `data-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **11** | **30** | **600** | [`data-engineering.md`](./data-engineering.md) | `scripts/seed-data/data-engineering/` |
-| **D10** | **Mobile Engineering (iOS / Android)** | `mobile-engineering` | **P2** | ⚪ *PLANNED* | *4* | *16* | *320* | Roadmap | Specification pending |
+| **D10** | **Mobile Engineering (iOS, Android & Cross-Platform)** | `mobile-engineering` | **P0** | 🟢 **LIVE IN NEO4J** | **18** | **35** | **700** | [`mobile-engineering.md`](./mobile-engineering.md) | `scripts/seed-data/mobile-engineering/` |
 
 ---
 
@@ -232,12 +232,27 @@ $$\text{Domain} \xrightarrow{\text{CONTAINS}} \text{Category} \xrightarrow{\text
 
 ---
 
-### D10: Mobile Engineering (Android / iOS / Cross-Platform)
+### D10: Mobile Engineering (iOS, Android & Cross-Platform Architecture)
 * **Domain Slug:** `mobile-engineering`
-* **Status:** ⚪ **PLANNED**
-* **Target Interview Round:** iOS / Android Mobile Architecture.
-* **Scope:** Android Jetpack/Compose, iOS SwiftUI/UIKit, Memory management (ARC vs GC), Offline-first SQLite sync, Background execution limits, Mobile security (Keystore/Keychain), Battery & Network profiling.
-* **Target Scale:** 16 Topics | **320 Questions**.
+* **Status:** 🟢 **LIVE IN NEO4J AURADB** (Verified: Version `1.0.0`)
+* **Target Interview Round:** Mobile System Architecture, iOS Native Deep Dive, Android Native Deep Dive, Cross-Platform Architecture (React Native & Flutter), Mobile App Performance & Device Hardening.
+* **Target Audience:** iOS Engineer, Android Engineer, Cross-Platform Mobile Engineer (React Native / Flutter), Staff Mobile Architect, Mobile Platform Lead.
+* **Graph Breakdown:**
+  * **18 Categories**:
+    * *Universal Mobile Systems (8 Categories | 16 Topics | 320 Qs)*: Client Architecture/UDF, Offline-First/Local Storage, Networking & Resilience, Memory/Performance/Battery, Mobile Security/Keystore, Release Engineering/App Size, App Lifecycle/Deep Linking/A11y, Mobile Quality/ANR Observability.
+    * *Native iOS (4 Categories | 7 Topics | 140 Qs)*: Swift Concurrency/Actors, SwiftUI/UIKit Hybrid Rendering, iOS Memory Management/ARC/Persistence, iOS Automated Testing.
+    * *Native Android (4 Categories | 7 Topics | 140 Qs)*: Kotlin Coroutines/Flows, Jetpack Compose Architecture, Android OS Process Lifecycle/Room, Android Automated Testing.
+    * *Cross-Platform Frameworks (2 Categories | 5 Topics | 100 Qs)*: React Native New Architecture/Hermes, Flutter & Dart Reactive Systems.
+  * **35 Topics**: `MOB01` through `MOB35` with pure DAG topological prerequisites.
+  * **700 Master Questions**: Exactly 20 questions/topic (4 Beginner, 6 Intermediate, 6 Advanced, 4 Expert).
+  * **Priority Ladder**: **P0 (21 Core Must-Master)**, **P1 (14 High-Impact Specialization)**, **P2 (0)**.
+  * **Candidate Sizing**: Deterministic role tracks (Native iOS Specialist: 23 Topics / 460 Qs; Native Android Specialist: 23 Topics / 460 Qs; React Native Specialist: 19 Topics / 380 Qs; Flutter Specialist: 18 Topics / 360 Qs; Staff/Principal Mobile Architect: 25 Topics / 500 Qs).
+* **Specification File:** [`docs/domains/mobile-engineering.md`](./mobile-engineering.md)
+* **Code & Seed Assets:**
+  * Categories: [`prepinminutes-backend/scripts/seed-data/mobile-engineering/categories.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/mobile-engineering/categories.ts)
+  * Topics & Prerequisites: [`prepinminutes-backend/scripts/seed-data/mobile-engineering/topics.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/mobile-engineering/topics.ts)
+  * Question Generator: [`prepinminutes-backend/scripts/seed-data/mobile-engineering/question-generator.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-data/mobile-engineering/question-generator.ts)
+  * Incremental Seeder Script: [`prepinminutes-backend/scripts/seed-mobile-engineering-incremental.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/scripts/seed-mobile-engineering-incremental.ts)
 
 ---
 
