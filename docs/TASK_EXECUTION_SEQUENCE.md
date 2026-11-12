@@ -10,18 +10,18 @@
 
 ## 1. Executive Status & Progress Matrix
 
-| Phase | Functional Scope | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) | Status |
-| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Phase 1** | **Curriculum Knowledge Graph (Neo4j AuraDB)** | 10 | 10 | 0 | 0 | 🟢 **100% COMPLETE** |
-| **Phase 1.5**| **Relational Schema & Curriculum Parity (PostgreSQL)** | 3 | 0 | 0 | 3 | ⚪ **P0 BLOCKING** |
-| **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 5 | 0 | 0 | 5 | ⚪ **READY TO START** |
-| **Phase 3** | **Unified Curriculum API & Edge Gateway** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **Phase 4** | **Dynamic Frontend Knowledge Graph Integration** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **Phase 5** | **Interactive Practice & Live Question Injection** | 4 | 0 | 0 | 4 | ⚪ **PENDING** |
-| **Phase 6** | **Deterministic Evaluation, Scoring & Decay Engine** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **Phase 7** | **Real-Time Voice AI Gateway & Media Streaming** | 2 | 0 | 0 | 2 | ⚪ **PENDING** |
-| **Phase 8** | **End-to-End Platform Verification & Polish** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **TOTAL** | **Entire PrepInMinutes Platform** | **36** | **10** | **0** | **26** | **27.8% OVERALL** |
+|     Phase     | Functional Scope                                       | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) |        Status         |
+| :-----------: | :----------------------------------------------------- | :---------: | :---------------: | :-----------------: | :-------------: | :-------------------: |
+|  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        | 🟢 **100% COMPLETE**  |
+| **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      3      |         0         |          0          |        3        |  ⚪ **P0 BLOCKING**   |
+|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         0         |          0          |        5        | ⚪ **READY TO START** |
+|  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
+|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
+|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |    ⚪ **PENDING**     |
+|  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
+|  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |    ⚪ **PENDING**     |
+|  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **36**    |      **10**       |        **0**        |     **26**      |   **27.8% OVERALL**   |
 
 ---
 
@@ -154,36 +154,37 @@ flowchart TD
 
 ---
 
-### Phase 1.5: Relational Schema & 10-Domain Curriculum Sync (PostgreSQL)
 
-> **Governing Specification**: [`docs/DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md`](./DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md)  
-> **Priority Standard**: **P0 (Immediate Blocking Foundations)**  
+### Phase 1.5: Relational Schema & Full-Platform Data Parity (PostgreSQL)
+
+> **Governing Specification**: [`docs/DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md`](./DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md) (v2.0.0)  
+> **Priority Standard**: **P0 (Immediate Blocking Foundations) & P1 (Interactive Demo Journey)**  
 > **Target Database**: Local PostgreSQL (`localhost:5432`) & Neon Cloud Mirror
 
-- [ ] **TASK-P1.5-01: Prisma Schema Evolution (Skill Gap & Intelligence Maintenance Models)**
+- [x] **TASK-P1.5-01: Prisma Schema Evolution (Universal 27-Model Alignment)**
+  - **Status**: Completed (November 13, 2026)
   - **Priority**: **P0 (Blocking)**
   - **Dependencies**: Phase 1
   - **Target Files**:
     - `prepinminutes-backend/prisma/schema.prisma`
     - `prep-in-minutes/prisma/schema.prisma`
   - **Scope**:
-    - Add `CandidateTopicProficiency` (`candidate_topic_proficiencies`) model to bridge Phase 2 skill gaps ($G(t)$).
-    - Add the 3 Data Maintenance Engine models:
-      - `IntelligenceRefreshConfig` (`intelligence_refresh_configs`)
-      - `IntelligenceRefreshExecution` (`intelligence_refresh_executions`)
-      - `CompanyIntelligenceRefreshLog` (`company_intelligence_refresh_logs`)
-    - Update `CurriculumTopic` difficulty and priority fields to match canonical definitions.
-  - **Acceptance Criteria**: `npx prisma validate` passes with 0 syntax or relational errors.
+    - Unified schema across backend and frontend repositories with zero drift.
+    - Added `CandidateTopicProficiency`, `SubscriptionPlan`, `PasswordResetToken`, `EmailVerificationToken`, `PlatformConfig`.
+    - Added the 3 Company Intelligence Refresh models (`IntelligenceRefreshConfig`, `IntelligenceRefreshExecution`, `CompanyIntelligenceRefreshLog` with dynamic `changedAttributes Json?`).
+    - Aligned all `CurriculumTopic` attributes (`topicId`, difficulty, priority).
+  - **Acceptance Criteria**: `npx prisma validate` and `npx prisma generate` passed with 0 syntax or relational errors in both repos.
 
-- [ ] **TASK-P1.5-02: Local PostgreSQL Schema Push & Verification (`localhost:5432`)**
+- [x] **TASK-P1.5-02: Local PostgreSQL Schema Push & Verification (`localhost:5432`)**
+  - **Status**: Completed (November 13, 2026)
   - **Priority**: **P0 (Blocking)**
   - **Dependencies**: `TASK-P1.5-01`
   - **Target Files**:
     - `prepinminutes-backend/prisma/schema.prisma`
   - **Scope**:
-    - Execute `npx prisma db push` against the local database (`localhost:5432`).
-    - Verify that all 23 relational tables exist and table constraints/indexes are active.
-  - **Acceptance Criteria**: Database query confirms all 23 tables exist in `information_schema.tables` on `localhost:5432`.
+    - Executed `npx prisma db push` against the local database (`localhost:5432`).
+    - Verified all 27 relational tables exist and table constraints/indexes are active.
+  - **Acceptance Criteria**: Database query confirmed all 27 tables exist in `information_schema.tables` on `localhost:5432`.
 
 - [ ] **TASK-P1.5-03: Relational 10-Domain Curriculum Sync Script (`371 Topics`)**
   - **Priority**: **P0 (Blocking)**
@@ -191,10 +192,36 @@ flowchart TD
   - **Target Files**:
     - `prepinminutes-backend/scripts/sync-curriculum-postgres.ts`
   - **Scope**:
-    - Author an idempotent synchronization script that reads the canonical domain seed data (from `scripts/seed-data/*`).
+    - Author an idempotent synchronization script that reads canonical domain seed data (from `scripts/seed-data/*`).
     - Upsert all **10 domains**, **122 categories**, and **371 topics** into PostgreSQL `curriculum_domains`, `curriculum_categories`, and `curriculum_topics`.
     - Establish 100% slug and ID parity between PostgreSQL and Neo4j.
   - **Acceptance Criteria**: `SELECT count(*) FROM curriculum_topics;` returns exactly 371 topics matching Neo4j.
+
+- [ ] **TASK-P1.5-04: Baseline Platform Seeds (Admin, Plans, Configs & Cron)**
+  - **Priority**: **P0 (Blocking)**
+  - **Dependencies**: `TASK-P1.5-02`
+  - **Target Files**:
+    - `prepinminutes-backend/prisma/seed-baseline.ts`
+  - **Scope**:
+    - Seed default Head of Department (HOD) admin (`imsauravsingh@gmail.com`).
+    - Seed 4 dynamic `SubscriptionPlan` tiers (`FREE`, `PRO_MONTHLY`, `PRO_QUARTERLY`, `LIFETIME`).
+    - Seed `IntelligenceRefreshConfig` for twice-monthly company refresh (batch size 50).
+    - Seed core `PlatformConfig` entries (AI model toggles, maintenance mode).
+  - **Acceptance Criteria**: Seed execution exits code 0; verified in database.
+
+- [ ] **TASK-P1.5-05: Golden Demo Candidate Seed (Full-State Interactive Journey)**
+  - **Priority**: **P1 (Core Demo Readiness)**
+  - **Dependencies**: `TASK-P1.5-03`, `TASK-P1.5-04`
+  - **Target Files**:
+    - `prepinminutes-backend/prisma/seed-demo-candidate.ts`
+  - **Scope**:
+    - Seed candidate user `candidate@prepinminutes.com` with active profile (Senior Backend Engineer, 68% readiness, 5-day streak).
+    - Seed active Preparation Plan with 4 weekly milestones.
+    - Seed 5 daily checklist tasks (3 completed, 2 pending).
+    - Seed 2 completed practice sessions with Sarah AI evaluation reports, rubric breakdown, and missing atoms.
+    - Seed 1 completed mock interview session with transcript JSON.
+    - Seed 4 SuperMemo SM-2 revision items with calculated next review dates.
+  - **Acceptance Criteria**: Immediate rich data visible on `/dashboard`, `/preparation-plan`, `/practice`, and `/revision` upon candidate login.
 
 ---
 
@@ -486,8 +513,8 @@ flowchart TD
 ## 4. Execution Protocol & Status Tracking Rule
 
 Whenever any task from this sequence is picked up, implemented, or tested:
+
 1. **Mark In Progress**: Update the status to `[-] IN PROGRESS`.
 2. **Execute & Test**: Implement the changes and run the associated test/build command.
 3. **Mark Completed**: Change `- [ ]` to `- [x]` with completion date and commit hash.
 4. **Preserve Sync**: Ensure `prep-in-minutes/docs/TASK_EXECUTION_SEQUENCE.md` and `prepinminutes-backend/docs/TASK_EXECUTION_SEQUENCE.md` remain identical.
-

@@ -1,6 +1,6 @@
 // PrepInMinutes Master Prisma Schema
-// Database: PostgreSQL with pgvector
-// Naming Convention: snake_case plural tables, snake_case singular columns, explicit idx_/uq_/fk_ constraints, timestamptz audit fields
+// Target Engines: PostgreSQL 16+ with pgvector
+// Zero Schema Drift Standard: 100% Identical between Localhost and Neon Cloud
 
 datasource db {
   provider   = "postgresql"
@@ -64,25 +64,27 @@ model User {
   role                AdminRole            @default(CANDIDATE) @map("role")
   adminApprovalStatus AdminApprovalStatus  @default(NONE) @map("admin_approval_status")
 
-  // Account Status & Universal Blocking (Applies to both Candidates & Staff)
+  // Account Status & Universal Blocking (Applies to Candidates & Staff)
   isBlocked           Boolean              @default(false) @map("is_blocked")
   blockedReason       String?              @map("blocked_reason")
   blockedAt           DateTime?            @map("blocked_at") @db.Timestamptz(6)
   blockedBy           String?              @map("blocked_by")
 
-  // Access Request Details (for Internal Staff)
+  // Access Request Details (for Internal Staff Role Escalation)
   requestedRole       String?              @map("requested_role") // "CURRICULUM_MANAGER" | "STAFF_ENGINEER" | "CONTENT_REVIEWER"
-  requestReason       String?              @db.Text @map("request_reason") // Written justification for HOD review
+  requestReason       String?              @db.Text @map("request_reason") // Justification for HOD review
   requestedAt         DateTime?            @map("requested_at") @db.Timestamptz(6)
-
-  approvedBy          String?              @map("approved_by") // imsauravsingh@gmail.com
+  approvedBy          String?              @map("approved_by") // e.g. imsauravsingh@gmail.com
   approvedAt          DateTime?            @map("approved_at") @db.Timestamptz(6)
+
   createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   profile             CandidateProfile?
   subscription        Subscription?
   auditLogs           AdminAuditLog[]
+  passwordResetTokens PasswordResetToken[]
+  verificationTokens  EmailVerificationToken[]
 
   @@index([role], map: "idx_users_role")
   @@index([adminApprovalStatus], map: "idx_users_admin_approval_status")
@@ -90,29 +92,71 @@ model User {
   @@map("users")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpCode   String   @map("otp_code")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, otpCode])
+  @@map("email_verification_tokens")
+}
+
+model SubscriptionPlan {
+  id                  String           @id @default(cuid())
+  tier                SubscriptionTier @unique
+  name                String           // e.g. "Pro Monthly", "Lifetime Pass"
+  description         String
+  price               Float            // e.g. 29.00
+  currency            String           @default("USD")
+  billingInterval     String           // "month" | "quarter" | "lifetime"
+  voiceMinutesLimit   Float            @default(180.0) @map("voice_minutes_limit")
+  mockInterviewsLimit Int              @default(5) @map("mock_interviews_limit")
+  features            String[]         @default([])
+  isActive            Boolean          @default(true) @map("is_active")
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("subscription_plans")
+}
+
 model Subscription {
-  id                     String             @id @default(cuid())
-  userId                 String             @unique(map: "uq_subscriptions_user_id") @map("user_id")
-  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tier                   SubscriptionTier   @default(FREE) @map("tier")
-  status                 SubscriptionStatus @default(INACTIVE) @map("status")
-  planName               String             @default("Free Plan") @map("plan_name")
-  isPlanOpted            Boolean            @default(false) @map("is_plan_opted") // True if paid plan chosen
-  pricePaid              Float              @default(0.0) @map("price_paid")
-  currency               String             @default("USD") @map("currency")
-  currentPeriodStart     DateTime           @default(now()) @map("current_period_start") @db.Timestamptz(6)
-  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz(6)
-  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
-  paymentProvider        String?            @map("payment_provider") // "stripe" | "razorpay" | "manual_admin"
+  id                  String             @id @default(cuid())
+  userId              String             @unique(map: "uq_subscriptions_user_id") @map("user_id")
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                SubscriptionTier   @default(FREE) @map("tier")
+  status              SubscriptionStatus @default(INACTIVE) @map("status")
+  planName            String             @default("Free Plan") @map("plan_name")
+  isPlanOpted         Boolean            @default(false) @map("is_plan_opted")
+  pricePaid           Float              @default(0.0) @map("price_paid")
+  currency            String             @default("USD") @map("currency")
+  currentPeriodStart  DateTime           @default(now()) @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd    DateTime?          @map("current_period_end") @db.Timestamptz(6)
+  cancelAtPeriodEnd   Boolean            @default(false) @map("cancel_at_period_end")
+  paymentProvider     String?            @map("payment_provider") // "stripe" | "razorpay" | "manual_admin"
   
-  // Usage tracking
-  voiceMinutesUsed       Float              @default(0.0) @map("voice_minutes_used")
-  voiceMinutesLimit      Float              @default(30.0) @map("voice_minutes_limit")
-  mockInterviewsUsed     Int                @default(0) @map("mock_interviews_used")
-  mockInterviewsLimit    Int                @default(1) @map("mock_interviews_limit")
+  // Real-Time Quota Metering
+  voiceMinutesUsed    Float              @default(0.0) @map("voice_minutes_used")
+  voiceMinutesLimit   Float              @default(30.0) @map("voice_minutes_limit")
+  mockInterviewsUsed  Int                @default(0) @map("mock_interviews_used")
+  mockInterviewsLimit Int                @default(1) @map("mock_interviews_limit")
   
-  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([tier, status], map: "idx_subscriptions_tier_status")
   @@index([isPlanOpted], map: "idx_subscriptions_is_plan_opted")
@@ -123,8 +167,8 @@ model AdminAuditLog {
   id          String    @id @default(cuid())
   userId      String    @map("user_id")
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action      String    @map("action") // "APPROVE_ADMIN_USER" | "ASSIGN_ROLE" | "BLOCK_USER" | "UNBLOCK_USER" | "UPDATE_CATEGORY"
-  targetType  String    @map("target_type") // "User" | "Category" | "Topic" | "Question" | "Subscription"
+  action      String    @map("action") // "APPROVE_STAFF" | "ASSIGN_ROLE" | "BLOCK_USER" | "UPDATE_TOPIC" | "TRIGGER_REFRESH"
+  targetType  String    @map("target_type") // "User" | "CurriculumTopic" | "CompanyIntelligence" | "Subscription"
   targetId    String    @map("target_id")
   changeDiff  Json?     @map("change_diff")
   ipAddress   String?   @map("ip_address")
@@ -134,12 +178,16 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+// -------------------------------------------------------------
+// 2. Candidate Profile & Preparation Roadmaps
+// -------------------------------------------------------------
+
 model CandidateProfile {
   id                 String   @id @default(cuid())
   userId             String   @unique(map: "uq_candidate_profiles_user_id") @map("user_id")
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_candidate_profiles_user_id")
-  targetRole         String   @map("target_role") // e.g. "Senior Software Engineer"
-  experienceLevel    String   @map("experience_level") // "0-2", "3-5", "6-9", "10+"
+  targetRole         String   @map("target_role") // e.g. "Senior Backend Engineer"
+  experienceLevel    String   @map("experience_level") // "STUDENT_FRESHER", "0-2", "3-5", "6-9", "10+"
   targetCompanies    String[] @map("target_companies") // ["Google", "Meta", "Stripe"]
   timelineWeeks      Int      @default(8) @map("timeline_weeks")
   timelineLabel      String   @default("1 month") @map("timeline_label")
@@ -161,6 +209,7 @@ model CandidateProfile {
   revisionItems      RevisionItem[]
   embeddings         DocumentEmbedding[]
   topicMasteries     CandidateTopicMastery[]
+  proficiencies      CandidateTopicProficiency[]
   weeklySnapshots    WeeklyAreaSnapshot[]
 
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -184,8 +233,8 @@ model PreparationPlan {
   jobDescriptionText String?          @db.Text @map("job_description_text")
   readinessScore     Int              @default(45) @map("readiness_score")
   activePhaseId      String           @default("phase-1") @map("active_phase_id")
-  weeklyMilestones   Json?            @map("weekly_milestones") // Detailed weekly breakdown of phases and topics
-  domainWeights      Json?            @map("domain_weights") // e.g. {"system-design": 0.40, "coding": 0.35, "behavioral": 0.15, "cloud": 0.10}
+  weeklyMilestones   Json?            @map("weekly_milestones") // Ordered weekly breakdown of topics
+  domainWeights      Json?            @map("domain_weights") // e.g. {"system-design": 0.40, "dsa": 0.35, "behavioral": 0.15, "cloud-devops": 0.10}
 
   dailyTasks         DailyPlanTask[]
 
@@ -203,11 +252,11 @@ model DailyPlanTask {
   plan          PreparationPlan  @relation(fields: [planId], references: [id], onDelete: Cascade, map: "fk_daily_plan_tasks_plan_id")
   topicId       String?          @map("topic_id")
   topic         CurriculumTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull, map: "fk_daily_plan_tasks_topic_id")
-  domainSlug    String           @map("domain_slug") // "system-design" | "coding" | "behavioral" | "cloud"
+  domainSlug    String           @map("domain_slug")
   title         String
   subtitle      String?
   durationMin   Int              @default(10) @map("duration_min")
-  practiceHref  String           @map("practice_href") // "/practice/session/system-design"
+  practiceHref  String           @map("practice_href")
   scheduledDate DateTime         @map("scheduled_date") @db.Timestamptz(6)
   orderIndex    Int              @default(0) @map("order_index")
   isCompleted   Boolean          @default(false) @map("is_completed")
@@ -219,7 +268,7 @@ model DailyPlanTask {
 }
 
 // -------------------------------------------------------------
-// 2. Canonical Curriculum & Knowledge Graph
+// 3. Canonical Curriculum Catalog (PostgreSQL 1:1 Mirror)
 // -------------------------------------------------------------
 
 model CurriculumDomain {
@@ -255,15 +304,18 @@ model CurriculumTopic {
   categoryId   String             @map("category_id")
   category     CurriculumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, map: "fk_curriculum_topics_category_id")
   slug         String             @unique(map: "uq_curriculum_topics_slug")
+  topicId      String             @default("") @map("topic_id") // Canonical ID: e.g. "FND001", "MOB15"
   title        String
   description  String
   durationMin  Int                @default(15) @map("duration_min")
-  difficulty   String // "EASY" | "MEDIUM" | "HARD"
-  rubricAtoms  String[]           @map("rubric_atoms") // ["virtual nodes", "hash ring", "rebalancing"]
-  practiceHref String             @map("practice_href") // "/practice/session/system-design"
+  difficulty   String             // "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT"
+  priority     String             @default("P0")
+  rubricAtoms  String[]           @map("rubric_atoms")
+  practiceHref String             @map("practice_href")
   iconName     String?            @map("icon_name")
 
   masteries        CandidateTopicMastery[]
+  proficiencies    CandidateTopicProficiency[]
   questions        CurriculumQuestion[]
   embeddings       TopicEmbedding[]
   revisionItems    RevisionItem[]
@@ -273,6 +325,7 @@ model CurriculumTopic {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([domainId, difficulty], map: "idx_curriculum_topics_domain_id_difficulty")
+  @@index([topicId], map: "idx_curriculum_topics_topic_id")
   @@map("curriculum_topics")
 }
 
@@ -285,8 +338,8 @@ model CurriculumQuestion {
   targetLevel String          @map("target_level") // "senior" | "staff"
   hints       String[]
   rubricGuide String          @db.Text @map("rubric_guide")
-  starterCode Json?           @map("starter_code") // Language-specific templates
-  testCases   Json?           @map("test_cases") // Automated verification suites
+  starterCode Json?           @map("starter_code")
+  testCases   Json?           @map("test_cases")
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([topicId], map: "idx_curriculum_questions_topic_id")
@@ -306,35 +359,35 @@ model TopicEmbedding {
 }
 
 // -------------------------------------------------------------
-// 3. Candidate Understanding & Progress Mastery Tracking
+// 4. Candidate Progress Tracking & Cognitive Depth
 // -------------------------------------------------------------
 
 model CandidateTopicMastery {
-  id          String           @id @default(cuid())
-  candidateId String           @map("candidate_id")
-  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_candidate_topic_masteries_candidate_id")
-  topicId     String           @map("topic_id")
-  topic       CurriculumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade, map: "fk_candidate_topic_masteries_topic_id")
+  id              String           @id @default(cuid())
+  candidateId     String           @map("candidate_id")
+  candidate       CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_candidate_topic_masteries_candidate_id")
+  topicId         String           @map("topic_id")
+  topic           CurriculumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade, map: "fk_candidate_topic_masteries_topic_id")
 
-  masteryScore   Float     @default(0.0) @map("mastery_score") // 0.0 - 100.0%
-  status         String    @default("NOT_STARTED") // "NOT_STARTED" | "NEEDS_PRACTICE" | "PRACTICED" | "MASTERED"
-  cognitiveStage String    @default("RECALL") @map("cognitive_stage") // "RECALL" | "APPLICATION" | "TRADE_OFFS" | "EXPERT"
-  totalAttempts  Int       @default(0) @map("total_attempts")
-  lastPracticedAt DateTime? @map("last_practiced_at") @db.Timestamptz(6)
+  masteryScore    Float            @default(0.0) @map("mastery_score") // 0.0 - 100.0%
+  status          String           @default("NOT_STARTED") // "NOT_STARTED" | "NEEDS_PRACTICE" | "PRACTICED" | "MASTERED"
+  cognitiveStage  String           @default("RECALL") @map("cognitive_stage") // "RECALL" | "APPLICATION" | "TRADE_OFFS" | "EXPERT"
+  totalAttempts   Int              @default(0) @map("total_attempts")
+  lastPracticedAt DateTime?        @map("last_practiced_at") @db.Timestamptz(6)
 
   // Spaced Repetition (SuperMemo SM-2)
-  intervalDays   Float     @default(1.0) @map("interval_days")
-  easeFactor     Float     @default(2.5) @map("ease_factor")
-  nextReviewDate DateTime? @map("next_review_date") @db.Timestamptz(6)
+  intervalDays    Float            @default(1.0) @map("interval_days")
+  easeFactor      Float            @default(2.5) @map("ease_factor")
+  nextReviewDate  DateTime?        @map("next_review_date") @db.Timestamptz(6)
 
-  // Dimension Running Averages
-  avgTechnicalDepth Float @default(0.0) @map("avg_technical_depth")
-  avgTradeoffs      Float @default(0.0) @map("avg_tradeoffs")
-  avgDataModeling   Float @default(0.0) @map("avg_data_modeling")
-  avgScalability    Float @default(0.0) @map("avg_scalability")
+  // 4-Dimension Running Averages
+  avgTechnicalDepth Float          @default(0.0) @map("avg_technical_depth")
+  avgTradeoffs      Float          @default(0.0) @map("avg_tradeoffs")
+  avgDataModeling   Float          @default(0.0) @map("avg_data_modeling")
+  avgScalability    Float          @default(0.0) @map("avg_scalability")
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([candidateId, topicId], map: "uq_candidate_topic_masteries_candidate_id_topic_id")
   @@index([candidateId, status], map: "idx_candidate_topic_masteries_candidate_id_status")
@@ -342,15 +395,35 @@ model CandidateTopicMastery {
   @@map("candidate_topic_masteries")
 }
 
+model CandidateTopicProficiency {
+  id                 String           @id @default(cuid())
+  candidateId        String           @map("candidate_id")
+  candidate          CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  topicId            String           @map("topic_id")
+  topic              CurriculumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topicSlug          String           @map("topic_slug")
+  currentProficiency String           @default("UNKNOWN") // "UNKNOWN", "BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"
+  targetProficiency  String           @default("ADVANCED")
+  confidenceScore    Decimal          @default(0.50) @db.Decimal(3, 2)
+  lastAssessedAt     DateTime?        @db.Timestamptz(6)
+  assessmentSource   String           @default("RESUME_ANALYSIS")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([candidateId, topicSlug], map: "uq_candidate_topic_proficiency")
+  @@index([candidateId, topicSlug])
+  @@map("candidate_topic_proficiencies")
+}
+
 model WeeklyAreaSnapshot {
   id                String           @id @default(cuid())
   candidateId       String           @map("candidate_id")
   candidate         CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_weekly_area_snapshots_candidate_id")
-  domainSlug        String           @map("domain_slug") // "system-design" | "coding" | "behavioral" | "cloud"
-  weekNumber        Int              @map("week_number") // 1, 2, 3, 4...
+  domainSlug        String           @map("domain_slug")
+  weekNumber        Int              @map("week_number")
   weekStartDate     DateTime         @map("week_start_date") @db.Timestamptz(6)
-  readinessPercent  Int              @map("readiness_percent") // 0 - 100
-  deltaPercent      Int              @default(0) @map("delta_percent") // e.g. +10
+  readinessPercent  Int              @map("readiness_percent")
+  deltaPercent      Int              @default(0) @map("delta_percent")
   sessionsCompleted Int              @default(0) @map("sessions_completed")
   minutesPracticed  Int              @default(0) @map("minutes_practiced")
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -361,90 +434,90 @@ model WeeklyAreaSnapshot {
 }
 
 // -------------------------------------------------------------
-// 4. Interactive Sessions & Multimodal Evaluation
+// 5. Interactive Sessions & Multimodal Evaluation
 // -------------------------------------------------------------
 
 model PracticeSession {
-  id              String           @id @default(cuid())
-  candidateId     String           @map("candidate_id")
-  candidate       CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_practice_sessions_candidate_id")
-  topicId         String?          @map("topic_id")
-  topic           CurriculumTopic? @relation(fields: [topicId], references: [id], map: "fk_practice_sessions_topic_id")
-  domain          String // "system-design" | "coding" | "behavioral" | "cloud"
-  topicSlug       String           @map("topic_slug") // "consistent-hashing"
-  title           String
-  durationSeconds Int              @default(0) @map("duration_seconds")
-  status          String // "ACTIVE" | "COMPLETED" | "ABANDONED"
-  whiteboardUrl   String?          @map("whiteboard_url") // Cloudflare R2 presigned asset key
-  diagramJson     Json?            @map("diagram_json")
-  architectureNotes String?        @db.Text @map("architecture_notes")
-  codeLanguage    String?          @map("code_language")
-  codeSubmission  String?          @db.Text @map("code_submission")
-  testCasesPassed Int?             @map("test_cases_passed")
-  totalTestCases  Int?             @map("total_test_cases")
-  isArModeUsed    Boolean          @default(false) @map("is_ar_mode_used")
-  starResponseJson Json?           @map("star_response_json")
-  chatHistory     Json?            @map("chat_history")
-  evaluation      EvaluationReport?
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String           @id @default(cuid())
+  candidateId       String           @map("candidate_id")
+  candidate         CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_practice_sessions_candidate_id")
+  topicId           String?          @map("topic_id")
+  topic             CurriculumTopic? @relation(fields: [topicId], references: [id], map: "fk_practice_sessions_topic_id")
+  domain            String
+  topicSlug         String           @map("topic_slug")
+  title             String
+  durationSeconds   Int              @default(0) @map("duration_seconds")
+  status            String           // "ACTIVE" | "COMPLETED" | "ABANDONED"
+  whiteboardUrl     String?          @map("whiteboard_url")
+  diagramJson       Json?            @map("diagram_json")
+  architectureNotes String?          @db.Text @map("architecture_notes")
+  codeLanguage      String?          @map("code_language")
+  codeSubmission    String?          @db.Text @map("code_submission")
+  testCasesPassed   Int?             @map("test_cases_passed")
+  totalTestCases    Int?             @map("total_test_cases")
+  isArModeUsed      Boolean          @default(false) @map("is_ar_mode_used")
+  starResponseJson  Json?            @map("star_response_json")
+  chatHistory       Json?            @map("chat_history")
+  evaluation        EvaluationReport?
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([candidateId, createdAt], map: "idx_practice_sessions_candidate_id_created_at")
   @@map("practice_sessions")
 }
 
 model MockInterviewSession {
-  id              String           @id @default(cuid())
-  candidateId     String           @map("candidate_id")
-  candidate       CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_mock_interview_sessions_candidate_id")
-  interviewType   String           @map("interview_type") // "system-design" | "technical" | "behavioral"
-  targetRole      String           @map("target_role")
-  difficulty      String // "senior" | "staff"
-  durationMinutes Int              @map("duration_minutes")
-  focusAreas      String[]         @default([]) @map("focus_areas")
-  status          String // "CONFIGURING" | "ACTIVE" | "EVALUATING" | "COMPLETED"
-  recordingUrl    String?          @map("recording_url") // R2 key for audio recording .opus
-  transcript      Json? // Array of { speaker: "ai" | "candidate", text: string, timestamp: number }
-  whiteboardUrl   String?          @map("whiteboard_url")
-  diagramJson     Json?            @map("diagram_json")
-  codeSubmission  String?          @db.Text @map("code_submission")
-  candidateNotes  String?          @db.Text @map("candidate_notes")
-  clarificationsAsked Int          @default(0) @map("clarifications_asked")
-  toolsUsed       String[]         @default([]) @map("tools_used")
-  evaluation      EvaluationReport?
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String           @id @default(cuid())
+  candidateId         String           @map("candidate_id")
+  candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "fk_mock_interview_sessions_candidate_id")
+  interviewType       String           @map("interview_type")
+  targetRole          String           @map("target_role")
+  difficulty          String
+  durationMinutes     Int              @map("duration_minutes")
+  focusAreas          String[]         @default([]) @map("focus_areas")
+  status              String           // "CONFIGURING" | "ACTIVE" | "EVALUATING" | "COMPLETED"
+  recordingUrl        String?          @map("recording_url")
+  transcript          Json?
+  whiteboardUrl       String?          @map("whiteboard_url")
+  diagramJson         Json?            @map("diagram_json")
+  codeSubmission      String?          @db.Text @map("code_submission")
+  candidateNotes      String?          @db.Text @map("candidate_notes")
+  clarificationsAsked Int              @default(0) @map("clarifications_asked")
+  toolsUsed           String[]         @default([]) @map("tools_used")
+  evaluation          EvaluationReport?
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([candidateId, createdAt], map: "idx_mock_interview_sessions_candidate_id_created_at")
   @@map("mock_interview_sessions")
 }
 
 model EvaluationReport {
-  id              String                @id @default(cuid())
-  candidateId     String?               @map("candidate_id")
-  practiceId      String?               @unique(map: "uq_evaluation_reports_practice_id") @map("practice_id")
-  practiceSession PracticeSession?      @relation(fields: [practiceId], references: [id], onDelete: Cascade, map: "fk_evaluation_reports_practice_id")
-  mockId          String?               @unique(map: "uq_evaluation_reports_mock_id") @map("mock_id")
-  mockSession     MockInterviewSession? @relation(fields: [mockId], references: [id], onDelete: Cascade, map: "fk_evaluation_reports_mock_id")
+  id                   String                @id @default(cuid())
+  candidateId          String?               @map("candidate_id")
+  practiceId           String?               @unique(map: "uq_evaluation_reports_practice_id") @map("practice_id")
+  practiceSession      PracticeSession?      @relation(fields: [practiceId], references: [id], onDelete: Cascade, map: "fk_evaluation_reports_practice_id")
+  mockId               String?               @unique(map: "uq_evaluation_reports_mock_id") @map("mock_id")
+  mockSession          MockInterviewSession? @relation(fields: [mockId], references: [id], onDelete: Cascade, map: "fk_evaluation_reports_mock_id")
 
-  title           String?
-  evaluatorName   String                @default("Sarah") @map("evaluator_name")
-  evaluatorRole   String                @default("AI Staff Infrastructure Engineer") @map("evaluator_role")
-  overallScore    Float                 @map("overall_score") // 0.0 - 100.0
-  verdict         String // "Strong Hire" | "Hire" | "Leaning Hire" | "Needs Practice"
-  percentileRank  Int?                  @map("percentile_rank")
-  priorReadinessScore Int?              @map("prior_readiness_score")
-  newReadinessScore Int?                @map("new_readiness_score")
-  readinessDelta  Int                   @map("readiness_delta") // e.g. +6%
-  onsiteRecommendation String?         @map("onsite_recommendation")
-  targetCompanyTier String?             @map("target_company_tier")
-  evaluatorNotes  String                @db.Text @map("evaluator_notes")
-  strengths       String[]
-  improvements    String[]
-  stageMilestones Json?                 @map("stage_milestones")
-  recommendedDrills Json?               @map("recommended_drills")
-  rubricScores    RubricScore[]
-  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  title                String?
+  evaluatorName        String                @default("Sarah") @map("evaluator_name")
+  evaluatorRole        String                @default("AI Staff Infrastructure Engineer") @map("evaluator_role")
+  overallScore         Float                 @map("overall_score") // 0.0 - 100.0
+  verdict              String                // "Strong Hire" | "Hire" | "Leaning Hire" | "Needs Practice"
+  percentileRank       Int?                  @map("percentile_rank")
+  priorReadinessScore  Int?                  @map("prior_readiness_score")
+  newReadinessScore    Int?                  @map("new_readiness_score")
+  readinessDelta       Int                   @map("readiness_delta") // e.g. +6%
+  onsiteRecommendation String?              @map("onsite_recommendation")
+  targetCompanyTier    String?               @map("target_company_tier")
+  evaluatorNotes       String                @db.Text @map("evaluator_notes")
+  strengths            String[]
+  improvements         String[]
+  stageMilestones      Json?                 @map("stage_milestones")
+  recommendedDrills    Json?                 @map("recommended_drills")
+  rubricScores         RubricScore[]
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([candidateId, createdAt], map: "idx_evaluation_reports_candidate_id_created_at")
   @@map("evaluation_reports")
@@ -454,11 +527,11 @@ model RubricScore {
   id           String           @id @default(cuid())
   reportId     String           @map("report_id")
   report       EvaluationReport @relation(fields: [reportId], references: [id], onDelete: Cascade, map: "fk_rubric_scores_report_id")
-  dimension    String // "technical_depth", "reasoning_tradeoffs", etc.
+  dimension    String           // "technical_depth", "reasoning_tradeoffs", "scalability", etc.
   ratingLabel  String?          @map("rating_label")
-  score        Float // 1.0 - 10.0
+  score        Float            // 1.0 - 10.0
   assessment   String           @db.Text
-  missingAtoms String[]         @map("missing_atoms") // Specific concepts missed
+  missingAtoms String[]         @map("missing_atoms")
 
   @@index([reportId], map: "idx_rubric_scores_report_id")
   @@map("rubric_scores")
@@ -499,4 +572,81 @@ model DocumentEmbedding {
 
   @@index([candidateId], map: "idx_document_embeddings_candidate_id")
   @@map("document_embeddings")
+}
+
+// -------------------------------------------------------------
+// 6. Company Intelligence Refresh Engine & Maintenance
+// -------------------------------------------------------------
+
+model IntelligenceRefreshConfig {
+  id                  String                      @id @default(cuid())
+  jobName             String                      @unique @map("job_name") // "COMPANY_INTELLIGENCE_REFRESH"
+  enabled             Boolean                     @default(true)
+  cronExpression      String                      @default("0 2 1,15 * *") @map("cron_expression") // Twice monthly
+  timezone            String                      @default("Asia/Kolkata")
+  batchSize           Int                         @default(50) @map("batch_size")
+  maxRetries          Int                         @default(3) @map("max_retries")
+  refreshIntervalDays Int                         @default(30) @map("refresh_interval_days")
+  strategy            String                      @default("RESUME_PENDING")
+  createdAt           DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  executions          IntelligenceRefreshExecution[]
+
+  @@map("intelligence_refresh_configs")
+}
+
+model IntelligenceRefreshExecution {
+  id             String                      @id @default(cuid())
+  configId       String                      @map("config_id")
+  config         IntelligenceRefreshConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
+  status         String                      @default("PENDING") // "PENDING" | "RUNNING" | "COMPLETED" | "PARTIAL" | "FAILED"
+  totalEligible  Int                         @default(0) @map("total_eligible")
+  totalProcessed Int                         @default(0) @map("total_processed")
+  totalFailed    Int                         @default(0) @map("total_failed")
+  totalRemaining Int                         @default(0) @map("total_remaining")
+  nextCursor     String?                     @map("next_cursor")
+  triggeredAt    DateTime                    @default(now()) @map("triggered_at") @db.Timestamptz(6)
+  startedAt      DateTime?                   @map("started_at") @db.Timestamptz(6)
+  completedAt    DateTime?                   @map("completed_at") @db.Timestamptz(6)
+
+  logs           CompanyIntelligenceRefreshLog[]
+
+  @@index([configId, triggeredAt])
+  @@map("intelligence_refresh_executions")
+}
+
+model CompanyIntelligenceRefreshLog {
+  id                     String                       @id @default(cuid())
+  executionId            String                       @map("execution_id")
+  execution              IntelligenceRefreshExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  companyId              String                       @map("company_id")
+  status                 String                       // "PENDING" | "RUNNING" | "SUCCESS" | "FAILED"
+  previousFrequencyScore Decimal?                     @db.Decimal(5, 2) @map("previous_frequency_score")
+  newFrequencyScore      Decimal?                     @db.Decimal(5, 2) @map("new_frequency_score")
+  previousSampleSize     Int?                         @map("previous_sample_size")
+  newSampleSize          Int?                         @map("new_sample_size")
+  changedAttributes      Json?                        @map("changed_attributes") // Captures hiringBar, interviewStages, formats, etc.
+  errorMessage           String?                      @db.Text @map("error_message")
+  retryCount             Int                          @default(0) @map("retry_count")
+  processedAt            DateTime?                    @map("processed_at") @db.Timestamptz(6)
+
+  @@index([executionId, status])
+  @@index([companyId])
+  @@map("company_intelligence_refresh_logs")
+}
+
+// -------------------------------------------------------------
+// 7. Dynamic Platform Settings & Feature Flags
+// -------------------------------------------------------------
+
+model PlatformConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   // Stringified value or JSON
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_configs")
 }

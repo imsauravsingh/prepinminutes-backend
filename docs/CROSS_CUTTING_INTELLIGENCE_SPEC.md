@@ -453,78 +453,82 @@ export function scheduleRoadmap(
 
 ### 9.1 Objective & Architectural Pattern
 
-To maintain accurate, up-to-date company interview intelligence (`frequencyScore`, `confidenceScore`, `sampleSize`, `lastVerifiedAt`) without manual toil or fragile in-memory scripts, PrepInMinutes implements a **resilient, persistent, and resumable Data Maintenance Engine**.
+To maintain accurate, up-to-date company interview intelligence (`frequencyScore`, `confidenceScore`, `sampleSize`, `hiringBar`, `interviewStages`, `lastVerifiedAt`) without manual toil or fragile in-memory scripts, PrepInMinutes implements a **lightweight, persistent, and resilient Company Intelligence Refresh Engine**.
 
 Crucially, it follows the **Polyglot State Separation Standard**:
-- **PostgreSQL (Neon)**: Stores scheduling configuration, execution runs, cursor state, per-company retry queues, and historical audit logs.
-- **Neo4j AuraDB**: Stores the canonical latest company intelligence properties and `[:FREQUENTLY_ASKED_AT]` graph edges.
+- **PostgreSQL**: Stores scheduling configuration, execution runs, cursor state, per-company retry queues, and historical audit logs. Does **not** duplicate company records into a separate SQL table.
+- **Neo4j AuraDB**: Stores the canonical latest company intelligence properties (`:Company`) and `[:FREQUENTLY_ASKED_AT]` graph edges.
 
 ```mermaid
 flowchart TD
   subgraph POSTGRES_OPERATIONAL["PostgreSQL (Operational State & Audit Ledger)"]
-    CONFIG["intelligence_refresh_configs<br/>cron: '0 2 1,15 * *'<br/>batchSize: 50<br/>strategy: RESUME_PENDING"]
+    CONFIG["intelligence_refresh_configs<br/>cron: '0 2 1,15 * *' (Asia/Kolkata)<br/>batchSize: 50<br/>strategy: RESUME_PENDING"]
     EXEC["intelligence_refresh_executions<br/>status: 'PARTIAL'<br/>processed: 50, remaining: 50"]
-    LOG["company_intelligence_refresh_logs<br/>previousScore: 82 -> newScore: 88<br/>sampleSize: 120, status: 'SUCCESS'"]
+    LOG["company_intelligence_refresh_logs<br/>previousScore: 82 -> newScore: 88<br/>changedAttributes: JSON, status: 'SUCCESS'"]
     CONFIG --> EXEC --> LOG
   end
 
-  subgraph ENGINE["Data Maintenance Engine (Worker)"]
-    SELECTOR["CompanySelectionService<br/>(Picks pending retries + oldest unverified)"]
-    PROCESSOR["BatchProcessorService<br/>(Calculates updated metrics)"]
-    GUARD["EvidenceQualityGuard<br/>(Validates sample size >= threshold)"]
-    SELECTOR --> PROCESSOR --> GUARD
+  subgraph ENGINE["Company Intelligence Refresh Worker"]
+    GUARD_RUN["ConcurrencyGuard<br/>(Ensures no other RUNNING execution)"]
+    SELECTOR["CompanySelectionService<br/>(Cypher: lastVerifiedAt < 30 days ago or NULL)"]
+    PROCESSOR["BatchProcessorService<br/>(Fetches evidence & validates)"]
+    SAFEGUARD["NonDestructiveQualityGuard<br/>(Retains existing value if new evidence insufficient)"]
+    GUARD_RUN --> SELECTOR --> PROCESSOR --> SAFEGUARD
   end
 
   subgraph NEO4J_GRAPH["Neo4j AuraDB (Canonical Knowledge Graph)"]
-    NODE["(:Company {slug: 'amazon'})<br/>lastVerifiedAt: datetime()"]
-    EDGE["(:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: 88, confidenceScore: 0.85}]->(Company)"]
+    NODE["(:Company {id: 'amazon', hiringBar: 'VERY_HIGH'})<br/>lastVerifiedAt: datetime()"]
+    EDGE["(:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: 88, sampleSize: 120}]->(Company)"]
     NODE --- EDGE
   end
 
-  EXEC -.->|"1. Read Config & Cursor"| SELECTOR
-  GUARD -.->|"2. Write Audit Ledger"| LOG
-  GUARD -->|"3. Atomic Graph Sync"| NODE
+  EXEC -.->|"1. Read Config & Cursor"| GUARD_RUN
+  SAFEGUARD -.->|"2. Write Audit Ledger"| LOG
+  SAFEGUARD -->|"3. Atomic Graph Update"| NODE
 ```
 
 ---
 
-### 9.2 The 3-Table Relational Schema (`prisma/schema.prisma`)
+### 9.2 Governing Principles & Operational Rules
+
+1. **Strict Data Ownership**:
+   - Neo4j owns the canonical company records and all intelligence attributes.
+   - PostgreSQL owns the scheduling configuration, execution history, and company-level audit logs.
+   - No separate company table is maintained in PostgreSQL.
+
+2. **Safe Non-Destructive Update Guarantee**:
+   - Never overwrite existing values with empty, unsupported, or low-confidence results.
+   - When new evidence is insufficient or below quality thresholds, retain the previous valid value.
+
+3. **Schedule vs. Eligibility**:
+   - **Schedule**: Twice monthly — 1st and 15th at 02:00 IST (`0 2 1,15 * *`, timezone `Asia/Kolkata`).
+   - **Eligibility**: 30-day refresh interval. Companies whose last successful refresh is $\ge 30$ days old, or companies that have never been refreshed.
+
+4. **Fault Isolation & Retries**:
+   - Batch size: 50 companies per execution by default.
+   - A single company failure does not abort the batch.
+   - Failed companies are retried up to 3 times, with error messages logged to `CompanyIntelligenceRefreshLog`.
+
+5. **Dynamic Changed Attributes Logging**:
+   - Records all changed data points in `changedAttributes` (JSON) to track evolutions in `hiringBar`, `interviewStages`, and `interviewFormats` without requiring relational schema migrations.
+
+---
+
+### 9.3 The 3-Table Relational Schema (`prisma/schema.prisma`)
 
 ```prisma
-enum RefreshJobStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  PARTIAL
-  FAILED
-}
-
-enum ItemProcessStatus {
-  PENDING
-  RUNNING
-  SUCCESS
-  FAILED
-  SKIPPED
-}
-
-enum RefreshStrategy {
-  RESUME_PENDING
-  ROUND_ROBIN_OLDEST_FIRST
-  FORCE_FULL_RETRY
-}
-
 model IntelligenceRefreshConfig {
-  id                  Int             @id @default(autoincrement())
-  jobName             String          @unique // e.g. "COMPANY_INTELLIGENCE_REFRESH"
-  enabled             Boolean         @default(true)
-  cronExpression      String          @default("0 2 1,15 * *") // 1st & 15th of month at 02:00 UTC
-  timezone            String          @default("UTC")
-  batchSize           Int             @default(50) // Companies per execution
-  maxRetries          Int             @default(3)
-  refreshIntervalDays Int             @default(30)
-  strategy            RefreshStrategy @default(RESUME_PENDING)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                  String                      @id @default(cuid())
+  jobName             String                      @unique @map("job_name") // "COMPANY_INTELLIGENCE_REFRESH"
+  enabled             Boolean                     @default(true)
+  cronExpression      String                      @default("0 2 1,15 * *") @map("cron_expression") // Twice monthly
+  timezone            String                      @default("Asia/Kolkata")
+  batchSize           Int                         @default(50) @map("batch_size")
+  maxRetries          Int                         @default(3) @map("max_retries")
+  refreshIntervalDays Int                         @default(30) @map("refresh_interval_days")
+  strategy            String                      @default("RESUME_PENDING")
+  createdAt           DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   executions          IntelligenceRefreshExecution[]
 
@@ -532,46 +536,42 @@ model IntelligenceRefreshConfig {
 }
 
 model IntelligenceRefreshExecution {
-  id             String           @id @default(uuid())
-  configId       Int
-  config         IntelligenceRefreshConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
-  status         RefreshJobStatus @default(PENDING)
-  totalEligible  Int              @default(0)
-  totalProcessed Int              @default(0)
-  totalFailed    Int              @default(0)
-  totalRemaining Int              @default(0)
-  nextCursor     String?          // Slug or offset cursor
-  triggeredBy    String           @default("CRON") // "CRON" | "MANUAL"
-  startedAt      DateTime?
-  completedAt    DateTime?
-  errorMessage   String?
-  createdAt      DateTime         @default(now())
+  id             String                      @id @default(cuid())
+  configId       String                      @map("config_id")
+  config         IntelligenceRefreshConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
+  status         String                      @default("PENDING") // "PENDING" | "RUNNING" | "COMPLETED" | "PARTIAL" | "FAILED"
+  totalEligible  Int                         @default(0) @map("total_eligible")
+  totalProcessed Int                         @default(0) @map("total_processed")
+  totalFailed    Int                         @default(0) @map("total_failed")
+  totalRemaining Int                         @default(0) @map("total_remaining")
+  nextCursor     String?                     @map("next_cursor")
+  triggeredAt    DateTime                    @default(now()) @map("triggered_at") @db.Timestamptz(6)
+  startedAt      DateTime?                   @map("started_at") @db.Timestamptz(6)
+  completedAt    DateTime?                   @map("completed_at") @db.Timestamptz(6)
 
   logs           CompanyIntelligenceRefreshLog[]
 
-  @@index([configId, status])
+  @@index([configId, triggeredAt])
   @@map("intelligence_refresh_executions")
 }
 
 model CompanyIntelligenceRefreshLog {
-  id                     String            @id @default(uuid())
-  executionId            String
+  id                     String                       @id @default(cuid())
+  executionId            String                       @map("execution_id")
   execution              IntelligenceRefreshExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
-  companySlug            String            // Foreign key to Neo4j Company.slug
-  status                 ItemProcessStatus @default(PENDING)
-  previousFrequencyScore Int?
-  newFrequencyScore      Int?
-  previousSampleSize     Int?
-  newSampleSize          Int?
-  previousConfidence     Decimal?          @db.Decimal(3, 2)
-  newConfidence          Decimal?          @db.Decimal(3, 2)
-  retryCount             Int               @default(0)
-  errorMessage           String?
-  processedAt            DateTime?
-  createdAt              DateTime          @default(now())
+  companyId              String                       @map("company_id")
+  status                 String                       // "PENDING" | "RUNNING" | "SUCCESS" | "FAILED"
+  previousFrequencyScore Decimal?                     @db.Decimal(5, 2) @map("previous_frequency_score")
+  newFrequencyScore      Decimal?                     @db.Decimal(5, 2) @map("new_frequency_score")
+  previousSampleSize     Int?                         @map("previous_sample_size")
+  newSampleSize          Int?                         @map("new_sample_size")
+  changedAttributes      Json?                        @map("changed_attributes") // Dynamic diff for hiringBar, interviewStages, formats
+  errorMessage           String?                      @db.Text @map("error_message")
+  retryCount             Int                          @default(0) @map("retry_count")
+  processedAt            DateTime?                    @map("processed_at") @db.Timestamptz(6)
 
   @@index([executionId, status])
-  @@index([companySlug, processedAt])
+  @@index([companyId])
   @@map("company_intelligence_refresh_logs")
 }
 ```
