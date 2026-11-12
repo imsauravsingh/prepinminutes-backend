@@ -154,6 +154,8 @@ flowchart TD
 
 ### Phase 2: Cross-Cutting Intelligence Layer (L1–L4 Graph Nodes)
 
+> **Governing Specification**: [`docs/CROSS_CUTTING_INTELLIGENCE_SPEC.md`](./CROSS_CUTTING_INTELLIGENCE_SPEC.md)
+
 - [ ] **TASK-P2-01: Seed Standard Roles & Career Levels (`:Role`)**
   - **Dependencies**: `TASK-P1-01` through `TASK-P1-10`
   - **Target Files**:
@@ -406,3 +408,4 @@ Whenever any task from this sequence is picked up, implemented, or tested:
 2. **Execute & Test**: Implement the changes and run the associated test/build command.
 3. **Mark Completed**: Change `- [ ]` to `- [x]` with completion date and commit hash.
 4. **Preserve Sync**: Ensure `prep-in-minutes/docs/TASK_EXECUTION_SEQUENCE.md` and `prepinminutes-backend/docs/TASK_EXECUTION_SEQUENCE.md` remain identical.
+
