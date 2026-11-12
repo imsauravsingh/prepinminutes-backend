@@ -13,14 +13,14 @@
 | Phase | Functional Scope | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) | Status |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Phase 1** | **Curriculum Knowledge Graph (Neo4j AuraDB)** | 10 | 10 | 0 | 0 | 🟢 **100% COMPLETE** |
-| **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 4 | 0 | 0 | 4 | ⚪ **READY TO START** |
+| **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 5 | 0 | 0 | 5 | ⚪ **READY TO START** |
 | **Phase 3** | **Unified Curriculum API & Edge Gateway** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 4** | **Dynamic Frontend Knowledge Graph Integration** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 5** | **Interactive Practice & Live Question Injection** | 4 | 0 | 0 | 4 | ⚪ **PENDING** |
 | **Phase 6** | **Deterministic Evaluation, Scoring & Decay Engine** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 7** | **Real-Time Voice AI Gateway & Media Streaming** | 2 | 0 | 0 | 2 | ⚪ **PENDING** |
 | **Phase 8** | **End-to-End Platform Verification & Polish** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **TOTAL** | **Entire PrepInMinutes Platform** | **32** | **10** | **0** | **22** | **31.3% OVERALL** |
+| **TOTAL** | **Entire PrepInMinutes Platform** | **33** | **10** | **0** | **23** | **30.3% OVERALL** |
 
 ---
 
@@ -213,6 +213,17 @@ flowchart TD
     - Automatically advances cursor so subsequent runs process remaining companies in round-robin fashion.
     - Write execution summary and before/after score deltas to audit log.
   - **Acceptance Criteria**: Test script simulates consecutive runs verifying that 50 companies are updated on Run 1, and the remaining companies are processed on Run 2.
+
+- [ ] **TASK-P2-05: Neon Cloud PostgreSQL Schema Reset & Structure Synchronization (Gated)**
+  - **Dependencies**: `TASK-P2-04`
+  - **Target Files**:
+    - `prepinminutes-backend/prisma/schema.prisma`
+    - `prep-in-minutes/prisma/schema.prisma`
+  - **Scope**:
+    - Reset the remote Neon Cloud PostgreSQL database instance.
+    - Push all updated schema structures (including `intelligence_refresh_*` models and `candidate_topic_proficiency`) to Neon upon explicit user confirmation.
+    - Keep Neon schema and seed baseline synchronized with the local PostgreSQL database (`localhost:5432`).
+  - **Acceptance Criteria**: Remote Neon Cloud DB passes `prisma validate` and reflects exact parity with the local PostgreSQL database structure.
 
 ---
 
