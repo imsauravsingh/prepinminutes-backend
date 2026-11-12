@@ -449,36 +449,189 @@ export function scheduleRoadmap(
 
 ---
 
-## 8. Seeding & Implementation Architecture
+## 9. Company Intelligence Refresh & Data Maintenance Engine
 
-### 8.1 File Structure in `prepinminutes-backend`
+### 9.1 Objective & Architectural Pattern
+
+To maintain accurate, up-to-date company interview intelligence (`frequencyScore`, `confidenceScore`, `sampleSize`, `lastVerifiedAt`) without manual toil or fragile in-memory scripts, PrepInMinutes implements a **resilient, persistent, and resumable Data Maintenance Engine**.
+
+Crucially, it follows the **Polyglot State Separation Standard**:
+- **PostgreSQL (Neon)**: Stores scheduling configuration, execution runs, cursor state, per-company retry queues, and historical audit logs.
+- **Neo4j AuraDB**: Stores the canonical latest company intelligence properties and `[:FREQUENTLY_ASKED_AT]` graph edges.
+
+```mermaid
+flowchart TD
+  subgraph POSTGRES_OPERATIONAL["PostgreSQL (Operational State & Audit Ledger)"]
+    CONFIG["intelligence_refresh_configs<br/>cron: '0 2 1,15 * *'<br/>batchSize: 50<br/>strategy: RESUME_PENDING"]
+    EXEC["intelligence_refresh_executions<br/>status: 'PARTIAL'<br/>processed: 50, remaining: 50"]
+    LOG["company_intelligence_refresh_logs<br/>previousScore: 82 -> newScore: 88<br/>sampleSize: 120, status: 'SUCCESS'"]
+    CONFIG --> EXEC --> LOG
+  end
+
+  subgraph ENGINE["Data Maintenance Engine (Worker)"]
+    SELECTOR["CompanySelectionService<br/>(Picks pending retries + oldest unverified)"]
+    PROCESSOR["BatchProcessorService<br/>(Calculates updated metrics)"]
+    GUARD["EvidenceQualityGuard<br/>(Validates sample size >= threshold)"]
+    SELECTOR --> PROCESSOR --> GUARD
+  end
+
+  subgraph NEO4J_GRAPH["Neo4j AuraDB (Canonical Knowledge Graph)"]
+    NODE["(:Company {slug: 'amazon'})<br/>lastVerifiedAt: datetime()"]
+    EDGE["(:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: 88, confidenceScore: 0.85}]->(Company)"]
+    NODE --- EDGE
+  end
+
+  EXEC -.->|"1. Read Config & Cursor"| SELECTOR
+  GUARD -.->|"2. Write Audit Ledger"| LOG
+  GUARD -->|"3. Atomic Graph Sync"| NODE
+```
+
+---
+
+### 9.2 The 3-Table Relational Schema (`prisma/schema.prisma`)
+
+```prisma
+enum RefreshJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum ItemProcessStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum RefreshStrategy {
+  RESUME_PENDING
+  ROUND_ROBIN_OLDEST_FIRST
+  FORCE_FULL_RETRY
+}
+
+model IntelligenceRefreshConfig {
+  id                  Int             @id @default(autoincrement())
+  jobName             String          @unique // e.g. "COMPANY_INTELLIGENCE_REFRESH"
+  enabled             Boolean         @default(true)
+  cronExpression      String          @default("0 2 1,15 * *") // 1st & 15th of month at 02:00 UTC
+  timezone            String          @default("UTC")
+  batchSize           Int             @default(50) // Companies per execution
+  maxRetries          Int             @default(3)
+  refreshIntervalDays Int             @default(30)
+  strategy            RefreshStrategy @default(RESUME_PENDING)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  executions          IntelligenceRefreshExecution[]
+
+  @@map("intelligence_refresh_configs")
+}
+
+model IntelligenceRefreshExecution {
+  id             String           @id @default(uuid())
+  configId       Int
+  config         IntelligenceRefreshConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  status         RefreshJobStatus @default(PENDING)
+  totalEligible  Int              @default(0)
+  totalProcessed Int              @default(0)
+  totalFailed    Int              @default(0)
+  totalRemaining Int              @default(0)
+  nextCursor     String?          // Slug or offset cursor
+  triggeredBy    String           @default("CRON") // "CRON" | "MANUAL"
+  startedAt      DateTime?
+  completedAt    DateTime?
+  errorMessage   String?
+  createdAt      DateTime         @default(now())
+
+  logs           CompanyIntelligenceRefreshLog[]
+
+  @@index([configId, status])
+  @@map("intelligence_refresh_executions")
+}
+
+model CompanyIntelligenceRefreshLog {
+  id                     String            @id @default(uuid())
+  executionId            String
+  execution              IntelligenceRefreshExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  companySlug            String            // Foreign key to Neo4j Company.slug
+  status                 ItemProcessStatus @default(PENDING)
+  previousFrequencyScore Int?
+  newFrequencyScore      Int?
+  previousSampleSize     Int?
+  newSampleSize          Int?
+  previousConfidence     Decimal?          @db.Decimal(3, 2)
+  newConfidence          Decimal?          @db.Decimal(3, 2)
+  retryCount             Int               @default(0)
+  errorMessage           String?
+  processedAt            DateTime?
+  createdAt              DateTime          @default(now())
+
+  @@index([executionId, status])
+  @@index([companySlug, processedAt])
+  @@map("company_intelligence_refresh_logs")
+}
+```
+
+---
+
+### 9.3 The 10 Invariant Execution Rules
+
+1. **Persistent Progress**: Progress and state are always committed to PostgreSQL transactions. The worker never relies on transient in-memory state or scheduler variables that could be lost on worker restarts.
+2. **Resume Pending First**: If a previous execution finished with status `PARTIAL` or failed companies, the scheduler prioritizes those pending/failed companies before selecting fresh companies.
+3. **Strict Idempotency**: Re-running a company update multiple times produces deterministic outputs without duplicating audit rows or corrupting scores.
+4. **Atomic Transactional Pair**: Updating the company intelligence in Neo4j and writing the success record in PostgreSQL are coupled. If the Neo4j write fails, the PostgreSQL log is marked `FAILED` with retry incremented.
+5. **Concurrency Protection (Advisory Lock)**: Uses PostgreSQL advisory transaction locks (`SELECT pg_try_advisory_xact_lock(hash('company_refresh'))`) so multiple worker pods or concurrent scheduler triggers cannot run simultaneously.
+6. **Failure Isolation**: A failure on Company #12 (e.g. timeout) does not abort the remaining 49 companies. The failed company is marked `FAILED`, while the remaining 49 proceed.
+7. **Fair Round-Robin Selection (Starvation Prevention)**: Companies are ordered by `lastVerifiedAt ASC NULLS FIRST`. Updating the first 50 gives them the newest timestamps, guaranteeing the remaining 50 are selected on the next run.
+8. **Auditable Ledger**: Every change records `previousFrequencyScore`, `newFrequencyScore`, `previousSampleSize`, `newSampleSize`, and source metadata.
+9. **Evidence Quality Guardrail**: If newly fetched evidence has an insufficient sample size ($N < 5$), the engine **preserves the previous score** and flags the record rather than degrading established data.
+10. **Telemetry & Admin Observability**: Exposes real-time stats (processed, remaining, failure rate, next run) and allows immediate manual triggers via `POST /api/admin/intelligence/refresh/trigger`.
+
+---
+
+## 10. Seeding & Implementation Architecture
+
+### 10.1 File Structure in `prepinminutes-backend`
 
 ```
-prepinminutes-backend/scripts/
-├── seed-data/
-│   ├── roles/
-│   │   ├── types.ts                      // RoleSeed interface (with careerBand & numeric exp)
-│   │   ├── roles-list.ts                 // 28 Canonical Roles (including L1 Freshers & L2 Associates)
-│   │   └── role-topic-mappings.ts        // [:REQUIRES_TOPIC] edges across 371 topics
-│   ├── companies/
-│   │   ├── types.ts                      // CompanySeed interface
-│   │   ├── companies-list.ts             // 20 Tier-1 Tech Companies
-│   │   ├── company-stage-mappings.ts     // [:USES_STAGE] hiring loops
-│   │   └── company-topic-mappings.ts     // [:FREQUENTLY_ASKED_AT] with confidenceScore & sampleSize
-│   └── stages-formats/
-│       ├── types.ts
-│       ├── stages.ts                     // 9 Canonical Interview Stages
-│       └── formats.ts                    // 6 Canonical Interview Formats
-├── seed-roles-incremental.ts             // Seeds :Role nodes & [:REQUIRES_TOPIC]
-├── seed-companies-incremental.ts         // Seeds :Company nodes, [:USES_STAGE] & [:FREQUENTLY_ASKED_AT]
-├── seed-stages-formats-incremental.ts    // Seeds :InterviewStage, :InterviewFormat & [:CONDUCTED_VIA]
-├── refresh-company-intelligence-cron.ts  // Bi-monthly batch cron worker with state cursor
-└── audit-intelligence-layer.ts           // Validates full dependency closure, scoring, and graph queries
+prepinminutes-backend/
+├── prisma/
+│   └── schema.prisma                     // Added: IntelligenceRefreshConfig, Execution & Log models
+├── scripts/
+│   ├── seed-data/
+│   │   ├── roles/
+│   │   │   ├── types.ts                  // RoleSeed interface (with careerBand & numeric exp)
+│   │   │   ├── roles-list.ts             // 28 Canonical Roles (including L1 Freshers & L2 Associates)
+│   │   │   └── role-topic-mappings.ts    // [:REQUIRES_TOPIC] edges across 371 topics
+│   │   ├── companies/
+│   │   │   ├── types.ts                  // CompanySeed interface
+│   │   │   ├── companies-list.ts         // 20 Tier-1 Tech Companies
+│   │   │   ├── company-stage-mappings.ts // [:USES_STAGE] hiring loops
+│   │   │   └── company-topic-mappings.ts // [:FREQUENTLY_ASKED_AT] with confidenceScore & sampleSize
+│   │   └── stages-formats/
+│   │       ├── types.ts
+│   │       ├── stages.ts                 // 9 Canonical Interview Stages
+│   │       └── formats.ts                // 6 Canonical Interview Formats
+│   ├── seed-roles-incremental.ts         // Seeds :Role nodes & [:REQUIRES_TOPIC]
+│   ├── seed-companies-incremental.ts     // Seeds :Company nodes, [:USES_STAGE] & [:FREQUENTLY_ASKED_AT]
+│   ├── seed-stages-formats-incremental.ts// Seeds :InterviewStage, :InterviewFormat & [:CONDUCTED_VIA]
+│   └── audit-intelligence-layer.ts       // Validates full dependency closure, scoring, and graph queries
+└── src/server/workers/
+    ├── company-intelligence/
+    │   ├── refresh-config.ts             // Config loader and default seeding
+    │   ├── company-selection.service.ts  // State cursor & batch pagination query
+    │   ├── intelligence-refresh.service.ts // Core update logic & Neo4j sync
+    │   └── company-refresh.worker.ts     // Main entry point for scheduled cron & manual trigger
+    └── cron.ts                           // Cloudflare Workers / Node cron dispatcher
 ```
 
-### 8.2 Execution Tasks & Verification Sequence
+### 10.2 Execution Tasks & Verification Sequence
 
 1. **`TASK-P2-01`**: Seed the 28 Canonical Roles (`:Role`), including `STUDENT_FRESHER` and `ASSOCIATE`, with their `[:REQUIRES_TOPIC]` edges.
 2. **`TASK-P2-02`**: Seed the 20 Companies (`:Company`) with evidence-backed `[:FREQUENTLY_ASKED_AT]` edges and company-specific stage loops (`[:USES_STAGE]`).
 3. **`TASK-P2-03`**: Seed the 9 Stages (`:InterviewStage`) & 6 Formats (`:InterviewFormat`), and implement the **5-Factor Roadmap Engine** with **Prerequisite Dependency Closure**.
-4. **`TASK-P2-04`**: Implement the **Periodic Company Intelligence Batch Refresh Worker** with configurable schedule and state cursor.
+4. **`TASK-P2-04`**: Scaffold the 3-table Prisma schema, build the **Company Intelligence Refresh & Data Maintenance Engine** with the state cursor, and implement the admin trigger endpoints.
