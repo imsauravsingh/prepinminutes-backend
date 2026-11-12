@@ -1,7 +1,7 @@
 # PrepInMinutes — Cross-Cutting Intelligence Layer Specification (L1–L4)
 ## Universal Ontology for Roles, Companies, Interview Stages & Formats
 
-> **Document Version:** 1.0.0  
+> **Document Version:** 1.1.0 (Production Architectural Revision)  
 > **Target Graph Engine:** Neo4j AuraDB (Cypher 5.x) & PostgreSQL (Neon DB State)  
 > **Status:** 🟢 **APPROVED ARCHITECTURAL SPECIFICATION**  
 > **Governing Standard:** [`docs/GENERIC_KNOWLEDGE_GRAPH_SCHEMA_SPEC.md`](./GENERIC_KNOWLEDGE_GRAPH_SCHEMA_SPEC.md) & [`docs/TASK_EXECUTION_SEQUENCE.md`](./TASK_EXECUTION_SEQUENCE.md)
@@ -10,25 +10,27 @@
 
 ## 1. Executive Summary & Purpose
 
-In PrepInMinutes, technical curriculum domains (**10 Domains | 122 Categories | 371 Topics | 7,420 Master Questions**) provide the deep, immutable computer science taxonomy. However, software engineering candidates **do not prepare for abstract computer science in a vacuum**:
-- They prepare for **specific career roles** at **distinct seniority levels** (e.g., *Senior Backend SDE [L5]* vs *Staff Distributed Systems Architect [L6]*).
-- They interview with **specific target employers** with idiosyncratic hiring bars (e.g., *Amazon Leadership Principles + System Design* vs *Google Hard Algorithmic LeetCode + Concurrency*).
-- They advance through **specific interview stages** (e.g., *Online Assessment $\to$ Technical Screen $\to$ Machine Coding $\to$ High-Level Design $\to$ Bar Raiser*).
-- They operate inside **calibrated interview formats** with fixed timeboxes (e.g., *45-minute interactive whiteboard* vs *90-minute live machine coding*).
+In PrepInMinutes, Phase 1 established the canonical computer science curriculum (**10 Domains | 122 Categories | 371 Topics | 7,420 Master Questions**). However, software engineering candidates **do not prepare for computer science in an abstract vacuum**:
+- They prepare for **specific career roles** at **distinct career bands**, from college students with 0 experience to Staff/Principal architects.
+- They interview with **specific target employers** with distinctive evaluation bars and high-frequency topics.
+- They advance through **specific interview stages** in company-specific interview loops.
+- They operate inside **calibrated interview formats** with fixed timeboxes and tooling.
+- Crucially, they arrive with **existing knowledge and skill gaps** that must dynamically shape their learning priority.
 
-The **Cross-Cutting Intelligence Layer (L1–L4)** binds candidate onboarding profiles to the underlying curriculum graph through **four graph entities and their semantic relationships**:
+The **Cross-Cutting Intelligence Layer (L1–L4)** binds candidate onboarding intent and existing proficiency directly to the 371 curriculum topics through an evidence-backed, prerequisite-closed graph traversal:
 
 ```mermaid
 flowchart TD
   subgraph CANDIDATE_POSTGRES["Private Candidate State (PostgreSQL)"]
     CP["CandidateProfile<br/>targetRole: 'senior-backend-sde'<br/>targetCompany: 'amazon'<br/>timelineWeeks: 8"]
+    PROF["CandidateTopicProficiency<br/>topicSlug: 'distributed-cache-redis'<br/>currentProficiency: 'ADVANCED'<br/>confidence: 0.85"]
   end
 
   subgraph GRAPH_INTELLIGENCE["Phase 2: Cross-Cutting Intelligence Layer (Neo4j AuraDB)"]
-    R["Layer 1: (:Role)<br/>level: 'L5', track: 'backend'"]
-    C["Layer 2: (:Company)<br/>tier: 'FAANG', bar: 92"]
-    S["Layer 3: (:InterviewStage)<br/>timebox: 45m"]
-    F["Layer 4: (:InterviewFormat)<br/>style: 'whiteboard'"]
+    R["Layer 1: (:Role)<br/>careerBand: 'SENIOR'<br/>minExpYears: 4, maxExpYears: 8"]
+    C["Layer 2: (:Company)<br/>tier: 'TIER_1_FAANG'<br/>lastVerifiedAt: datetime()"]
+    S["Layer 3: (:InterviewStage)<br/>slug: 'system-design-hld'"]
+    F["Layer 4: (:InterviewFormat)<br/>style: 'interactive-whiteboard'"]
   end
 
   subgraph CANONICAL_DOMAINS["Phase 1: Canonical Curriculum Spine (Neo4j AuraDB)"]
@@ -36,12 +38,13 @@ flowchart TD
     Q["(:Question)<br/>id: 'q-cmp001-001'"]
   end
 
-  CP -.->|"Foreign Key Slug"| R
-  CP -.->|"Foreign Key Slug"| C
+  CP -.->|"Target Role"| R
+  CP -.->|"Target Company"| C
+  CP -.->|"Skill Gap G(t)"| PROF
   
-  R -->|"[:REQUIRES_TOPIC {isCore: true, minProficiency: 'L4'}]"| T
-  T -->|"[:FREQUENTLY_ASKED_AT {frequencyScore: 96}]"| C
-  R -->|"[:INCLUDES_STAGE {roundOrder: 3}]"| S
+  R -->|"[:REQUIRES_TOPIC {isCore: true, priorityScore: 95}]"| T
+  T -->|"[:FREQUENTLY_ASKED_AT {frequencyScore: 88, confidenceScore: 0.85}]"| C
+  C -->|"[:USES_STAGE {roundOrder: 3}]"| S
   S -->|"[:CONDUCTED_VIA]"| F
   T -->|"[:TESTED_IN_STAGE]"| S
   T -->|"[:HAS_QUESTION]"| Q
@@ -49,40 +52,57 @@ flowchart TD
 
 ---
 
-## 2. Layer 1: Roles & Career Levels (`:Role`)
+## 2. Layer 1: Roles, Career Bands & Fresher Architecture (`:Role`)
 
-### 2.1 The Career Seniority Framework (L3 to L7 & M1 to M2)
+### 2.1 The 7 Standardized Career Bands (Decoupled from Company Payroll Codes)
 
-PrepInMinutes adopts the canonical industry leveling standard mapped across Google, Amazon, Meta, and Microsoft:
+To eliminate confusion between Big Tech internal payroll levels (like Google L5 vs Amazon L6) and provide clear, intuitive entry points for college freshers with 0 experience, PrepInMinutes standardizes on **7 universal career bands**:
 
-| Career Level | Level Tag | Canonical Titles | Scope of Impact & Evaluation Expectation |
-| :---: | :---: | :--- | :--- |
-| **Junior / Associate** | **L3** | SDE-1, Software Engineer I, Frontend/Backend I | Core implementation, clean code, basic data structures, unit testing, task-level execution. |
-| **Mid-Level** | **L4** | SDE-2, Software Engineer II | Independent feature delivery, end-to-end component design, debugging, concurrency, relational modeling. |
-| **Senior** | **L5** | Senior SDE, Senior Engineer | System architecture, distributed trade-offs, operational resilience, tech debt management, mentoring. |
-| **Staff** | **L6** | Staff SDE, Tech Lead Architect | Multi-team architectural strategy, platform scalability, cross-service contracts, high-leverage organizational influence. |
-| **Principal** | **L7** | Principal Engineer, Distinguished Architect | Multi-year company technical vision, foundational platform redesigns, industry-wide engineering standards. |
-| **Manager** | **M1** | Engineering Manager (EM) | Team delivery, sprint execution, talent acquisition, performance reviews, 1-on-1s, culture. |
-| **Senior Director** | **M2** | Senior EM, Director of Engineering | Multi-team headcount strategy, executive stakeholder alignment, budget/FinOps, organizational health. |
+| Career Band | Code | Experience Bounds | Target Audience & Hiring Context | Evaluation Focus |
+| :--- | :---: | :---: | :--- | :--- |
+| **Student / Fresher** | `STUDENT_FRESHER` | **0 – 1 Years** | College students, campus placements, internships, career switchers with 0 production experience. | Core DSA (Arrays, Strings, Trees), CS fundamentals (OS, DBMS, CN), SQL queries, academic resume project defense. |
+| **Associate Engineer** | `ASSOCIATE` | **0.5 – 2 Years** | First full-time engineering role, Junior Associate SDE. | Clean code, unit testing, Git hygiene, REST APIs, basic OOP design patterns, intermediate DSA. |
+| **Mid-Level Engineer** | `MID_LEVEL` | **2 – 5 Years** | SDE-2, Independent feature owner. | Low-Level Design (LLD), microservices, database sharding/indexing, concurrency, end-to-end features. |
+| **Senior Engineer** | `SENIOR` | **4 – 8 Years** | Senior SDE, Tech Lead. | High-Level Design (HLD), distributed trade-offs, fault tolerance, non-functional requirements, team mentorship. |
+| **Staff Architect** | `STAFF` | **8 – 12+ Years** | Staff SDE, Principal Architect. | Multi-system scalability, tech strategy, organizational architecture, cross-domain technical influence. |
+| **Principal / Fellow** | `PRINCIPAL` | **12+ Years** | Principal Engineer, Distinguished Architect. | Enterprise platform evolution, multi-year technology vision, executive-level technical leadership. |
+| **Management** | `MANAGEMENT` | **4+ Years Lead** | Engineering Manager (EM), Director of Engineering. | Delivery management, hiring bar, 1-on-1s, performance management, engineering culture, executive reporting. |
 
-### 2.2 The 24 Canonical Engineering Roles across 9 Disciplines
+### 2.2 Decoupled Company Level Equivalents
 
-Every engineering role has a deterministic primary track and maps to a curated subset of the 371 curriculum topics:
+The `:Role` node stores company-specific equivalents as an explicit mapping rather than conflating them with universal seniority:
+
+```json
+{
+  "careerBand": "SENIOR",
+  "companyEquivalents": {
+    "google": "L5",
+    "amazon": "L6 (Senior SDE)",
+    "meta": "E5",
+    "microsoft": "63-64",
+    "apple": "ICT4",
+    "uber": "L5b"
+  }
+}
+```
+
+### 2.3 The 28 Canonical Engineering Roles across 9 Disciplines
 
 ```mermaid
 graph LR
-  ROLES["24 Canonical Roles"]
+  ROLES["28 Canonical Roles"]
   
-  D1["General SDE<br/>(L3, L4, L5, L6)"]
-  D2["Backend & Distributed<br/>(L3, L4, L5, L6)"]
-  D3["Frontend & Web<br/>(L3, L4, L5, L6)"]
+  D0["Freshers & Students<br/>(L1 Fresher, L2 Associate)"]
+  D1["General Software Engineering<br/>(Mid, Senior, Staff, Principal)"]
+  D2["Backend & Distributed Systems<br/>(Mid, Senior, Staff)"]
+  D3["Frontend & Web Architecture<br/>(Mid, Senior, Staff)"]
   D4["Mobile Engineering<br/>(iOS, Android, Cross-Platform)"]
   D5["Cloud & DevOps / SRE<br/>(DevOps, SRE, Cloud Architect)"]
   D6["Data Engineering<br/>(Analytics, Big Data, Streaming)"]
   D7["AI / GenAI Engineering<br/>(Applied AI, LLM Infra)"]
-  D8["Full-Stack Engineering<br/>(L4, L5)"]
-  D9["Engineering Management<br/>(EM M1, Director M2)"]
+  D8["Engineering Leadership<br/>(EM, Director)"]
 
+  ROLES --> D0
   ROLES --> D1
   ROLES --> D2
   ROLES --> D3
@@ -91,302 +111,339 @@ graph LR
   ROLES --> D6
   ROLES --> D7
   ROLES --> D8
-  ROLES --> D9
 ```
 
 #### Detailed Role Inventory:
+1. `campus-fresher-sde` (`STUDENT_FRESHER`): College Campus Placement & Graduate SDE (Exp: 0–1 yrs)
+2. `fresher-frontend-engineer` (`STUDENT_FRESHER`): Entry-Level Web Developer (Exp: 0–1 yrs)
+3. `fresher-backend-engineer` (`STUDENT_FRESHER`): Entry-Level Backend Developer (Exp: 0–1 yrs)
+4. `associate-software-engineer` (`ASSOCIATE`): Early Career Associate SDE (Exp: 0.5–2 yrs)
+5. `mid-general-sde` (`MID_LEVEL`): Mid-Level Software Engineer (Exp: 2–5 yrs)
+6. `senior-general-sde` (`SENIOR`): Senior Software Engineer (Exp: 4–8 yrs)
+7. `staff-general-sde` (`STAFF`): Staff Software Architect (Exp: 8–12 yrs)
+8. `principal-software-engineer` (`PRINCIPAL`): Principal Engineer (Exp: 12+ yrs)
+9. `mid-backend-sde` (`MID_LEVEL`): Backend Engineer (Exp: 2–5 yrs)
+10. `senior-backend-sde` (`SENIOR`): Senior Backend Engineer (Exp: 4–8 yrs)
+11. `staff-backend-sde` (`STAFF`): Staff Distributed Systems Architect (Exp: 8–12 yrs)
+12. `mid-frontend-sde` (`MID_LEVEL`): Frontend Engineer (Exp: 2–5 yrs)
+13. `senior-frontend-sde` (`SENIOR`): Senior Web Architect (Exp: 4–8 yrs)
+14. `staff-frontend-sde` (`STAFF`): Staff Frontend Platform Architect (Exp: 8–12 yrs)
+15. `ios-native-engineer` (`MID_LEVEL` / `SENIOR`): Native iOS Engineer
+16. `android-native-engineer` (`MID_LEVEL` / `SENIOR`): Native Android Engineer
+17. `crossplatform-mobile-engineer` (`SENIOR`): React Native / Flutter Platform Lead
+18. `devops-engineer` (`MID_LEVEL`): DevOps & CI/CD Engineer
+19. `site-reliability-engineer` (`SENIOR`): Site Reliability Engineer (SRE)
+20. `cloud-platform-architect` (`STAFF`): Enterprise Cloud Infrastructure Architect
+21. `analytics-engineer` (`MID_LEVEL`): Analytics & Modern Data Stack Engineer
+22. `data-platform-engineer` (`SENIOR`): Big Data & Lakehouse Platform Engineer
+23. `streaming-data-engineer` (`SENIOR`): Real-Time Streaming Systems Engineer
+24. `applied-ai-engineer` (`MID_LEVEL`): GenAI & RAG Applications Engineer
+25. `llm-infra-architect` (`STAFF`): LLM Infrastructure & Serving Architect
+26. `engineering-manager` (`MANAGEMENT`): Engineering Manager (EM)
+27. `director-of-engineering` (`MANAGEMENT`): Director of Engineering
+28. `fullstack-engineer` (`MID_LEVEL` / `SENIOR`): Full-Stack Product Engineer
 
-1. `junior-general-sde` (SDE-1 / L3): General Software Engineer
-2. `mid-general-sde` (SDE-2 / L4): Mid-Level Software Engineer
-3. `senior-general-sde` (Senior SDE / L5): Senior Software Engineer
-4. `staff-general-sde` (Staff SDE / L6): Staff Software Architect
-5. `junior-backend-sde` (Junior Backend SDE / L3): Backend Developer
-6. `mid-backend-sde` (Backend SDE-2 / L4): Backend Engineer
-7. `senior-backend-sde` (Senior Backend SDE / L5): Senior Backend Engineer
-8. `staff-backend-sde` (Staff Backend Architect / L6): Staff Distributed Systems Architect
-9. `junior-frontend-sde` (Junior Frontend SDE / L3): Frontend Developer
-10. `mid-frontend-sde` (Frontend SDE-2 / L4): Frontend Engineer
-11. `senior-frontend-sde` (Senior Frontend SDE / L5): Senior Web Architect
-12. `staff-frontend-sde` (Staff Frontend Architect / L6): Staff Frontend Platform Architect
-13. `ios-native-engineer` (iOS Specialist / L4-L5): Native iOS Engineer
-14. `android-native-engineer` (Android Specialist / L4-L5): Native Android Engineer
-15. `crossplatform-mobile-engineer` (React Native / Flutter Lead / L5): Mobile Cross-Platform Lead
-16. `devops-engineer` (DevOps SDE / L4): DevOps & CI/CD Engineer
-17. `site-reliability-engineer` (SRE / L5): Site Reliability Engineer
-18. `cloud-platform-architect` (Cloud Architect / L6): Enterprise Cloud Infrastructure Architect
-19. `analytics-engineer` (Analytics Engineer / L4): Analytics & Modern Data Stack Engineer
-20. `data-platform-engineer` (Data Engineer / L5): Big Data & Lakehouse Platform Engineer
-21. `applied-ai-engineer` (Applied AI SDE / L4): GenAI & RAG Applications Engineer
-22. `llm-infra-architect` (AI Systems Architect / L6): LLM Infrastructure & Serving Architect
-23. `engineering-manager` (Engineering Manager / M1): Engineering Manager
-24. `director-of-engineering` (Director / M2): Director of Engineering
-
-### 2.3 Neo4j Role Schema & Property Invariants
+### 2.4 Neo4j Role Schema & Property Invariants
 
 ```cypher
 (:Role {
-  slug: string,                    // Primary key: "senior-backend-sde" (UNIQUE)
-  name: string,                    // "Senior Backend Engineer"
-  level: string,                   // "L5" (L3, L4, L5, L6, L7, M1, M2)
-  track: string,                   // "backend" (general, backend, frontend, mobile, cloud, data, ai, leadership)
-  description: string,             // Role purpose and scope of responsibilities
-  minProficiency: string,          // "L4" (Target learning level threshold: L1 to L5)
-  expectedExperienceYears: string, // "5-8 years"
+  slug: string,                     // Primary key: "campus-fresher-sde" (UNIQUE)
+  name: string,                     // "Campus Graduate & Fresher SDE"
+  careerBand: string,               // "STUDENT_FRESHER" (STUDENT_FRESHER, ASSOCIATE, MID_LEVEL, SENIOR, STAFF, PRINCIPAL, MANAGEMENT)
+  track: string,                    // "general" (general, backend, frontend, mobile, cloud, data, ai, leadership)
+  description: string,              // Comprehensive role scope
+  minProficiency: string,           // "L1" (Target learning level threshold: L1 to L5)
+  minExperienceYears: integer,      // 0 (Numeric bound for precise candidate filtering)
+  maxExperienceYears: integer,      // 1 (Numeric bound)
+  companyEquivalents: string,       // Serialized JSON map of company-specific leveling
   createdAt: datetime(),
   updatedAt: datetime()
 })
 ```
 
-### 2.4 The `[:REQUIRES_TOPIC]` Semantic Edge
+### 2.5 The `[:REQUIRES_TOPIC]` Semantic Edge
 
 ```cypher
 (:Role)-[:REQUIRES_TOPIC {
-  isCore: boolean,              // true for mandatory foundational topics; false for high-yield electives
-  priorityScore: integer,       // 1 to 100 (relative importance of this topic to passing this role's interview)
-  targetLevel: string,          // "L4" (Minimum depth expected: L1-L5)
-  minimumDifficulty: string     // "ADVANCED" (BEGINNER, INTERMEDIATE, ADVANCED, EXPERT)
+  isCore: boolean,               // true for mandatory foundational topics; false for high-yield electives
+  priorityScore: integer,        // 1 to 100 (relative importance of this topic to passing this role's interview)
+  targetLevel: string,           // "L2" (Target Bloom taxonomy level: L1 to L5)
+  minimumDifficulty: string      // "BEGINNER" (BEGINNER, INTERMEDIATE, ADVANCED, EXPERT)
 }]->(:Topic)
 ```
 
 ---
 
-## 3. Layer 2: Companies & Interview Archetypes (`:Company`)
+## 3. Layer 2: Companies, Evidence Provenance & Periodic Refresh (`:Company`)
 
-### 3.1 The 20 Canonical Tier-1 Tech Companies
+### 3.1 Eliminating Fabricated Precision: Evidence & Confidence Standards
 
-PrepInMinutes models 20 high-frequency hiring tech enterprises, categorized into 3 market tiers:
-
-| Company Name | Slug | Tier | Hiring Bar (0–100) | Distinctive Interview Culture & Weighting |
-| :--- | :--- | :---: | :---: | :--- |
-| **Google** | `google` | `TIER_1_FAANG` | 96 | Pure algorithmic problem solving (hard DSA), rigorous concurrency, large-scale systems, Googleiness. |
-| **Meta** | `meta` | `TIER_1_FAANG` | 95 | Velocity, fast product coding, scalable systems design, API design, behavioral "Move Fast". |
-| **Amazon** | `amazon` | `TIER_1_FAANG` | 92 | 16 Leadership Principles (LP), LP-driven STAR stories, operational excellence, Bar Raiser veto. |
-| **Apple** | `apple` | `TIER_1_FAANG` | 94 | Hardware-software co-design, native performance, memory optimization, privacy, low-level internals. |
-| **Netflix** | `netflix` | `TIER_1_FAANG` | 96 | High autonomy & responsibility, deep distributed systems, microservice resilience (Chaos Engineering), Senior ICs only. |
-| **Microsoft** | `microsoft` | `TIER_1_FAANG` | 91 | Collaborative design, object-oriented principles, enterprise architecture, Growth Mindset. |
-| **Uber** | `uber` | `TIER_1_UNICORN` | 94 | High-throughput low-latency systems, geospatial algorithms, 90-minute machine coding, distributed data. |
-| **Stripe** | `stripe` | `TIER_1_UNICORN` | 97 | Clean code, practical bug-finding in real codebases, API ergonomics, idempotent financial transaction safety. |
-| **Airbnb** | `airbnb` | `TIER_1_UNICORN` | 93 | End-to-end architecture, cross-functional collaboration, core values, high-polish UI and distributed caching. |
-| **Databricks** | `databricks` | `TIER_1_UNICORN` | 96 | Distributed compute internals (Spark/Tungsten), open table formats (Delta/Iceberg), kernel performance. |
-| **Snowflake** | `snowflake` | `TIER_1_UNICORN` | 95 | Database engine internals, query optimization, C++ vectorization, multi-tenant cloud storage. |
-| **DoorDash** | `doordash` | `TIER_1_UNICORN` | 92 | Practical machine coding, logistics optimization, event-driven streaming, bias for action. |
-| **Block (Square)** | `block` | `TIER_1_UNICORN` | 93 | Pair programming with engineers, clean architecture, financial ledger idempotency, open-source ethos. |
-| **ByteDance (TikTok)**| `bytedance`| `TIER_1_UNICORN` | 95 | High-velocity LeetCode hard rounds, extreme scale recommendation systems, live streaming infra. |
-| **Coinbase** | `coinbase` | `TIER_1_UNICORN` | 92 | Blockchain security, cryptographic key management, high-volume order book matching engines. |
-| **Spotify** | `spotify` | `TIER_1_UNICORN` | 91 | Agile squads, client-side caching, audio streaming protocols, cultural autonomy & alignment. |
-| **LinkedIn** | `linkedin` | `TIER_1_UNICORN` | 93 | Kafka streaming origins, graph processing, distributed consensus, Member First values. |
-| **Salesforce** | `salesforce` | `ENTERPRISE` | 89 | Multi-tenant SaaS architecture, data security, enterprise CRM workflows, Ohana culture. |
-| **Atlassian** | `atlassian` | `ENTERPRISE` | 90 | Values interview ("Open Company, No Bullshit"), clean machine coding, distributed team collaboration. |
-| **Adobe** | `adobe` | `ENTERPRISE` | 89 | Creative Cloud rendering, digital media pipelines, document security, scalable web services. |
-
-### 3.2 Neo4j Company Schema & Property Invariants
-
-```cypher
-(:Company {
-  slug: string,                  // Primary key: "amazon" (UNIQUE)
-  name: string,                  // "Amazon"
-  tier: string,                  // "TIER_1_FAANG" (TIER_1_FAANG, TIER_1_UNICORN, ENTERPRISE)
-  hiringBar: integer,            // 92 (Overall bar score out of 100)
-  headquarters: string,          // "Seattle, WA"
-  interviewCulture: string,      // "Leadership Principles heavy; Bar Raiser round has absolute veto power."
-  focusAreas: string[],          // ["Distributed Systems", "Leadership Principles", "Operational Excellence"]
-  createdAt: datetime(),
-  updatedAt: datetime()
-})
-```
-
-### 3.3 The `[:FREQUENTLY_ASKED_AT]` Semantic Edge
+Rather than assigning arbitrary hiring bar scores (e.g. `hiringBar: 96`), company interview intelligence is backed by **statistical provenance and confidence metrics**:
 
 ```cypher
 (:Topic)-[:FREQUENTLY_ASKED_AT {
-  frequencyScore: integer,       // 0 to 100 (relative frequency of this topic appearing in company interviews)
-  lastTrend: string,             // "HOT" (SURGING, HOT, STABLE, COOLING)
-  interviewStage: string,        // "system-design-hld" (default round where this topic is tested)
-  weight: integer                // Weight multiplier in roadmap ranking
+  frequencyScore: integer,       // 0 to 100 (relative frequency score)
+  confidenceScore: float,        // 0.00 to 1.00 (statistical confidence based on sample size and verification)
+  sampleSize: integer,           // Number of verified interview experiences analyzed
+  sourceType: string,            // "VERIFIED_DEBRIEFS" | "CURATED_CURRICULUM" | "COMMUNITY_REPORTED"
+  lastVerifiedAt: datetime(),    // Timestamp of last verification
+  primaryStage: string,          // "system-design-hld" (default round where this topic is tested)
+  weight: integer                // Weight multiplier in roadmap ranking (1 to 100)
 }]->(:Company)
 ```
+
+> **Evaluation Rule**: A topic with `frequency: 85, confidence: 0.90` mathematically outranks a topic with `frequency: 90, confidence: 0.20` because unverified signals carry higher risk of wasting the candidate's finite preparation time.
+
+### 3.2 The 20 Canonical Tier-1 Tech Companies
+
+| Company Name | Slug | Market Tier | Verified Interview Culture & Distinctive Philosophy | Primary Hiring Pillars |
+| :--- | :--- | :---: | :--- | :--- |
+| **Google** | `google` | `TIER_1_FAANG` | Pure algorithmic problem solving (hard DSA), rigorous concurrency, large-scale systems, Googleiness. | Hard DSA, System Design, Concurrency |
+| **Meta** | `meta` | `TIER_1_FAANG` | Fast execution velocity, product architecture, live coding with speed, behavioral "Move Fast". | Fast Coding, System Design, API Design |
+| **Amazon** | `amazon` | `TIER_1_FAANG` | 16 Leadership Principles (LP), STAR behavioral stories, operational excellence, Bar Raiser veto. | Leadership Principles, HLD, LLD |
+| **Apple** | `apple` | `TIER_1_FAANG` | Hardware-software co-design, native performance, memory optimization, low-level OS internals. | Low-Level Systems, Performance, Architecture |
+| **Netflix** | `netflix` | `TIER_1_FAANG` | High autonomy & responsibility, deep distributed systems, microservice resilience, Senior ICs. | Distributed Systems, Microservices, Chaos |
+| **Microsoft** | `microsoft` | `TIER_1_FAANG` | Collaborative design, object-oriented principles, enterprise architecture, Growth Mindset. | OOP / Clean Code, System Design, DSA |
+| **Uber** | `uber` | `TIER_1_UNICORN` | High-throughput low-latency systems, geospatial algorithms, 90-minute machine coding. | Machine Coding, HLD, Concurrency |
+| **Stripe** | `stripe` | `TIER_1_UNICORN` | Clean code, practical bug-finding in real codebases, API ergonomics, idempotent financial transactions. | Bug Hunting, API Design, Idempotency |
+| **Airbnb** | `airbnb` | `TIER_1_UNICORN` | End-to-end architecture, cross-functional collaboration, core values, high-polish UI & caching. | Full-Stack Architecture, Core Values, Caching |
+| **Databricks** | `databricks` | `TIER_1_UNICORN` | Distributed compute internals (Spark/Tungsten), open table formats (Delta/Iceberg), kernel speed. | Spark Internals, Distributed Storage, C++ |
+| **Snowflake** | `snowflake` | `TIER_1_UNICORN` | Database engine internals, query optimization, C++ vectorization, multi-tenant cloud storage. | Query Optimizers, Database Internals, C++ |
+| **DoorDash** | `doordash` | `TIER_1_UNICORN` | Practical machine coding, logistics optimization, event-driven streaming, bias for action. | Machine Coding, Event Streaming, LLD |
+| **Block (Square)** | `block` | `TIER_1_UNICORN` | Pair programming with engineers, clean architecture, financial ledger idempotency, open-source. | Pair Programming, Ledger Safety, TDD |
+| **ByteDance** | `bytedance` | `TIER_1_UNICORN` | High-velocity LeetCode hard rounds, extreme scale recommendation systems, live streaming infra. | Hard DSA, High-Throughput Streaming, HLD |
+| **Coinbase** | `coinbase` | `TIER_1_UNICORN` | Blockchain security, cryptographic key management, high-volume order book matching engines. | Cryptography, Security, Concurrency |
+| **Spotify** | `spotify` | `TIER_1_UNICORN` | Autonomous squads, client-side caching, audio streaming protocols, cultural autonomy. | Mobile / Web Architecture, Event Streaming |
+| **LinkedIn** | `linkedin` | `TIER_1_UNICORN` | Kafka streaming origins, graph processing, distributed consensus, Member First values. | Distributed Logs, Kafka, System Design |
+| **Salesforce** | `salesforce` | `ENTERPRISE` | Multi-tenant SaaS architecture, data security, enterprise CRM workflows, Ohana culture. | Multi-Tenancy, Enterprise Architecture, OOP |
+| **Atlassian** | `atlassian` | `ENTERPRISE` | Values interview ("Open Company, No Bullshit"), clean machine coding, distributed collaboration. | Machine Coding, Values Round, Clean Code |
+| **Adobe** | `adobe` | `ENTERPRISE` | Creative Cloud rendering, digital media pipelines, document security, scalable web services. | C++ / Graphics, Web Architecture, Microservices |
+
+### 3.3 Company-Specific Interview Loops: `(:Company)-[:USES_STAGE]`
+
+Companies do not run the same interview stages. PrepInMinutes models each company's verified hiring loop:
+
+```cypher
+(:Company)-[:USES_STAGE {
+  roundOrder: integer,           // 1, 2, 3, 4, 5 (Order in hiring loop)
+  isEliminationRound: boolean,   // true for rounds that cause immediate rejection if failed (e.g. Amazon Bar Raiser, OA)
+  stageWeight: integer           // Relative weight in final hiring debrief (1 to 100)
+}]->(:InterviewStage)
+```
+
+### 3.4 Periodic Company Intelligence Batch Refresh Worker (Cron with State Cursor)
+
+To prevent market trend staleness without incurring massive API/LLM rate-limits or database contention, PrepInMinutes implements a **periodic round-robin batch refresher**:
+
+```mermaid
+flowchart TD
+  CRON["Scheduled Cron Trigger<br/>Schedule: '0 0 1,15 * *'<br/>(1st and 15th of each month)"] --> WORKER["CompanyIntelligenceRefresherWorker"]
+  
+  WORKER --> QUERY["Fetch Least Recently Verified Companies<br/>SELECT slug FROM companies<br/>ORDER BY last_verified_at ASC NULLS FIRST<br/>LIMIT $batchSize (e.g., 50)"]
+  
+  QUERY --> PROCESS["Process Batch (e.g. Companies 1 to 50):<br/>1. Recalculate topic frequencies<br/>2. Update confidence scores & sample sizes<br/>3. Re-timestamp lastVerifiedAt = datetime()"]
+  
+  PROCESS --> UPDATE["Cypher Batch Execution:<br/>SET r.lastVerifiedAt = datetime(),<br/>    r.frequencyScore = newScore,<br/>    r.confidenceScore = newConf"]
+  
+  UPDATE --> STATE["State Cursor Progresses Automatically:<br/>Companies 51-100 will be selected<br/>on the next scheduled execution!"]
+```
+
+#### Configuration & Behavior Contract:
+1. **Configurable Schedule**: Defaults to twice a month (`0 0 1,15 * *` at midnight UTC).
+2. **Configurable Batch Window**: `BATCH_SIZE = 50` (or `MAX_COMPANIES_PER_RUN`).
+3. **State Cursor via Timestamp Sorting**: By querying `ORDER BY c.lastVerifiedAt ASC NULLS FIRST LIMIT $BATCH_SIZE`, the worker naturally maintains a self-healing state cursor. The 50 companies updated on the 1st of the month will have the newest timestamps; the next run on the 15th will automatically pick the remaining 50 companies.
+4. **Audit Trail**: Every update writes an immutable audit record to `company_intelligence_audit_log` with before/after frequency deltas.
 
 ---
 
 ## 4. Layer 3: Interview Stages & Evaluation Rounds (`:InterviewStage`)
 
-### 4.1 The 8 Canonical Interview Rounds
-
-Hiring loops at premier tech companies are broken down into standard evaluative rounds:
+### 4.1 The 9 Canonical Interview Stages
 
 | Stage Name | Slug | Default Timebox | Core Evaluative Focus | Target Domains |
 | :--- | :--- | :---: | :--- | :--- |
-| **Online Assessment** | `online-assessment` | 75 min | Automated automated screening, LeetCode style correctness, algorithmic Big-O, edge cases. | `dsa` |
-| **Technical Phone Screen** | `technical-phone-screen` | 45 min | Live problem solving, communication, baseline algorithmic fluency, technical background. | `dsa`, `backend-engineering` |
-| **Live Coding Round** | `live-coding-dsa` | 60 min | Problem breakdown, optimal data structure selection, runtime invariants, edge case verification. | `dsa` |
-| **Machine Coding / LLD** | `machine-coding-lld` | 90 min | Object-oriented design, clean code, SOLID principles, concurrency, unit tests, working implementation. | `low-level-design` |
+| **Online Assessment (OA)** | `online-assessment` | 75 min | Automated screening, LeetCode correctness, algorithmic complexity, boundary edge cases. | `dsa` |
+| **Technical Phone Screen** | `technical-phone-screen` | 45 min | Live coding fluency, communication clarity, problem breakdown, candidate background. | `dsa`, `backend-engineering` |
+| **Live Coding & Algorithms** | `live-coding-dsa` | 60 min | Optimal data structures, runtime analysis, edge case defensive handling, clean code. | `dsa` |
+| **Machine Coding / LLD** | `machine-coding-lld` | 90 min | Object-oriented design, clean code, SOLID principles, concurrency, unit tests, working code. | `low-level-design` |
 | **High-Level System Design** | `system-design-hld` | 45 min | Scalability, trade-offs, fault tolerance, data modeling, network protocols, distributed consensus. | `system-design`, `ai-system-design` |
-| **Domain Deep Dive** | `domain-deep-dive` | 45 min | Specialized framework/runtime depth: Swift ARC, Compose, Spark Catalyst, Kubernetes, React fiber. | `frontend`, `mobile`, `cloud`, `data` |
-| **Behavioral & STAR Round** | `behavioral-leadership`| 45 min | Conflict resolution, leadership, failure ownership, customer focus, cross-functional collaboration. | `behavioral-leadership` |
-| **Bar Raiser / Executive** | `bar-raiser-executive` | 45 min | Company culture alignment, high-leverage decision making, strategic influence, hiring calibration. | `behavioral-leadership` |
+| **Domain Deep Dive** | `domain-deep-dive` | 45 min | Specialized platform internals: Swift ARC, Jetpack Compose, Spark Catalyst, Kubernetes. | `frontend`, `mobile`, `cloud`, `data` |
+| **Behavioral & STAR Round** | `behavioral-leadership`| 45 min | Conflict resolution, leadership, failure ownership, customer focus, cross-functional impact. | `behavioral-leadership` |
+| **Bar Raiser / Values Round** | `bar-raiser-values` | 45 min | Company culture calibration (e.g. Amazon LP, Googleiness), hiring bar veto authority. | `behavioral-leadership` |
+| **Architecture Defense / RFC** | `architecture-defense-rfc`| 60 min | Defending technical trade-offs, handling counter-proposals, architectural decision records (ADR). | `system-design`, `ai-system-design` |
 
-### 4.2 Neo4j Interview Stage Schema
+### 4.2 Hierarchical Stages: Parent-Child Stage Groupings
 
-```cypher
-(:InterviewStage {
-  slug: string,                  // Primary key: "system-design-hld" (UNIQUE)
-  name: string,                  // "High-Level System Design (HLD)"
-  category: string,              // "ARCHITECTURE" (CODING, ARCHITECTURE, DOMAIN, BEHAVIORAL)
-  defaultTimeboxMin: integer,    // 45
-  evaluationFocus: string,       // "Scalability, distributed storage, reliability, trade-offs."
-  description: string,
-  createdAt: datetime(),
-  updatedAt: datetime()
-})
-```
-
-### 4.3 Stage Relationships: `[:INCLUDES_STAGE]` & `[:TESTED_IN_STAGE]`
+To avoid treating every hiring loop as identical, stages support hierarchical parent-child relationships:
 
 ```cypher
-// Role includes interview round in its standard hiring loop:
-(:Role)-[:INCLUDES_STAGE {
-  roundOrder: integer,           // 1, 2, 3, 4, 5
-  isMandatory: boolean,          // true for required rounds, false for optional screens
-  weight: integer                // Weight in hiring decision
-}]->(:InterviewStage)
-
-// Topic is evaluated during specific stage:
-(:Topic)-[:TESTED_IN_STAGE {
-  relevanceScore: integer        // 1 to 100
-}]->(:InterviewStage)
+(:InterviewStage {slug: "machine-coding-lld"})-[:SUB_STAGE_OF]->(:InterviewStage {slug: "technical-onsite"})
 ```
 
 ---
 
-## 5. Layer 4: Interview Formats & Timebox Calibrations (`:InterviewFormat`)
+## 5. Layer 4: Interview Formats & Decoupled Tooling (`:InterviewFormat`)
 
-### 5.1 The 5 Canonical Formats
+### 5.1 The 6 Canonical Formats
 
-Interview formats dictate how the candidate interacts with the interviewer and tools during a stage:
+Interview formats define the interactive tooling and pacing constraints within a session:
 
 | Format Name | Slug | Default Timebox | Interactive Tooling & Pacing Rules |
 | :--- | :--- | :---: | :--- |
-| **Interactive Whiteboard** | `interactive-whiteboard` | 45 min | Box-and-arrow canvas, vector component nodes (DB, Cache, LB), 10m requirements $\to$ 15m HLD $\to$ 15m deep-dive $\to$ 5m scale. |
+| **Interactive Whiteboard** | `interactive-whiteboard` | 45 min | Box-and-arrow canvas, vector component nodes (DB, Cache, LB), 10m requirements $\to$ 15m HLD $\to$ 15m deep dive $\to$ 5m scale. |
 | **Pair Programming IDE** | `pair-programming-ide` | 45–60 min | Live synchronized code editor, syntax highlighting, test runner execution, collaborative debugging. |
 | **Timed Machine Coding** | `timed-machine-coding` | 90 min | Full scaffolding workspace, multi-file design, running unit test suite, timebox submit confirmation. |
 | **Conversational Voice Q&A** | `conversational-voice-qa`| 45 min | Low-latency audio dock with Sarah AI persona, animated waveform, barge-in interruption handler, STAR probes. |
-| **Architecture Defense / RFC**| `take-home-defense` | 45 min | Deep dive into technical trade-offs, defensive design questions, defending design decisions under scrutiny. |
+| **Take-Home Assignment** | `take-home-assignment` | 180 min | Independent scoped project implementation, GitHub PR submission, test coverage evaluation. |
+| **Written RFC Defense** | `written-rfc-defense` | 60 min | Architectural trade-off document presentation, defending design decisions under adversarial cross-examination. |
 
-### 5.2 Neo4j Interview Format Schema
+### 5.2 Decoupled M:N Stage-to-Format Mapping
+
+A stage is not locked into a single format. For example, `system-design-hld` can be conducted via `interactive-whiteboard` or `conversational-voice-qa`:
 
 ```cypher
-(:InterviewFormat {
-  slug: string,                  // Primary key: "interactive-whiteboard" (UNIQUE)
-  name: string,                  // "Interactive Architecture Whiteboard"
-  style: string,                 // "DIAGRAM_COLLABORATIVE" (CODE_EXECUTION, DIAGRAM_COLLABORATIVE, AUDIO_CONVERSATIONAL)
-  defaultTimeboxMin: integer,    // 45
-  pacingGuide: string,           // "0-5m Scope | 5-20m High-Level Design | 20-35m Deep Dive | 35-45m Failure & Scale"
-  createdAt: datetime(),
-  updatedAt: datetime()
-})
-
-// Stage is conducted via format:
-(:InterviewStage)-[:CONDUCTED_VIA]->(:InterviewFormat)
+(:InterviewStage)-[:CONDUCTED_VIA {
+  isDefault: boolean,
+  pacingNotes: string
+}]->(:InterviewFormat)
 ```
 
 ---
 
-## 6. Graph Schema Integrity & Database Constraints
+## 6. Private Candidate Intelligence Bridge (PostgreSQL State)
 
-To guarantee zero duplicate nodes and deterministic upsert operations, the following constraints must be enforced in **Neo4j AuraDB**:
+Neo4j stores the immutable curriculum and cross-cutting relationships. The **PostgreSQL relational database** stores private candidate proficiency:
 
-```cypher
-// 1. Role Constraints
-CREATE CONSTRAINT role_slug_unique IF NOT EXISTS FOR (r:Role) REQUIRE r.slug IS UNIQUE;
+```sql
+-- Private Candidate Topic Proficiency State in PostgreSQL
+CREATE TABLE candidate_topic_proficiency (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidate_id UUID NOT NULL REFERENCES candidate_profiles(id) ON DELETE CASCADE,
+  topic_slug VARCHAR(128) NOT NULL, -- FK referencing Neo4j Topic.slug
+  current_proficiency VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN', -- 'UNKNOWN', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'
+  target_proficiency VARCHAR(16) NOT NULL DEFAULT 'ADVANCED',
+  confidence_score NUMERIC(3, 2) NOT NULL DEFAULT 0.50, -- 0.00 to 1.00
+  last_assessed_at TIMESTAMP WITH TIME ZONE,
+  assessment_source VARCHAR(32) NOT NULL DEFAULT 'RESUME_ANALYSIS', -- 'RESUME_ANALYSIS', 'SELF_ASSESSMENT', 'PRACTICE_DRILL', 'MOCK_INTERVIEW'
+  total_attempts INTEGER NOT NULL DEFAULT 0,
+  last_score INTEGER, -- 0 to 100
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE (candidate_id, topic_slug)
+);
 
-// 2. Company Constraints
-CREATE CONSTRAINT company_slug_unique IF NOT EXISTS FOR (c:Company) REQUIRE c.slug IS UNIQUE;
-
-// 3. Interview Stage Constraints
-CREATE CONSTRAINT interview_stage_slug_unique IF NOT EXISTS FOR (s:InterviewStage) REQUIRE s.slug IS UNIQUE;
-
-// 4. Interview Format Constraints
-CREATE CONSTRAINT interview_format_slug_unique IF NOT EXISTS FOR (f:InterviewFormat) REQUIRE f.slug IS UNIQUE;
-
-// 5. Index for fast frequency score sorting
-CREATE INDEX topic_frequency_score_idx IF NOT EXISTS FOR ()-[r:FREQUENTLY_ASKED_AT]-() ON (r.frequencyScore);
-CREATE INDEX role_topic_priority_idx IF NOT EXISTS FOR ()-[r:REQUIRES_TOPIC]-() ON (r.priorityScore);
+CREATE INDEX idx_candidate_topic_prof ON candidate_topic_proficiency (candidate_id, topic_slug);
 ```
+
+### Proficiency Gap Calculation Formula:
+
+$$\text{SkillGap}(t) = \max\Big(0.10, \; \text{NumericLevel}(\text{targetProficiency}) - \text{NumericLevel}(\text{currentProficiency}) \cdot \text{confidenceScore} \Big)$$
+
+- If a candidate targeting Senior Backend already has verified `ADVANCED` proficiency in Redis caching ($\text{confidence} = 0.95$), their $\text{SkillGap}(\text{redis}) \approx 0.10$.
+- If their Kafka proficiency is `UNKNOWN` ($\text{confidence} = 0.00$), their $\text{SkillGap}(\text{kafka}) = 1.00$, propelling Kafka to top preparation priority.
 
 ---
 
-## 7. The Tailored Preparation Roadmap Engine (`TASK-P2-03`)
+## 7. The Unified 5-Factor Preparation Roadmap Engine
 
-### 7.1 Algorithmic Formulation
+### 7.1 Multi-Dimensional Preparation Priority Formulation
 
-When a candidate inputs:
-$$\text{Input} = \big( \text{targetRoleSlug}, \text{targetCompanySlug}, \text{timelineWeeks}, \text{currentReadinessScore} \big)$$
+$$\mathbf{P(t) = w_R \cdot R(t) + w_C \cdot C(t) + w_M \cdot M(t) + w_G \cdot \text{SkillGap}(t) + w_S \cdot S(t)}$$
 
-The roadmap engine executes a deterministic graph synthesis:
+| Variable | Weight | Name | Description & Formula |
+| :---: | :---: | :--- | :--- |
+| **$R(t)$** | **30%** | **Role Relevance** | Normalized priority score ($0\text{–}100$) from `(:Role)-[:REQUIRES_TOPIC]->(t)`. |
+| **$C(t)$** | **20%** | **Company Relevance** | Confidence-adjusted frequency: $\text{freq}(t) \cdot \text{confidenceScore}$. |
+| **$M(t)$** | **10%** | **Market Relevance** | Trend multiplier: SURGING ($1.00$), HOT ($0.85$), STABLE ($0.65$), COOLING ($0.40$). |
+| **$G(t)$** | **25%** | **Candidate Skill Gap** | Normalized gap between target and current proficiency: $\text{SkillGap}(t) \times 100$. |
+| **$S(t)$** | **15%** | **Stage Relevance** | Urgency matching the candidate's next scheduled round (e.g. OA vs HLD). |
 
-$$\text{RoadmapScore}(t) = \alpha \cdot \text{RolePriority}(t) + \beta \cdot \text{CompanyFrequency}(t) + \gamma \cdot \text{DomainWeight}(t)$$
+### 7.2 Recursive Prerequisite Dependency Closure
 
-Where:
-- $\alpha = 0.55$: Role essentiality (guarantees candidate learns core principles required by their seniority level).
-- $\beta = 0.35$: Target company hiring trends (guarantees candidate practices high-frequency topics asked at their target employer).
-- $\gamma = 0.10$: Market trend multiplier (SURGING = $1.15$, HOT = $1.05$, STABLE = $1.00$).
+To prevent the **prerequisite truncation bug** (where Kahn's algorithm fails or an advanced topic is scheduled without its required foundational concept), the engine computes the full **transitive dependency closure** before topological scheduling:
 
-### 7.2 The Master Cypher Query for Personalized Roadmap Generation
+```mermaid
+flowchart LR
+  subgraph SELECTED["Selected Topics via Scoring"]
+    T3["Topic 3: Distributed Sharding (Senior)"]
+  end
 
+  subgraph CLOSURE["Recursive Dependency Closure (Neo4j Traversal)"]
+    T2["Topic 2: Distributed Caching"]
+    T1["Topic 1: Scalability Fundamentals"]
+    T1 --> T2 --> T3
+  end
+
+  SELECTED -.->|"Traverse [:PREREQUISITE_OF*]"| CLOSURE
+```
+
+#### Cypher Transitive Closure Traversal:
 ```cypher
-MATCH (r:Role {slug: $targetRoleSlug})
-MATCH (c:Company {slug: $targetCompanySlug})
-
-// Match all topics required by Role
-MATCH (r)-[req:REQUIRES_TOPIC]->(t:Topic)
-MATCH (cat:Category)-[:HAS_TOPIC]->(t)
-MATCH (d:Domain)-[:CONTAINS]->(cat)
-
-// Optionally match company frequency edge
-OPTIONAL MATCH (t)-[freq:FREQUENTLY_ASKED_AT]->(c)
-
-WITH r, c, d, cat, t, req,
-     coalesce(freq.frequencyScore, 50) AS companyFreqScore,
-     CASE t.trend
-       WHEN 'SURGING' THEN 1.15
-       WHEN 'HOT' THEN 1.05
-       ELSE 1.0
-     END AS trendMultiplier
-
-// Calculate blended composite score
-WITH d, cat, t, req, companyFreqScore,
-     round((0.55 * req.priorityScore + 0.35 * companyFreqScore) * trendMultiplier) AS compositeScore
-
-// Fetch prerequisites to build valid DAG
-OPTIONAL MATCH (prereq:Topic)-[:PREREQUISITE_OF]->(t)
-
-RETURN t.slug AS topicSlug,
-       t.topicId AS topicId,
+MATCH (target:Topic) WHERE target.slug IN $selectedTopicSlugs
+OPTIONAL MATCH (prereq:Topic)-[:PREREQUISITE_OF*1..6]->(target)
+WITH collect(DISTINCT target) + collect(DISTINCT prereq) AS fullClosure
+UNWIND fullClosure AS t
+RETURN DISTINCT t.slug AS slug,
        t.title AS title,
-       t.difficulty AS difficulty,
        t.durationMin AS durationMin,
-       cat.slug AS categorySlug,
-       d.slug AS domainSlug,
-       req.isCore AS isCore,
-       compositeScore AS priorityScore,
-       collect(DISTINCT prereq.slug) AS prerequisites
-ORDER BY compositeScore DESC, t.priority ASC
+       t.difficulty AS difficulty,
+       [(p:Topic)-[:PREREQUISITE_OF]->(t) | p.slug] AS prerequisites
 ```
 
-### 7.3 Prerequisite Topological Ordering Guarantee
-
-To guarantee the generated preparation plan has **zero ordering violations** (i.e. a candidate is never assigned a complex system design before mastering foundational caching), the backend executes Kahn's Algorithm on the returned Cypher topic nodes:
+### 7.3 Kahn's Algorithm Topological Scheduler with Cycle Guard
 
 ```ts
-export function scheduleTopologicalRoadmap(
-  topics: Array<{ slug: string; prerequisites: string[]; priorityScore: number }>,
+export function scheduleRoadmap(
+  topics: Array<{ slug: string; prerequisites: string[]; durationMin: number; priorityScore: number }>,
   timelineWeeks: number,
   weeklyHours: number
 ): WeeklyMilestone[] {
-  // 1. Construct DAG adjacency and in-degree map
-  // 2. Prioritize zero in-degree nodes using max-heap sorted by priorityScore
-  // 3. Bucket into weekly milestones based on durationMin <= weeklyHours * 60
-  // 4. Return strictly ordered milestones
+  // 1. Build in-degree map and adjacency list
+  const inDegree = new Map<string, number>();
+  const adj = new Map<string, string[]>();
+
+  for (const t of topics) {
+    inDegree.set(t.slug, 0);
+    adj.set(t.slug, []);
+  }
+
+  for (const t of topics) {
+    for (const p of t.prerequisites) {
+      if (inDegree.has(p)) {
+        adj.get(p)!.push(t.slug);
+        inDegree.set(t.slug, (inDegree.get(t.slug) || 0) + 1);
+      }
+    }
+  }
+
+  // 2. Priority queue for zero in-degree nodes (sorted by priorityScore DESC)
+  const queue: string[] = [];
+  for (const [slug, deg] of inDegree.entries()) {
+    if (deg === 0) queue.push(slug);
+  }
+  queue.sort((a, b) => getScore(b) - getScore(a));
+
+  const sortedSlugs: string[] = [];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    sortedSlugs.push(current);
+
+    for (const neighbor of adj.get(current) || []) {
+      inDegree.set(neighbor, inDegree.get(neighbor)! - 1);
+      if (inDegree.get(neighbor) === 0) {
+        queue.push(neighbor);
+        queue.sort((a, b) => getScore(b) - getScore(a));
+      }
+    }
+  }
+
+  // 3. Cycle Detection Guard
+  if (sortedSlugs.length !== topics.length) {
+    throw new Error(`Cycle detected in curriculum prerequisite graph! Processed ${sortedSlugs.length}/${topics.length}`);
+  }
+
+  // 4. Distribute into weekly milestones respecting weeklyHours budget
+  return bucketIntoWeeks(sortedSlugs, timelineWeeks, weeklyHours);
 }
 ```
 
@@ -400,33 +457,28 @@ export function scheduleTopologicalRoadmap(
 prepinminutes-backend/scripts/
 ├── seed-data/
 │   ├── roles/
-│   │   ├── types.ts                     // RoleSeed interface
-│   │   ├── roles-list.ts                // 24 Canonical Roles
-│   │   └── role-topic-mappings.ts       // [:REQUIRES_TOPIC] edges across 371 topics
+│   │   ├── types.ts                      // RoleSeed interface (with careerBand & numeric exp)
+│   │   ├── roles-list.ts                 // 28 Canonical Roles (including L1 Freshers & L2 Associates)
+│   │   └── role-topic-mappings.ts        // [:REQUIRES_TOPIC] edges across 371 topics
 │   ├── companies/
-│   │   ├── types.ts                     // CompanySeed interface
-│   │   ├── companies-list.ts            // 20 Tier-1 Tech Companies
-│   │   └── company-topic-mappings.ts    // [:FREQUENTLY_ASKED_AT] edges
+│   │   ├── types.ts                      // CompanySeed interface
+│   │   ├── companies-list.ts             // 20 Tier-1 Tech Companies
+│   │   ├── company-stage-mappings.ts     // [:USES_STAGE] hiring loops
+│   │   └── company-topic-mappings.ts     // [:FREQUENTLY_ASKED_AT] with confidenceScore & sampleSize
 │   └── stages-formats/
 │       ├── types.ts
-│       ├── stages.ts                    // 8 Canonical Interview Stages
-│       └── formats.ts                   // 5 Canonical Interview Formats
-├── seed-roles-incremental.ts            // Seeds :Role nodes & [:REQUIRES_TOPIC]
-├── seed-companies-incremental.ts        // Seeds :Company nodes & [:FREQUENTLY_ASKED_AT]
-├── seed-stages-formats-incremental.ts   // Seeds :InterviewStage, :InterviewFormat & links
-└── audit-intelligence-layer.ts          // Audits graph integrity & tests roadmap generation
+│       ├── stages.ts                     // 9 Canonical Interview Stages
+│       └── formats.ts                    // 6 Canonical Interview Formats
+├── seed-roles-incremental.ts             // Seeds :Role nodes & [:REQUIRES_TOPIC]
+├── seed-companies-incremental.ts         // Seeds :Company nodes, [:USES_STAGE] & [:FREQUENTLY_ASKED_AT]
+├── seed-stages-formats-incremental.ts    // Seeds :InterviewStage, :InterviewFormat & [:CONDUCTED_VIA]
+├── refresh-company-intelligence-cron.ts  // Bi-monthly batch cron worker with state cursor
+└── audit-intelligence-layer.ts           // Validates full dependency closure, scoring, and graph queries
 ```
 
-### 8.2 Execution & Verification Checklist
+### 8.2 Execution Tasks & Verification Sequence
 
-1. **Dry-Run Validation**:
-   - `npm run tsx scripts/seed-roles-incremental.ts --dry-run`
-   - `npm run tsx scripts/seed-companies-incremental.ts --dry-run`
-   - `npm run tsx scripts/seed-stages-formats-incremental.ts --dry-run`
-   - Verify: 24 roles, 20 companies, 8 stages, 5 formats, 0 broken topic slugs.
-2. **Schema Constraints Enforcement**:
-   - Verify unique constraints for `Role.slug`, `Company.slug`, `InterviewStage.slug`, `InterviewFormat.slug`.
-3. **Live Sync to Neo4j AuraDB**:
-   - Pure `MERGE` statements; idempotent and safe to re-run.
-4. **End-to-End Roadmap Query Test**:
-   - Execute `scripts/audit-intelligence-layer.ts` to test roadmap synthesis for Amazon Senior SDE, Google L4, and Uber Staff Architect.
+1. **`TASK-P2-01`**: Seed the 28 Canonical Roles (`:Role`), including `STUDENT_FRESHER` and `ASSOCIATE`, with their `[:REQUIRES_TOPIC]` edges.
+2. **`TASK-P2-02`**: Seed the 20 Companies (`:Company`) with evidence-backed `[:FREQUENTLY_ASKED_AT]` edges and company-specific stage loops (`[:USES_STAGE]`).
+3. **`TASK-P2-03`**: Seed the 9 Stages (`:InterviewStage`) & 6 Formats (`:InterviewFormat`), and implement the **5-Factor Roadmap Engine** with **Prerequisite Dependency Closure**.
+4. **`TASK-P2-04`**: Implement the **Periodic Company Intelligence Batch Refresh Worker** with configurable schedule and state cursor.

@@ -13,14 +13,14 @@
 | Phase | Functional Scope | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) | Status |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Phase 1** | **Curriculum Knowledge Graph (Neo4j AuraDB)** | 10 | 10 | 0 | 0 | 🟢 **100% COMPLETE** |
-| **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 3 | 0 | 0 | 3 | ⚪ **READY TO START** |
+| **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 4 | 0 | 0 | 4 | ⚪ **READY TO START** |
 | **Phase 3** | **Unified Curriculum API & Edge Gateway** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 4** | **Dynamic Frontend Knowledge Graph Integration** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 5** | **Interactive Practice & Live Question Injection** | 4 | 0 | 0 | 4 | ⚪ **PENDING** |
 | **Phase 6** | **Deterministic Evaluation, Scoring & Decay Engine** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 7** | **Real-Time Voice AI Gateway & Media Streaming** | 2 | 0 | 0 | 2 | ⚪ **PENDING** |
 | **Phase 8** | **End-to-End Platform Verification & Polish** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **TOTAL** | **Entire PrepInMinutes Platform** | **31** | **10** | **0** | **21** | **32.3% OVERALL** |
+| **TOTAL** | **Entire PrepInMinutes Platform** | **32** | **10** | **0** | **22** | **31.3% OVERALL** |
 
 ---
 
@@ -42,9 +42,10 @@ flowchart TD
   end
 
   subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4)"]
-    T201["P2-01: Roles & Career Levels (:Role)"]
-    T202["P2-02: Companies & Interview Trends (:Company)"]
-    T203["P2-03: Role-Company Roadmap Query Engine"]
+    T201["P2-01: Roles & Career Bands (Freshers to Staff)"]
+    T202["P2-02: Companies, Evidence & Stage Loops"]
+    T203["P2-03: 5-Factor Roadmap Engine & Prereq Closure"]
+    T204["P2-04: Company Intelligence Refresh Cron (State Cursor)"]
   end
 
   subgraph P3["Phase 3: Unified Curriculum API"]
@@ -154,39 +155,64 @@ flowchart TD
 
 ### Phase 2: Cross-Cutting Intelligence Layer (L1–L4 Graph Nodes)
 
-> **Governing Specification**: [`docs/CROSS_CUTTING_INTELLIGENCE_SPEC.md`](./CROSS_CUTTING_INTELLIGENCE_SPEC.md)
+> **Governing Specification**: [`docs/CROSS_CUTTING_INTELLIGENCE_SPEC.md`](./CROSS_CUTTING_INTELLIGENCE_SPEC.md) (v1.1.0)
 
-- [ ] **TASK-P2-01: Seed Standard Roles & Career Levels (`:Role`)**
+- [ ] **TASK-P2-01: Seed Standard Roles & Career Bands (including L1 Freshers & L2 Associates)**
   - **Dependencies**: `TASK-P1-01` through `TASK-P1-10`
   - **Target Files**:
     - `prepinminutes-backend/scripts/seed-data/roles/`
     - `prepinminutes-backend/scripts/seed-roles-incremental.ts`
   - **Scope**:
-    - Create `(:Role {slug, name, level, minProficiency})` nodes for canonical roles:
-      - SDE-1 / Junior (`L3`), SDE-2 / Mid-Level (`L4`), Senior SDE (`L5`), Staff / Principal Architect (`L6+`), Engineering Manager / Director (`M1-M2`).
-      - Specialized tracks: Frontend, Backend, Fullstack, Mobile (iOS/Android), AI/ML, DevOps/SRE, Data Engineering.
-    - Connect `(r:Role)-[:REQUIRES_TOPIC {isCore: boolean, targetLevel: string}]->(t:Topic)`.
-  - **Acceptance Criteria**: All 371 topics mapped to relevant career roles and seniority levels with 0 dangling edges.
+    - Create `(:Role)` nodes for 28 canonical roles across 7 standardized career bands:
+      - `STUDENT_FRESHER` (Campus SDE, Fresher Frontend, Fresher Backend: 0–1 yrs exp)
+      - `ASSOCIATE` (Associate SDE: 0.5–2 yrs exp)
+      - `MID_LEVEL` (SDE-2 across General, Backend, Frontend, Fullstack, Mobile, DevOps, Data, AI: 2–5 yrs exp)
+      - `SENIOR` (Senior SDE across disciplines: 4–8 yrs exp)
+      - `STAFF` (Staff SDE / Architects: 8–12 yrs exp)
+      - `PRINCIPAL` (Principal Engineer: 12+ yrs exp)
+      - `MANAGEMENT` (Engineering Manager, Director)
+    - Store decoupled `companyEquivalents` JSON and numeric `minExperienceYears`/`maxExperienceYears`.
+    - Connect `(r:Role)-[:REQUIRES_TOPIC {isCore: boolean, priorityScore: int, targetLevel: string}]->(t:Topic)`.
+  - **Acceptance Criteria**: 28 roles seeded; all 371 topics mapped to relevant career roles with 0 dangling edges.
 
-- [ ] **TASK-P2-02: Seed Tier-1 Tech Companies & Frequency Weights (`:Company`)**
+- [ ] **TASK-P2-02: Seed Companies with Evidence Provenance & Company-Specific Stage Loops**
   - **Dependencies**: `TASK-P2-01`
   - **Target Files**:
     - `prepinminutes-backend/scripts/seed-data/companies/`
     - `prepinminutes-backend/scripts/seed-companies-incremental.ts`
   - **Scope**:
-    - Create `(:Company {slug, name, tier, hiringBar})` nodes:
-      - FAANG (Google, Meta, Apple, Amazon, Netflix), Tier-1 Unicorns (Uber, Stripe, Airbnb, Databricks, Snowflake, DoorDash, ByteDance, Coinbase), Enterprise (Microsoft, Salesforce).
-    - Connect `(t:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: int, lastTrend: string}]->(c:Company)`.
-  - **Acceptance Criteria**: Cypher query `MATCH (c:Company {slug: "amazon"})<-[f:FREQUENTLY_ASKED_AT]-(t:Topic) RETURN t ORDER BY f.frequencyScore DESC` returns top curated topics.
+    - Create `(:Company)` nodes for 20 Tier-1 tech employers (FAANG, Unicorns, Enterprise).
+    - Seed evidence-backed relationships:
+      - `(t:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: int, confidenceScore: float, sampleSize: int, sourceType: string, lastVerifiedAt: datetime()}]->(c:Company)`
+    - Seed company-specific hiring loops:
+      - `(c:Company)-[:USES_STAGE {roundOrder: int, isEliminationRound: boolean, stageWeight: int}]->(s:InterviewStage)`
+  - **Acceptance Criteria**: Cypher queries verify evidence fields on all relationships and return company-specific stage loops.
 
-- [ ] **TASK-P2-03: Implement Graph Query Engine for Tailored Preparation Roadmaps**
+- [ ] **TASK-P2-03: Implement 5-Factor Roadmap Engine with Prerequisite Dependency Closure**
   - **Dependencies**: `TASK-P2-01`, `TASK-P2-02`
   - **Target Files**:
     - `prepinminutes-backend/src/server/graph/roadmap-query.ts`
   - **Scope**:
-    - Build deterministic Cypher synthesis: given `(targetRole, targetSeniority, targetCompany, timelineWeeks)`, return an ordered DAG of topics:
-      $$\text{Role Core Topics} \cup \text{Company High-Frequency Topics} \xrightarrow{\text{topological sort}} \text{Personalized Roadmap}$$
-  - **Acceptance Criteria**: Dry-run tests generate valid 10–25 topic roadmaps across 12 role-company combinations with zero cycle deadlocks.
+    - Build multi-dimensional scoring formula:
+      $$P(t) = 0.30 R(t) + 0.20 C(t) + 0.10 M(t) + 0.25 \text{SkillGap}(t) + 0.15 S(t)$$
+    - Traverse recursive transitive dependency closure:
+      `MATCH (prereq:Topic)-[:PREREQUISITE_OF*1..6]->(target:Topic)`
+    - Execute Kahn's algorithm with max-heap priority scheduling and DAG cycle detection.
+    - Bucket ordered topics into weekly milestones matching `timelineWeeks` and `weeklyGoalHours`.
+  - **Acceptance Criteria**: Dry-run tests generate valid 10–25 topic roadmaps across Fresher, Mid, and Senior profiles with 0 broken prerequisites and 0 cycles.
+
+- [ ] **TASK-P2-04: Periodic Company Intelligence Batch Refresh Worker with State Cursor**
+  - **Dependencies**: `TASK-P2-02`
+  - **Target Files**:
+    - `prepinminutes-backend/src/server/workers/company-intelligence-worker.ts`
+    - `prepinminutes-backend/scripts/refresh-company-intelligence-cron.ts`
+  - **Scope**:
+    - Implement bi-monthly cron job (`0 0 1,15 * *`) with configurable `BATCH_SIZE = 50` (or `MAX_COMPANIES_PER_RUN`).
+    - Query companies ordered by `lastVerifiedAt ASC NULLS FIRST LIMIT $batchSize`.
+    - Recalculate frequency and confidence scores, update timestamps to `datetime()`.
+    - Automatically advances cursor so subsequent runs process remaining companies in round-robin fashion.
+    - Write execution summary and before/after score deltas to audit log.
+  - **Acceptance Criteria**: Test script simulates consecutive runs verifying that 50 companies are updated on Run 1, and the remaining companies are processed on Run 2.
 
 ---
 
