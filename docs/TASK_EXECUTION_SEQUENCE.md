@@ -13,6 +13,7 @@
 | Phase | Functional Scope | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) | Status |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Phase 1** | **Curriculum Knowledge Graph (Neo4j AuraDB)** | 10 | 10 | 0 | 0 | 🟢 **100% COMPLETE** |
+| **Phase 1.5**| **Relational Schema & Curriculum Parity (PostgreSQL)** | 3 | 0 | 0 | 3 | ⚪ **P0 BLOCKING** |
 | **Phase 2** | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)** | 5 | 0 | 0 | 5 | ⚪ **READY TO START** |
 | **Phase 3** | **Unified Curriculum API & Edge Gateway** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 4** | **Dynamic Frontend Knowledge Graph Integration** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
@@ -20,7 +21,7 @@
 | **Phase 6** | **Deterministic Evaluation, Scoring & Decay Engine** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
 | **Phase 7** | **Real-Time Voice AI Gateway & Media Streaming** | 2 | 0 | 0 | 2 | ⚪ **PENDING** |
 | **Phase 8** | **End-to-End Platform Verification & Polish** | 3 | 0 | 0 | 3 | ⚪ **PENDING** |
-| **TOTAL** | **Entire PrepInMinutes Platform** | **33** | **10** | **0** | **23** | **30.3% OVERALL** |
+| **TOTAL** | **Entire PrepInMinutes Platform** | **36** | **10** | **0** | **26** | **27.8% OVERALL** |
 
 ---
 
@@ -150,6 +151,50 @@ flowchart TD
   - **Status**: Completed (November 11, 2026)
   - **Scale**: 18 Categories | 35 Topics (`MOB01`–`MOB35`) | 700 Questions | v1.0.0
   - **Artifacts**: `docs/domains/mobile-engineering.md`, `scripts/seed-data/mobile-engineering/`
+
+---
+
+### Phase 1.5: Relational Schema & 10-Domain Curriculum Sync (PostgreSQL)
+
+> **Governing Specification**: [`docs/DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md`](./DATABASE_ARCHITECTURE_AND_PROGRESS_TRACKING_SPEC.md)  
+> **Priority Standard**: **P0 (Immediate Blocking Foundations)**  
+> **Target Database**: Local PostgreSQL (`localhost:5432`) & Neon Cloud Mirror
+
+- [ ] **TASK-P1.5-01: Prisma Schema Evolution (Skill Gap & Intelligence Maintenance Models)**
+  - **Priority**: **P0 (Blocking)**
+  - **Dependencies**: Phase 1
+  - **Target Files**:
+    - `prepinminutes-backend/prisma/schema.prisma`
+    - `prep-in-minutes/prisma/schema.prisma`
+  - **Scope**:
+    - Add `CandidateTopicProficiency` (`candidate_topic_proficiencies`) model to bridge Phase 2 skill gaps ($G(t)$).
+    - Add the 3 Data Maintenance Engine models:
+      - `IntelligenceRefreshConfig` (`intelligence_refresh_configs`)
+      - `IntelligenceRefreshExecution` (`intelligence_refresh_executions`)
+      - `CompanyIntelligenceRefreshLog` (`company_intelligence_refresh_logs`)
+    - Update `CurriculumTopic` difficulty and priority fields to match canonical definitions.
+  - **Acceptance Criteria**: `npx prisma validate` passes with 0 syntax or relational errors.
+
+- [ ] **TASK-P1.5-02: Local PostgreSQL Schema Push & Verification (`localhost:5432`)**
+  - **Priority**: **P0 (Blocking)**
+  - **Dependencies**: `TASK-P1.5-01`
+  - **Target Files**:
+    - `prepinminutes-backend/prisma/schema.prisma`
+  - **Scope**:
+    - Execute `npx prisma db push` against the local database (`localhost:5432`).
+    - Verify that all 23 relational tables exist and table constraints/indexes are active.
+  - **Acceptance Criteria**: Database query confirms all 23 tables exist in `information_schema.tables` on `localhost:5432`.
+
+- [ ] **TASK-P1.5-03: Relational 10-Domain Curriculum Sync Script (`371 Topics`)**
+  - **Priority**: **P0 (Blocking)**
+  - **Dependencies**: `TASK-P1.5-02`
+  - **Target Files**:
+    - `prepinminutes-backend/scripts/sync-curriculum-postgres.ts`
+  - **Scope**:
+    - Author an idempotent synchronization script that reads the canonical domain seed data (from `scripts/seed-data/*`).
+    - Upsert all **10 domains**, **122 categories**, and **371 topics** into PostgreSQL `curriculum_domains`, `curriculum_categories`, and `curriculum_topics`.
+    - Establish 100% slug and ID parity between PostgreSQL and Neo4j.
+  - **Acceptance Criteria**: `SELECT count(*) FROM curriculum_topics;` returns exactly 371 topics matching Neo4j.
 
 ---
 
