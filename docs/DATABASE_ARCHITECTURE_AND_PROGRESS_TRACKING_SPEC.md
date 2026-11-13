@@ -1,4 +1,5 @@
 # PrepInMinutes — Comprehensive Application Data Architecture, Schema & Seeding Specification
+
 ## Full-Platform Relational Modeling, Progress Tracking & Data Seeding Strategy
 
 > **Document Version:** 2.0.0  
@@ -59,25 +60,26 @@ graph TD
   P0 --> P1 --> P2
 ```
 
-| Priority | Task Code | Target Area | Description & Deliverable | Status |
-| :---: | :---: | :--- | :--- | :---: |
-| **P0** | **`DATA-P0-01`** | **Schema Alignment** | Unify `prisma/schema.prisma` across backend and frontend repositories with all 27 models and 4 enums. Run `prisma validate`. | 🟢 Completed |
-| **P0** | **`DATA-P0-02`** | **Local DB Migration** | Push schema to `localhost:5432` (`DATABASE_URL`). Verify all tables and indexes are created without error. | 🟢 Completed |
-| **P0** | **`DATA-P0-03`** | **Baseline System Seeds** | Seed default HOD Admin (`imsauravsingh@gmail.com`), Subscription Plan Definitions, Platform Configs, and Intelligence Cron Config. | ⚪ Ready |
-| **P0** | **`DATA-P0-04`** | **Curriculum Catalog Sync** | Seed all 10 Domains, 122 Categories, and 371 Topics from Neo4j into PostgreSQL `curriculum_*` tables (1:1 slug parity). | ⚪ Ready |
-| **P1** | **`DATA-P1-01`** | **Golden Demo Candidate Seed** | Seed a realistic, end-to-end demo candidate (`candidate@prepinminutes.com`) with active plan, 5 daily tasks, 3 practice sessions, 1 mock interview, and Sarah AI evaluations. | ⚪ Pending |
-| **P1** | **`DATA-P1-02`** | **Topic Mastery & Gaps** | Implement atomic score recalculation and `CandidateTopicProficiency` updates upon evaluation completion. | ⚪ Pending |
-| **P1** | **`DATA-P1-03`** | **Daily Task & Streak Engine** | Wire `DailyPlanTask` completion logic, weekly goal hour tracking, and daily activity streak increments. | ⚪ Pending |
-| **P1** | **`DATA-P1-04`** | **Spaced Repetition Pipeline** | Implement SuperMemo SM-2 decay calculations and automated creation of `RevisionItem` when session score $< 60\%$. | ⚪ Pending |
-| **P2** | **`DATA-P2-01`** | **Company Refresh Batch Worker** | Implement cursor-based batch processor (50 companies/run) with failure handling and audit logging. | ⚪ Pending |
-| **P2** | **`DATA-P2-02`** | **Admin Control & RBAC API** | Implement admin endpoints for staff approval workflows, user blocking, and subscription quota management. | ⚪ Pending |
-| **P2** | **`DATA-P2-03`** | **Neon Cloud Parity (Gated)** | Reset Neon Cloud database, push unified schema, and run identical seeds upon explicit user confirmation. | ⚪ Gated |
+| Priority |    Task Code     | Target Area                      | Description & Deliverable                                                                                                                                                     |    Status    |
+| :------: | :--------------: | :------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------: |
+|  **P0**  | **`DATA-P0-01`** | **Schema Alignment**             | Unify `prisma/schema.prisma` across backend and frontend repositories with all 27 models and 4 enums. Run `prisma validate`.                                                  | 🟢 Completed |
+|  **P0**  | **`DATA-P0-02`** | **Local DB Migration**           | Push schema to `localhost:5432` (`DATABASE_URL`). Verify all tables and indexes are created without error.                                                                    | 🟢 Completed |
+|  **P0**  | **`DATA-P0-03`** | **Baseline System Seeds**        | Seed default HOD Admin (`imsauravsingh@gmail.com`), Subscription Plan Definitions, Platform Configs, and Intelligence Cron Config.                                            | 🟢 Completed |
+|  **P0**  | **`DATA-P0-04`** | **Curriculum Catalog Sync**      | Seed all 10 Domains, 122 Categories, and 371 Topics into PostgreSQL `curriculum_*` tables (1:1 slug parity).                                                                  | 🟢 Completed |
+|  **P1**  | **`DATA-P1-01`** | **Golden Demo Candidate Seed**   | Seed a realistic, end-to-end demo candidate (`candidate@prepinminutes.com`) with active plan, daily tasks, practice session, and Sarah AI evaluations. | 🟢 Completed |
+|  **P1**  | **`DATA-P1-02`** | **Topic Mastery & Gaps**         | Implement atomic score recalculation and `CandidateTopicProficiency` updates upon evaluation completion.                                                                      |  ⚪ Pending  |
+|  **P1**  | **`DATA-P1-03`** | **Daily Task & Streak Engine**   | Wire `DailyPlanTask` completion logic, weekly goal hour tracking, and daily activity streak increments.                                                                       |  ⚪ Pending  |
+|  **P1**  | **`DATA-P1-04`** | **Spaced Repetition Pipeline**   | Implement SuperMemo SM-2 decay calculations and automated creation of `RevisionItem` when session score $< 60\%$.                                                             |  ⚪ Pending  |
+|  **P2**  | **`DATA-P2-01`** | **Company Refresh Batch Worker** | Implement cursor-based batch processor (50 companies/run) with failure handling and audit logging.                                                                            |  ⚪ Pending  |
+|  **P2**  | **`DATA-P2-02`** | **Admin Control & RBAC API**     | Implement admin endpoints for staff approval workflows, user blocking, and subscription quota management.                                                                     |  ⚪ Pending  |
+|  **P2**  | **`DATA-P2-03`** | **Neon Cloud Parity (Gated)**    | Reset Neon Cloud database, push unified schema, and run identical seeds upon explicit user confirmation.                                                                      |   ⚪ Gated   |
 
 ---
 
 ## 3. The 12 Application Functional Domains & Schema Design
 
 ### Area 1: Identity, Authentication, Staff Approvals & Account Security
+
 - **Models**: `User`, `PasswordResetToken`, `EmailVerificationToken`
 - **Enums**: `AdminRole` (`SUPER_ADMIN`, `HOD`, `CURRICULUM_MANAGER`, `STAFF_ENGINEER`, `CONTENT_REVIEWER`, `CANDIDATE`), `AdminApprovalStatus` (`NONE`, `PENDING`, `APPROVED`, `REJECTED`, `SUSPENDED`)
 - **Key Responsibilities**:
@@ -86,6 +88,7 @@ graph TD
   - Staff role escalation workflow: Candidates or team members request elevated roles (`requestedRole`, `requestReason`), which queue up for the Head of Department (HOD) to approve or reject.
 
 ### Area 2: Subscriptions, Tier Catalog & Real-Time Quota Metering
+
 - **Models**: `Subscription`, `SubscriptionPlan`
 - **Enums**: `SubscriptionTier` (`FREE`, `PRO_MONTHLY`, `PRO_QUARTERLY`, `LIFETIME`, `CAMPUS_ENTERPRISE`), `SubscriptionStatus` (`INACTIVE`, `TRIALING`, `ACTIVE`, `PAST_DUE`, `CANCELED`, `EXPIRED`)
 - **Key Responsibilities**:
@@ -94,6 +97,7 @@ graph TD
   - Dynamic `SubscriptionPlan` catalog table storing price, currency, features, and quota limits so frontend pricing tables and checkout flows are completely data-driven.
 
 ### Area 3: Candidate Onboarding & Profile State
+
 - **Model**: `CandidateProfile`
 - **Key Responsibilities**:
   - Captures career targets: `targetRole`, `experienceLevel` (`STUDENT_FRESHER`, `0-2`, `3-5`, `6-9`, `10+`), `targetCompanies` (e.g. `["Google", "Amazon", "Stripe"]`), `timelineWeeks`.
@@ -101,6 +105,7 @@ graph TD
   - Resume & Job Description ingestion (`resumeFileUrl`, `jobDescriptionText`) used for RAG-based context injection into AI interviewers.
 
 ### Area 4: Personalized Preparation Plan & Daily Task Calendar Engine
+
 - **Models**: `PreparationPlan`, `DailyPlanTask`
 - **Key Responsibilities**:
   - `PreparationPlan` stores roadmap architecture: `activePhaseId`, `weeklyMilestones` (JSON ordered breakdown), and `domainWeights` (e.g. `{"system-design": 0.40, "dsa": 0.35, "behavioral": 0.15, "cloud-devops": 0.10}`).
@@ -108,6 +113,7 @@ graph TD
     - Links to canonical topic (`topicId`), domain (`domainSlug`), title, duration (`durationMin`), practice URL (`practiceHref`), scheduled date, and completion timestamp.
 
 ### Area 5: 10-Domain Canonical Curriculum Spine (PostgreSQL Mirror)
+
 - **Models**: `CurriculumDomain`, `CurriculumCategory`, `CurriculumTopic`, `CurriculumQuestion`
 - **Key Responsibilities**:
   - Provides referential integrity for all candidate activity across the 10 domains:
@@ -124,6 +130,7 @@ graph TD
   - 100% slug and topicId parity with Neo4j (`FND001`, `MOB15`, etc.).
 
 ### Area 6: Granular Topic Mastery & Cognitive Depth
+
 - **Models**: `CandidateTopicMastery`, `CandidateTopicProficiency`
 - **Key Responsibilities**:
   - Tracks individual mastery on each of the 371 topics ($0.0\text{–}100.0\%$).
@@ -132,6 +139,7 @@ graph TD
   - `CandidateTopicProficiency` bridges candidate self-assessments or resume parsing directly into Phase 2 roadmap generation.
 
 ### Area 7: Multi-Modal Practice Engine
+
 - **Model**: `PracticeSession`
 - **Key Responsibilities**:
   - **System Design**: Whiteboard diagrams stored as serialized JSON and rendered PNGs in Cloudflare R2 (`whiteboardUrl`, `diagramJson`).
@@ -140,6 +148,7 @@ graph TD
   - **Cloud/DevOps**: Architecture manifests, incident post-mortem dialogue.
 
 ### Area 8: Live AI Mock Interviews (Sarah Voice Agent)
+
 - **Model**: `MockInterviewSession`
 - **Key Responsibilities**:
   - Manages full 4-stage mock interview lifecycle: `CONFIGURING` $\to$ `ACTIVE` $\to$ `EVALUATING` $\to$ `COMPLETED`.
@@ -148,13 +157,15 @@ graph TD
   - Tracks candidate behavior: `clarificationsAsked`, `toolsUsed`, candidate notes.
 
 ### Area 9: AI Evaluation Reports & 6-Dimension Rubric Engine
+
 - **Models**: `EvaluationReport`, `RubricScore`
 - **Key Responsibilities**:
-  - Sarah AI's comprehensive verdict: `overallScore` ($0.0\text{–}100.0$), `verdict` (*Strong Hire / Hire / Leaning Hire / Needs Practice*), `percentileRank`, and `readinessDelta` (e.g. $+6\%$).
+  - Sarah AI's comprehensive verdict: `overallScore` ($0.0\text{–}100.0$), `verdict` (_Strong Hire / Hire / Leaning Hire / Needs Practice_), `percentileRank`, and `readinessDelta` (e.g. $+6\%$).
   - Qualitative analysis: `strengths`, `improvements`, `evaluatorNotes`, and `recommendedDrills`.
   - Granular `RubricScore` breakdown across dimensions (Technical Depth, Communication, Scalability, Tradeoffs, Failure Handling, API Design) with `missingAtoms` pinpointing exact concepts the candidate overlooked.
 
 ### Area 10: Memory Decay & Spaced Repetition (SuperMemo SM-2)
+
 - **Model**: `RevisionItem`
 - **Key Responsibilities**:
   - Implements the Ebbinghaus forgetting curve to combat knowledge decay before interview day.
@@ -163,6 +174,7 @@ graph TD
   - Categorizes knowledge health into retention bands: `CRITICAL_DECAY` $\to$ `NEEDS_REINFORCEMENT` $\to$ `STABLE` $\to$ `PERMANENT_MEMORY`.
 
 ### Area 11: Company Intelligence & Dynamic Batch Refresh Engine
+
 - **Models**: `IntelligenceRefreshConfig`, `IntelligenceRefreshExecution`, `CompanyIntelligenceRefreshLog`
 - **Architectural Principles**:
   - **Strict Polyglot Separation**: Neo4j remains the sole canonical source of truth for company graph nodes, stage relationships, and interview frequencies. PostgreSQL manages scheduling configuration, execution runs, and company-level audit logs. No duplicate company table is created in PostgreSQL.
@@ -175,6 +187,7 @@ graph TD
   - **Concurrency Guard**: Lightweight check ensures only one execution runs at a time (skips trigger if an execution with status `RUNNING` exists).
 
 ### Area 12: Platform Global Configurations & Immutable Admin Audit Logs
+
 - **Models**: `PlatformConfig`, `AdminAuditLog`
 - **Key Responsibilities**:
   - `PlatformConfig`: Key-value configuration store for runtime parameters (e.g. default AI model, voice timeout, maintenance mode, free quota limits).
@@ -337,13 +350,13 @@ model Subscription {
   currentPeriodEnd    DateTime?          @map("current_period_end") @db.Timestamptz(6)
   cancelAtPeriodEnd   Boolean            @default(false) @map("cancel_at_period_end")
   paymentProvider     String?            @map("payment_provider") // "stripe" | "razorpay" | "manual_admin"
-  
+
   // Real-Time Quota Metering
   voiceMinutesUsed    Float              @default(0.0) @map("voice_minutes_used")
   voiceMinutesLimit   Float              @default(30.0) @map("voice_minutes_limit")
   mockInterviewsUsed  Int                @default(0) @map("mock_interviews_used")
   mockInterviewsLimit Int                @default(1) @map("mock_interviews_limit")
-  
+
   createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -847,6 +860,7 @@ model PlatformConfig {
 Seeding is structured into four distinct, idempotent datasets executed via `scripts/seed-platform.ts`:
 
 ### 5.1 Dataset 1: Baseline System Seeds
+
 1. **Default Head of Department (HOD)**:
    - Email: `imsauravsingh@gmail.com`
    - Role: `HOD`
@@ -869,20 +883,26 @@ Seeding is structured into four distinct, idempotent datasets executed via `scri
    - `system.public_signup_enabled`: `"true"`
 
 ### 5.2 Dataset 2: 10-Domain Canonical Curriculum Catalog (PostgreSQL 1:1 Mirror)
+
 Synchronized directly from the canonical Neo4j AuraDB graph:
+
 - 10 `CurriculumDomain` records
 - 122 `CurriculumCategory` records
 - 371 `CurriculumTopic` records (with difficulty, duration, practice URLs, rubric atoms, and priority)
 - 0 missing slugs or broken foreign keys.
 
 ### 5.3 Dataset 3: Cross-Cutting Metadata Mirror
+
 Provides relational fallback and dropdown population for candidate onboarding and mock configuration:
+
 - **28 Roles**: Covering all 7 career bands (`STUDENT_FRESHER`, `ASSOCIATE`, `JUNIOR`, `MID`, `SENIOR`, `STAFF`, `PRINCIPAL`).
 - **20 Companies**: Tier 1 (Google, Amazon, Meta, Microsoft, Apple, Netflix) and Tier 2 (Uber, Stripe, Airbnb, etc.) with verified hiring bars.
 - **9 Stages & 6 Formats**: Pre-populated for interview configuration screens.
 
 ### 5.4 Dataset 4: Golden Demo Candidate (Full-State Test Journey)
+
 Populates a fully realized candidate profile (`candidate@prepinminutes.com`) so that `/dashboard`, `/preparation-plan`, `/practice`, `/mock-interview`, and `/revision` render rich, interactive UI components immediately upon developer or candidate login:
+
 - **Profile**: Target Role = "Senior Backend Engineer", Target Companies = ["Google", "Amazon"], Readiness = 68%, Streak = 5 days.
 - **Active Plan**: 4-Week System Design & Distributed Systems Mastery with populated `weeklyMilestones`.
 - **Daily Tasks**: 5 scheduled tasks (3 completed, 2 pending for today and tomorrow).
@@ -895,6 +915,7 @@ Populates a fully realized candidate profile (`candidate@prepinminutes.com`) so 
 ## 6. Implementation & Verification Protocol
 
 When executing the priority tasks:
+
 1. **Schema Check**:
    ```bash
    npx prisma validate

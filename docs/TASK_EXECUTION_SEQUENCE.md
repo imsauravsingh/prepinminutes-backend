@@ -186,42 +186,50 @@ flowchart TD
     - Verified all 27 relational tables exist and table constraints/indexes are active.
   - **Acceptance Criteria**: Database query confirmed all 27 tables exist in `information_schema.tables` on `localhost:5432`.
 
-- [ ] **TASK-P1.5-03: Relational 10-Domain Curriculum Sync Script (`371 Topics`)**
+- [x] **TASK-P1.5-03: Relational 10-Domain Curriculum Sync Script (`371 Topics`)**
+  - **Status**: Completed (November 14, 2026)
   - **Priority**: **P0 (Blocking)**
   - **Dependencies**: `TASK-P1.5-02`
   - **Target Files**:
     - `prepinminutes-backend/scripts/sync-curriculum-postgres.ts`
   - **Scope**:
-    - Author an idempotent synchronization script that reads canonical domain seed data (from `scripts/seed-data/*`).
-    - Upsert all **10 domains**, **122 categories**, and **371 topics** into PostgreSQL `curriculum_domains`, `curriculum_categories`, and `curriculum_topics`.
-    - Establish 100% slug and ID parity between PostgreSQL and Neo4j.
-  - **Acceptance Criteria**: `SELECT count(*) FROM curriculum_topics;` returns exactly 371 topics matching Neo4j.
+    - Authored an idempotent synchronization script reading canonical domain seed data (from `scripts/seed-data/*`).
+    - Upserted all **10 domains**, **122 categories**, and **371 topics** into PostgreSQL `curriculum_domains`, `curriculum_categories`, and `curriculum_topics`.
+    - Pruned legacy obsolete domains and categories.
+    - Established 100% slug, ID, difficulty, and rubric atoms parity with Neo4j.
+  - **Acceptance Criteria**: Database query confirmed: 10 domains, 122 categories, 371 topics, and 5,718 questions live in PostgreSQL.
 
-- [ ] **TASK-P1.5-04: Baseline Platform Seeds (Admin, Plans, Configs & Cron)**
+- [x] **TASK-P1.5-04: Baseline Platform Seeds (Admin, Plans, Configs & Cron)**
+  - **Status**: Completed (November 14, 2026)
   - **Priority**: **P0 (Blocking)**
   - **Dependencies**: `TASK-P1.5-02`
   - **Target Files**:
-    - `prepinminutes-backend/prisma/seed-baseline.ts`
+    - `prepinminutes-backend/scripts/seed-platform-baseline.ts`
   - **Scope**:
-    - Seed default Head of Department (HOD) admin (`imsauravsingh@gmail.com`).
-    - Seed 4 dynamic `SubscriptionPlan` tiers (`FREE`, `PRO_MONTHLY`, `PRO_QUARTERLY`, `LIFETIME`).
-    - Seed `IntelligenceRefreshConfig` for twice-monthly company refresh (batch size 50).
-    - Seed core `PlatformConfig` entries (AI model toggles, maintenance mode).
-  - **Acceptance Criteria**: Seed execution exits code 0; verified in database.
+    - Seeded default Head of Department (HOD) root admin (`imsauravsingh@gmail.com`) with `APPROVED` status and unlimited subscription.
+    - Seeded 4 dynamic `SubscriptionPlan` catalog tiers (`FREE`, `PRO_MONTHLY`, `PRO_QUARTERLY`, `LIFETIME`).
+    - Seeded `IntelligenceRefreshConfig` for twice-monthly company refresh (batch size 50, Asia/Kolkata).
+    - Seeded 10 core `PlatformConfig` entries (Cartesia voice model, Gemini 1.5 Pro evaluator, maintenance flags).
+    - Recorded `PLATFORM_INITIALIZATION` in `admin_audit_logs`.
+  - **Acceptance Criteria**: Seed execution exited code 0; 4 plans, 10 configs, 1 refresh job verified in PostgreSQL.
 
-- [ ] **TASK-P1.5-05: Golden Demo Candidate Seed (Full-State Interactive Journey)**
+- [x] **TASK-P1.5-05: Golden Demo Candidate Seed (Full-State Interactive Journey)**
+  - **Status**: Completed (November 14, 2026)
   - **Priority**: **P1 (Core Demo Readiness)**
   - **Dependencies**: `TASK-P1.5-03`, `TASK-P1.5-04`
   - **Target Files**:
-    - `prepinminutes-backend/prisma/seed-demo-candidate.ts`
+    - `prepinminutes-backend/scripts/seed-demo-candidate.ts`
+    - `prepinminutes-backend/scripts/seed-data/platform-schema/demo-candidate.ts`
   - **Scope**:
-    - Seed candidate user `candidate@prepinminutes.com` with active profile (Senior Backend Engineer, 68% readiness, 5-day streak).
-    - Seed active Preparation Plan with 4 weekly milestones.
-    - Seed 5 daily checklist tasks (3 completed, 2 pending).
-    - Seed 2 completed practice sessions with Sarah AI evaluation reports, rubric breakdown, and missing atoms.
-    - Seed 1 completed mock interview session with transcript JSON.
-    - Seed 4 SuperMemo SM-2 revision items with calculated next review dates.
-  - **Acceptance Criteria**: Immediate rich data visible on `/dashboard`, `/preparation-plan`, `/practice`, and `/revision` upon candidate login.
+    - Seeded candidate user `candidate@prepinminutes.com` (password: `Candidate@123`) with verified profile (Senior Backend Engineer, 68% readiness, 5-day streak).
+    - Seeded active Preparation Plan with 4 weekly milestones and domain weights.
+    - Seeded 4 daily checklist tasks linked directly via foreign keys to `curriculum_topics` (`distributed-key-value-store`, `distributed-caching-redis`, `kafka-event-streaming`, `leader-election-raft`).
+    - Seeded completed practice session for Distributed Key-Value Store with diagram JSON and architecture whiteboard.
+    - Seeded Sarah AI multimodal evaluation report (82/100, "Hire" verdict, +6% readiness delta) with 3 rubric dimension scores and missing atoms.
+    - Seeded candidate topic mastery in `TRADE_OFFS` stage and SuperMemo SM-2 interval.
+    - Seeded 2 SuperMemo SM-2 revision items (`leader-election-raft` and `distributed-locks-fencing`) with next review dates.
+    - Seeded candidate topic proficiencies and weekly area snapshot.
+  - **Acceptance Criteria**: Verified in PostgreSQL: candidate user, profile, subscription, plan, tasks, session, evaluation, rubric scores, mastery, and revisions exist and link with zero orphaned relations.
 
 ---
 
