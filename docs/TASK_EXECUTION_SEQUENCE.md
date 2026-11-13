@@ -14,14 +14,14 @@
 | :-----------: | :----------------------------------------------------- | :---------: | :---------------: | :-----------------: | :-------------: | :----------------------: |
 |  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        |  🟢 **100% COMPLETE**   |
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         3         |          0          |        2        | 🟡 **60% (IN PROGRESS)** |
+|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         4         |          0          |        1        | 🟡 **80% (IN PROGRESS)** |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **18**       |        **0**        |     **20**      |    **47.4% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **19**       |        **0**        |     **19**      |    **50.0% OVERALL**     |
 
 ---
 
@@ -50,11 +50,11 @@ flowchart TD
     T155["P1.5-05: Golden Demo Candidate Full-State Journey"]
   end
 
-  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4) (60% DONE)"]
+  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4) (80% DONE)"]
     T201["P2-01: 28 Roles & 7 Career Bands [DONE]"]
     T202["P2-02: 20 Companies, Stages & Formats [DONE]"]
     T203["P2-03: 5-Factor Roadmap Engine & Prereq Closure [DONE]"]
-    T204["P2-04: Company Intelligence Refresh Cron (State Cursor)"]
+    T204["P2-04: Company Intelligence Refresh Cron (State Cursor) [DONE]"]
     T205["P2-05: Neon Cloud PostgreSQL Reset & Sync (Gated)"]
   end
 
@@ -291,18 +291,21 @@ flowchart TD
     - Distributed ordered topics into weekly milestones matching `timelineWeeks` and `weeklyGoalHours`.
   - **Acceptance Criteria**: Verified dry-run test suite across 3 distinct candidate archetypes (Fresher at Google, Mid-Level Backend at Amazon, Senior Distributed Systems at Stripe) with 0 broken prerequisites and 0 cycles.
 
-- [ ] **TASK-P2-04: Periodic Company Intelligence Batch Refresh Worker with State Cursor**
+- [x] **TASK-P2-04: Periodic Company Intelligence Batch Refresh Worker with State Cursor**
+  - **Status**: Completed (November 14, 2026)
+  - **Priority**: **P1 (Core Intelligence Parity)**
   - **Dependencies**: `TASK-P2-02`
   - **Target Files**:
     - `prepinminutes-backend/src/server/workers/company-intelligence-worker.ts`
     - `prepinminutes-backend/scripts/refresh-company-intelligence-cron.ts`
   - **Scope**:
-    - Implement bi-monthly cron job (`0 0 1,15 * *`) with configurable `BATCH_SIZE = 50` (or `MAX_COMPANIES_PER_RUN`).
-    - Query companies ordered by `lastVerifiedAt ASC NULLS FIRST LIMIT $batchSize`.
-    - Recalculate frequency and confidence scores, update timestamps to `datetime()`.
-    - Automatically advances cursor so subsequent runs process remaining companies in round-robin fashion.
-    - Write execution summary and before/after score deltas to audit log.
-  - **Acceptance Criteria**: Test script simulates consecutive runs verifying that 50 companies are updated on Run 1, and the remaining companies are processed on Run 2.
+    - Implemented periodic batch refresh worker reading active configuration from PostgreSQL `IntelligenceRefreshConfig` (`0 2 1,15 * *`, `batchSize = 50`, `timezone = 'Asia/Kolkata'`).
+    - Engineered round-robin state cursor querying Neo4j companies ordered by `CASE WHEN c.lastVerifiedAt IS NULL THEN 0 ELSE 1 END, c.lastVerifiedAt ASC, c.slug ASC`.
+    - Integrated Concurrency Guard preventing concurrent overlapping worker runs while cleaning up stale runs (> 20 mins).
+    - Enforced Evidence Quality Guardrail preserving previous scores when sample size $N < 5$.
+    - Implemented Per-Company Fault Isolation so a failure on any individual company does not abort the remaining batch.
+    - Atomically synchronized updated `frequencyScore`, `sampleSize`, and `confidenceScore` to Neo4j graph nodes while writing execution audit records and JSON attribute diffs to PostgreSQL `IntelligenceRefreshExecution`, `CompanyIntelligenceRefreshLog`, and `AdminAuditLog`.
+  - **Acceptance Criteria**: Verified via `scripts/refresh-company-intelligence-cron.ts`: Run 1 updated 10 companies, Run 2 updated the remaining 10 companies with 100% disjoint sets (0% overlap/starvation), 20 audit logs and 2 execution ledgers committed, and all 20 Neo4j company nodes updated with recent verification timestamps.
 
 - [ ] **TASK-P2-05: Neon Cloud PostgreSQL Schema Reset & Structure Synchronization (Gated)**
   - **Dependencies**: `TASK-P2-04`

@@ -141,7 +141,7 @@ const RAW_DSA_TOPICS: Omit<TopicSeed, 'questions'>[] = [
     durationMin: 45,
     frequency: 88,
     weight: 86,
-    trend: 'RISING',
+    trend: 'HOT',
     description:
       'Advanced substring pattern matching: Knuth-Morris-Pratt (KMP) Longest Prefix Suffix (LPS) array in O(N+M), Rabin-Karp polynomial rolling hash, and Repeated String Match.',
     rubricAtoms: ['KMP LPS Array Construction', 'O(N+M) Deterministic Substring Search', 'Rabin-Karp Rolling Hash Math', 'Spurious Hash Collision Handling'],
@@ -587,7 +587,7 @@ const RAW_DSA_TOPICS: Omit<TopicSeed, 'questions'>[] = [
     durationMin: 35,
     frequency: 96,
     weight: 94,
-    trend: 'RISING',
+    trend: 'HOT',
     description:
       'Prefix tree data structure: Implement a Trie (insert, search, startsWith), Longest Common Prefix with Trie, Implement a Phone Directory (autocomplete), and Longest String with All Prefixes.',
     rubricAtoms: ['TrieNode Array vs HashMap Children', 'isEndOfWord Boolean Marker', 'Prefix Query Matching O(L)', 'Autocomplete Subtree Depth-First Search'],

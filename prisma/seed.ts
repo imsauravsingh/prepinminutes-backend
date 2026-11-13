@@ -1061,6 +1061,7 @@ async function main() {
             categoryId: category.id,
           },
           create: {
+            topicId: topicData.slug,
             slug: topicData.slug,
             title: topicData.title,
             description: topicData.description,
