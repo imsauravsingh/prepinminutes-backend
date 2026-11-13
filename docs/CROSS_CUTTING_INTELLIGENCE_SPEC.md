@@ -631,7 +631,9 @@ prepinminutes-backend/
 
 ### 10.2 Execution Tasks & Verification Sequence
 
-1. **`TASK-P2-01`**: Seed the 28 Canonical Roles (`:Role`), including `STUDENT_FRESHER` and `ASSOCIATE`, with their `[:REQUIRES_TOPIC]` edges.
-2. **`TASK-P2-02`**: Seed the 20 Companies (`:Company`) with evidence-backed `[:FREQUENTLY_ASKED_AT]` edges and company-specific stage loops (`[:USES_STAGE]`).
-3. **`TASK-P2-03`**: Seed the 9 Stages (`:InterviewStage`) & 6 Formats (`:InterviewFormat`), and implement the **5-Factor Roadmap Engine** with **Prerequisite Dependency Closure**.
-4. **`TASK-P2-04`**: Scaffold the 3-table Prisma schema, build the **Company Intelligence Refresh & Data Maintenance Engine** with the state cursor, and implement the admin trigger endpoints.
+| Task Code | Focus Area | Deliverables & Scope | Status |
+| :--- | :--- | :--- | :---: |
+| **`TASK-P2-01`** | **Standard Roles & Career Bands** | Seeded the 28 Canonical Roles (`:Role`), including `STUDENT_FRESHER` (Campus SDE, Fresher Frontend, Fresher Backend) and `ASSOCIATE`, with 813 `[:REQUIRES_TOPIC]` edges covering all 371 curriculum topics with 0 dangling topics. | 🟢 **COMPLETED** |
+| **`TASK-P2-02`** | **Companies, Stages & Formats** | Seeded 20 Tier-1 Tech Employers (`:Company`), 9 Canonical Stages (`:InterviewStage`), 6 Canonical Formats (`:InterviewFormat`), 93 hiring loop edges (`[:USES_STAGE]`), 14 format bindings (`[:CONDUCTED_VIA]`), 569 domain alignments (`[:TESTED_IN_STAGE]`), and 53 statistical evidence provenance edges (`[:FREQUENTLY_ASKED_AT]`). | 🟢 **COMPLETED** |
+| **`TASK-P2-03`** | **5-Factor Roadmap Engine** | Implement 5-factor mathematical scoring $P(t)$, recursive transitive dependency closure over `(:Topic)-[:PREREQUISITE_OF*1..6]->(:Topic)`, and Kahn's topological sort with cycle detection. | ⚪ **PENDING** |
+| **`TASK-P2-04`** | **Company Intelligence Refresh Worker** | Implement periodic cron (`0 0 1,15 * *`) with state cursor (batch size 50, Asia/Kolkata), audit logging, and admin on-demand trigger endpoints. | ⚪ **PENDING** |
