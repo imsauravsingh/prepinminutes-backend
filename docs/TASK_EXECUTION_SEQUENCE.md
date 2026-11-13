@@ -10,18 +10,18 @@
 
 ## 1. Executive Status & Progress Matrix
 
-|     Phase     | Functional Scope                                       | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) |        Status         |
-| :-----------: | :----------------------------------------------------- | :---------: | :---------------: | :-----------------: | :-------------: | :-------------------: |
-|  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        | 🟢 **100% COMPLETE**  |
-| **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      3      |         0         |          0          |        3        |  ⚪ **P0 BLOCKING**   |
-|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         0         |          0          |        5        | ⚪ **READY TO START** |
-|  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
-|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
-|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |    ⚪ **PENDING**     |
-|  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
-|  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |    ⚪ **PENDING**     |
-|  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |    ⚪ **PENDING**     |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **36**    |      **10**       |        **0**        |     **26**      |   **27.8% OVERALL**   |
+|     Phase     | Functional Scope                                       | Total Tasks | Completed (`[x]`) | In Progress (`[-]`) | Pending (`[ ]`) |          Status          |
+| :-----------: | :----------------------------------------------------- | :---------: | :---------------: | :-----------------: | :-------------: | :----------------------: |
+|  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        |  🟢 **100% COMPLETE**   |
+| **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
+|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         3         |          0          |        2        | 🟡 **60% (IN PROGRESS)** |
+|  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
+|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
+|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
+|  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
+|  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
+|  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **18**       |        **0**        |     **20**      |    **47.4% OVERALL**     |
 
 ---
 
@@ -42,11 +42,20 @@ flowchart TD
     T110["P1-10: Mobile Engineering (700 Qs)"]
   end
 
-  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4)"]
-    T201["P2-01: Roles & Career Bands (Freshers to Staff)"]
-    T202["P2-02: Companies, Evidence & Stage Loops"]
-    T203["P2-03: 5-Factor Roadmap Engine & Prereq Closure"]
+  subgraph P15["Phase 1.5: Relational Parity & Platform Seeds (100% DONE)"]
+    T151["P1.5-01: Universal Prisma Schema Alignment (27 Models)"]
+    T152["P1.5-02: Local PostgreSQL Push & Verification"]
+    T153["P1.5-03: 10-Domain Curriculum Sync (371 Topics)"]
+    T154["P1.5-04: Baseline Platform Seeds (Admin, Plans, Configs)"]
+    T155["P1.5-05: Golden Demo Candidate Full-State Journey"]
+  end
+
+  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4) (60% DONE)"]
+    T201["P2-01: 28 Roles & 7 Career Bands [DONE]"]
+    T202["P2-02: 20 Companies, Stages & Formats [DONE]"]
+    T203["P2-03: 5-Factor Roadmap Engine & Prereq Closure [DONE]"]
     T204["P2-04: Company Intelligence Refresh Cron (State Cursor)"]
+    T205["P2-05: Neon Cloud PostgreSQL Reset & Sync (Gated)"]
   end
 
   subgraph P3["Phase 3: Unified Curriculum API"]
@@ -85,6 +94,8 @@ flowchart TD
     T803["P8-03: Performance, Quotas & Security Audit"]
   end
 
+  P1 --> P15
+  P15 --> P2
   P1 --> P2
   P1 --> P3
   P2 --> P3
