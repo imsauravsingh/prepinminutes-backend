@@ -81,3 +81,4 @@ export const DOMAIN_ROLE_AFFINITIES: Record<string, { roleSlug: string; isCore: 
     { roleSlug: "android-native-engineer", isCore: false, priority: 78 },
   ],
 };
+

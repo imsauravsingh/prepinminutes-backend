@@ -50,3 +50,4 @@ export interface RoleSeed {
   companyEquivalents: Record<string, string>;
   requiredTopics: RoleTopicRequirement[];
 }
+

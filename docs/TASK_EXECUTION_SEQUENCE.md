@@ -249,18 +249,21 @@ flowchart TD
     - Merged 813 `(r:Role)-[:REQUIRES_TOPIC {isCore: boolean, priorityScore: int, targetLevel: string, minimumDifficulty: string}]->(t:Topic)` relationships across all 371 curriculum topics.
   - **Acceptance Criteria**: Verified in Neo4j AuraDB: 28 roles seeded, 813 relationships committed, 0 unmapped dangling topics.
 
-- [ ] **TASK-P2-02: Seed Companies with Evidence Provenance & Company-Specific Stage Loops**
+- [x] **TASK-P2-02: Seed Companies with Evidence Provenance & Company-Specific Stage Loops**
+  - **Status**: Completed (November 14, 2026)
   - **Dependencies**: `TASK-P2-01`
   - **Target Files**:
     - `prepinminutes-backend/scripts/seed-data/companies/`
     - `prepinminutes-backend/scripts/seed-companies-incremental.ts`
   - **Scope**:
-    - Create `(:Company)` nodes for 20 Tier-1 tech employers (FAANG, Unicorns, Enterprise).
-    - Seed evidence-backed relationships:
-      - `(t:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: int, confidenceScore: float, sampleSize: int, sourceType: string, lastVerifiedAt: datetime()}]->(c:Company)`
-    - Seed company-specific hiring loops:
+    - Created `(:Company)` nodes for 20 Tier-1 tech employers (`google`, `meta`, `amazon`, `apple`, `netflix`, `microsoft`, `uber`, `stripe`, `airbnb`, `databricks`, `snowflake`, `doordash`, `block`, `bytedance`, `coinbase`, `spotify`, `linkedin`, `salesforce`, `atlassian`, `adobe`).
+    - Created 9 `(:InterviewStage)` nodes and 6 `(:InterviewFormat)` nodes with tooling contracts.
+    - Linked 14 `[:CONDUCTED_VIA]` stage-format mappings and 569 `[:TESTED_IN_STAGE]` domain alignments.
+    - Seeded 93 company-specific hiring loop edges:
       - `(c:Company)-[:USES_STAGE {roundOrder: int, isEliminationRound: boolean, stageWeight: int}]->(s:InterviewStage)`
-  - **Acceptance Criteria**: Cypher queries verify evidence fields on all relationships and return company-specific stage loops.
+    - Seeded 53 evidence-backed statistical provenance relationships:
+      - `(t:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: int, confidenceScore: float, sampleSize: int, sourceType: string, lastVerifiedAt: datetime()}]->(c:Company)`
+  - **Acceptance Criteria**: Verified in Neo4j AuraDB: 20 companies, 9 stages, 6 formats, 93 stage loop edges, 53 statistical provenance edges.
 
 - [ ] **TASK-P2-03: Implement 5-Factor Roadmap Engine with Prerequisite Dependency Closure**
   - **Dependencies**: `TASK-P2-01`, `TASK-P2-02`
