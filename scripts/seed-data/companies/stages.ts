@@ -168,3 +168,4 @@ export const CANONICAL_STAGES: InterviewStageSeed[] = [
     ],
   },
 ];
+

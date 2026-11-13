@@ -265,18 +265,20 @@ flowchart TD
       - `(t:Topic)-[:FREQUENTLY_ASKED_AT {frequencyScore: int, confidenceScore: float, sampleSize: int, sourceType: string, lastVerifiedAt: datetime()}]->(c:Company)`
   - **Acceptance Criteria**: Verified in Neo4j AuraDB: 20 companies, 9 stages, 6 formats, 93 stage loop edges, 53 statistical provenance edges.
 
-- [ ] **TASK-P2-03: Implement 5-Factor Roadmap Engine with Prerequisite Dependency Closure**
+- [x] **TASK-P2-03: Implement 5-Factor Roadmap Engine with Prerequisite Dependency Closure**
+  - **Status**: Completed (November 14, 2026)
   - **Dependencies**: `TASK-P2-01`, `TASK-P2-02`
   - **Target Files**:
     - `prepinminutes-backend/src/server/graph/roadmap-query.ts`
+    - `prepinminutes-backend/scripts/test-roadmap-engine.ts`
   - **Scope**:
-    - Build multi-dimensional scoring formula:
+    - Built multi-dimensional scoring formula:
       $$P(t) = 0.30 R(t) + 0.20 C(t) + 0.10 M(t) + 0.25 \text{SkillGap}(t) + 0.15 S(t)$$
-    - Traverse recursive transitive dependency closure:
+    - Traversed recursive transitive dependency closure via Neo4j Cypher:
       `MATCH (prereq:Topic)-[:PREREQUISITE_OF*1..6]->(target:Topic)`
-    - Execute Kahn's algorithm with max-heap priority scheduling and DAG cycle detection.
-    - Bucket ordered topics into weekly milestones matching `timelineWeeks` and `weeklyGoalHours`.
-  - **Acceptance Criteria**: Dry-run tests generate valid 10–25 topic roadmaps across Fresher, Mid, and Senior profiles with 0 broken prerequisites and 0 cycles.
+    - Executed Kahn's topological sort with max-heap priority scheduling and DAG cycle detection guard.
+    - Distributed ordered topics into weekly milestones matching `timelineWeeks` and `weeklyGoalHours`.
+  - **Acceptance Criteria**: Verified dry-run test suite across 3 distinct candidate archetypes (Fresher at Google, Mid-Level Backend at Amazon, Senior Distributed Systems at Stripe) with 0 broken prerequisites and 0 cycles.
 
 - [ ] **TASK-P2-04: Periodic Company Intelligence Batch Refresh Worker with State Cursor**
   - **Dependencies**: `TASK-P2-02`

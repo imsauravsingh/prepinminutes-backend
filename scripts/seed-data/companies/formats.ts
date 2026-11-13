@@ -50,3 +50,4 @@ export const CANONICAL_FORMATS: InterviewFormatSeed[] = [
       "Architectural Decision Record (ADR) presentation where candidate defends system trade-offs, capacity numbers, failure recovery, and non-functional requirements under cross-examination.",
   },
 ];
+

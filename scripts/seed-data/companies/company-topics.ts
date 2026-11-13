@@ -620,3 +620,4 @@ export const CANONICAL_COMPANY_TOPICS: TopicFrequencyRequirement[] = [
     weight: 98,
   },
 ];
+
