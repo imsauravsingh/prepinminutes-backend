@@ -237,23 +237,17 @@ flowchart TD
 
 > **Governing Specification**: [`docs/CROSS_CUTTING_INTELLIGENCE_SPEC.md`](./CROSS_CUTTING_INTELLIGENCE_SPEC.md) (v1.1.0)
 
-- [ ] **TASK-P2-01: Seed Standard Roles & Career Bands (including L1 Freshers & L2 Associates)**
+- [x] **TASK-P2-01: Seed Standard Roles & Career Bands (including L1 Freshers & L2 Associates)**
+  - **Status**: Completed (November 14, 2026)
   - **Dependencies**: `TASK-P1-01` through `TASK-P1-10`
   - **Target Files**:
     - `prepinminutes-backend/scripts/seed-data/roles/`
     - `prepinminutes-backend/scripts/seed-roles-incremental.ts`
   - **Scope**:
-    - Create `(:Role)` nodes for 28 canonical roles across 7 standardized career bands:
-      - `STUDENT_FRESHER` (Campus SDE, Fresher Frontend, Fresher Backend: 0–1 yrs exp)
-      - `ASSOCIATE` (Associate SDE: 0.5–2 yrs exp)
-      - `MID_LEVEL` (SDE-2 across General, Backend, Frontend, Fullstack, Mobile, DevOps, Data, AI: 2–5 yrs exp)
-      - `SENIOR` (Senior SDE across disciplines: 4–8 yrs exp)
-      - `STAFF` (Staff SDE / Architects: 8–12 yrs exp)
-      - `PRINCIPAL` (Principal Engineer: 12+ yrs exp)
-      - `MANAGEMENT` (Engineering Manager, Director)
-    - Store decoupled `companyEquivalents` JSON and numeric `minExperienceYears`/`maxExperienceYears`.
-    - Connect `(r:Role)-[:REQUIRES_TOPIC {isCore: boolean, priorityScore: int, targetLevel: string}]->(t:Topic)`.
-  - **Acceptance Criteria**: 28 roles seeded; all 371 topics mapped to relevant career roles with 0 dangling edges.
+    - Created `(:Role)` nodes for 28 canonical roles across 7 standardized career bands (`STUDENT_FRESHER`, `ASSOCIATE`, `MID_LEVEL`, `SENIOR`, `STAFF`, `PRINCIPAL`, `MANAGEMENT`).
+    - Stored decoupled `companyEquivalents` JSON and numeric bounds `minExperienceYears`/`maxExperienceYears`.
+    - Merged 813 `(r:Role)-[:REQUIRES_TOPIC {isCore: boolean, priorityScore: int, targetLevel: string, minimumDifficulty: string}]->(t:Topic)` relationships across all 371 curriculum topics.
+  - **Acceptance Criteria**: Verified in Neo4j AuraDB: 28 roles seeded, 813 relationships committed, 0 unmapped dangling topics.
 
 - [ ] **TASK-P2-02: Seed Companies with Evidence Provenance & Company-Specific Stage Loops**
   - **Dependencies**: `TASK-P2-01`
