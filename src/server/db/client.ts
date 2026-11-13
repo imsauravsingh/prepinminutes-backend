@@ -21,9 +21,10 @@ export function getDb(): PrismaClient {
     throw new Error("DATABASE_URL is not configured.");
   }
 
-  // Use PrismaNeonHttp when connecting to Neon cloud endpoints (stateless HTTP fetch for edge),
-  // or PrismaPg connection pool when connecting to local PostgreSQL or standard Postgres.
-  const adapter = connectionString.includes("neon.tech")
+  // Use PrismaNeonHttp when connecting in Cloudflare Workers / edge environments without Node pg support,
+  // or PrismaPg connection pool when running in Node.js (scripts, migrations, server runtime).
+  const isNode = typeof process !== "undefined" && Boolean(process.versions?.node);
+  const adapter = !isNode && connectionString.includes("neon.tech")
     ? new PrismaNeonHttp(connectionString, {})
     : new PrismaPg(new Pool({ connectionString }));
 

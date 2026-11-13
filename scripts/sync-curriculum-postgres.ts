@@ -310,49 +310,30 @@ async function syncCurriculum() {
 
       totalTopicsUpserted++;
 
-      // 4. Optionally Upsert Questions if present
+      // 4. Batch Insert Questions if present (High-Performance Multi-Row Insert)
       if (t.questions && Array.isArray(t.questions) && t.questions.length > 0) {
-        for (const q of t.questions) {
-          await prisma.curriculumQuestion.upsert({
-            where: {
-              id:
-                q.id ||
-                `q_${t.slug}_${Math.random().toString(36).substring(7)}`,
-            },
-            update: {
-              topicId: topic.id,
-              title: q.title || t.title,
-              prompt: q.prompt || q.title,
-              targetLevel: q.learningLevel
-                ? String(q.learningLevel).toLowerCase()
-                : q.difficulty
-                  ? String(q.difficulty).toLowerCase()
-                  : "senior",
-              hints: Array.isArray(q.hints) ? q.hints : [],
-              rubricGuide:
-                q.rubricGuide ||
-                q.prompt ||
-                "Verify technical correctness and trade-offs.",
-            },
-            create: {
-              id: q.id || undefined,
-              topicId: topic.id,
-              title: q.title || t.title,
-              prompt: q.prompt || q.title,
-              targetLevel: q.learningLevel
-                ? String(q.learningLevel).toLowerCase()
-                : q.difficulty
-                  ? String(q.difficulty).toLowerCase()
-                  : "senior",
-              hints: Array.isArray(q.hints) ? q.hints : [],
-              rubricGuide:
-                q.rubricGuide ||
-                q.prompt ||
-                "Verify technical correctness and trade-offs.",
-            },
-          });
-          totalQuestionsUpserted++;
-        }
+        const questionBatch = t.questions.map((q: any) => ({
+          ...(q.id ? { id: q.id } : {}),
+          topicId: topic.id,
+          title: q.title || t.title,
+          prompt: q.prompt || q.title,
+          targetLevel: q.learningLevel
+            ? String(q.learningLevel).toLowerCase()
+            : q.difficulty
+              ? String(q.difficulty).toLowerCase()
+              : "senior",
+          hints: Array.isArray(q.hints) ? q.hints : [],
+          rubricGuide:
+            q.rubricGuide ||
+            q.prompt ||
+            "Verify technical correctness and trade-offs.",
+        }));
+
+        const result = await prisma.curriculumQuestion.createMany({
+          data: questionBatch,
+          skipDuplicates: true,
+        });
+        totalQuestionsUpserted += result.count;
       }
     }
 

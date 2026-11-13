@@ -14,14 +14,14 @@
 | :-----------: | :----------------------------------------------------- | :---------: | :---------------: | :-----------------: | :-------------: | :----------------------: |
 |  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        |  🟢 **100% COMPLETE**   |
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         4         |          0          |        1        | 🟡 **80% (IN PROGRESS)** |
+|  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **19**       |        **0**        |     **19**      |    **50.0% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **20**       |        **0**        |     **18**      |    **52.6% OVERALL**     |
 
 ---
 
@@ -50,12 +50,12 @@ flowchart TD
     T155["P1.5-05: Golden Demo Candidate Full-State Journey"]
   end
 
-  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4) (80% DONE)"]
+  subgraph P2["Phase 2: Cross-Cutting Intelligence (L1-L4) (100% DONE)"]
     T201["P2-01: 28 Roles & 7 Career Bands [DONE]"]
     T202["P2-02: 20 Companies, Stages & Formats [DONE]"]
     T203["P2-03: 5-Factor Roadmap Engine & Prereq Closure [DONE]"]
     T204["P2-04: Company Intelligence Refresh Cron (State Cursor) [DONE]"]
-    T205["P2-05: Neon Cloud PostgreSQL Reset & Sync (Gated)"]
+    T205["P2-05: Neon Cloud PostgreSQL Reset & Structure Sync [DONE]"]
   end
 
   subgraph P3["Phase 3: Unified Curriculum API"]
@@ -307,16 +307,23 @@ flowchart TD
     - Atomically synchronized updated `frequencyScore`, `sampleSize`, and `confidenceScore` to Neo4j graph nodes while writing execution audit records and JSON attribute diffs to PostgreSQL `IntelligenceRefreshExecution`, `CompanyIntelligenceRefreshLog`, and `AdminAuditLog`.
   - **Acceptance Criteria**: Verified via `scripts/refresh-company-intelligence-cron.ts`: Run 1 updated 10 companies, Run 2 updated the remaining 10 companies with 100% disjoint sets (0% overlap/starvation), 20 audit logs and 2 execution ledgers committed, and all 20 Neo4j company nodes updated with recent verification timestamps.
 
-- [ ] **TASK-P2-05: Neon Cloud PostgreSQL Schema Reset & Structure Synchronization (Gated)**
+- [x] **TASK-P2-05: Neon Cloud PostgreSQL Schema Reset & Structure Synchronization (Gated)**
+  - **Status**: Completed (November 14, 2026)
+  - **Priority**: **P0 (Cloud Database Parity)**
   - **Dependencies**: `TASK-P2-04`
   - **Target Files**:
     - `prepinminutes-backend/prisma/schema.prisma`
     - `prep-in-minutes/prisma/schema.prisma`
+    - `prepinminutes-backend/src/server/db/client.ts`
   - **Scope**:
-    - Reset the remote Neon Cloud PostgreSQL database instance.
-    - Push all updated schema structures (including `intelligence_refresh_*` models and `candidate_topic_proficiency`) to Neon upon explicit user confirmation.
-    - Keep Neon schema and seed baseline synchronized with the local PostgreSQL database (`localhost:5432`).
-  - **Acceptance Criteria**: Remote Neon Cloud DB passes `prisma validate` and reflects exact parity with the local PostgreSQL database structure.
+    - Secured explicit user approval to execute `prisma db push --force-reset` on remote Neon Cloud PostgreSQL (`ep-mute-water-b4tb9s29-pooler.c-6.us-east-2.aws.neon.tech/prepinminutes`).
+    - Successfully reset remote database instance and re-created all **27 relational tables** from unified Prisma schema.
+    - Updated `src/server/db/client.ts` to utilize robust `PrismaPg` connection pool in Node runtime for high-throughput batch operations.
+    - Optimized `scripts/sync-curriculum-postgres.ts` with `createMany({ skipDuplicates: true })` multi-row inserts.
+    - Synchronized platform baseline seeds: root HOD admin (`imsauravsingh@gmail.com`), 4 subscription tiers, 10 platform configurations, and company refresh config.
+    - Synchronized full 10-domain curriculum: 10 domains, 122 categories, 371 topics, and 5,718 questions.
+    - Seeded golden demo candidate (`candidate@prepinminutes.com`) with verified profile, 4 daily tasks, completed practice session, Sarah AI evaluation report, and SM-2 revision items.
+  - **Acceptance Criteria**: Live Neon Cloud database audit confirmed exact 1:1 parity with local PostgreSQL: 27 tables, 10 domains, 122 categories, 371 topics, 5,718 questions, 4 plans, 10 configs, 1 refresh job, 2 users, 4 tasks, 1 session, 1 evaluation report.
 
 ---
 
