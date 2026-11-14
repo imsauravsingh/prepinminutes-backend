@@ -1,5 +1,5 @@
 /**
- * PrepInMinutes — Public Curriculum Hierarchy & Domain Catalog Endpoints
+ * PrepInMinutes — Public Curriculum Hierarchy, Topic Detail & Question Bundle Endpoints
  *
  * Implements:
  * 1. GET /api/curriculum/domains
@@ -14,6 +14,18 @@
  *    - Strict 1:1 schema equivalence between Neo4j and Postgres
  *    - HTTP 304 Not Modified support via ETag
  *    - Structured HTTP 404 for unknown domains
+ *
+ * 3. GET /api/curriculum/topic/:topicSlug
+ *    - Complete 8-layer topic metadata:
+ *      - Domain, Category, Topic attributes, Rubric atoms
+ *      - Inbound Prerequisites, Outbound Dependents, Component edges, Foundational edges
+ *      - Questions collection with hints, rubrics, keywords, and follow-up probes
+ *
+ * 4. GET /api/curriculum/topic/:topicSlug/questions
+ *    - Dynamic question bundle with query filters:
+ *      - ?targetLevel=senior|staff|l1..l5
+ *      - ?difficulty=BEGINNER|INTERMEDIATE|ADVANCED|EXPERT
+ *      - ?limit=1..100
  */
 
 import { ApiRequest, ApiResponse } from "../lib/http";
@@ -24,6 +36,8 @@ import {
 import {
   CurriculumDomainsResponse,
   CurriculumHierarchyResponse,
+  TopicDetailResponse,
+  TopicQuestionsResponse,
 } from "../server/graph/types";
 
 /**
@@ -225,6 +239,225 @@ export async function handleGetCurriculumHierarchy(
   }
 
   const payload: CurriculumHierarchyResponse & { success: boolean } = {
+    success: true,
+    ...result.data,
+  };
+
+  const etag = generateETag(curriculumVersion, payload);
+
+  // Store in L0 Edge Memory Cache
+  memoryCache.set(cacheKey, {
+    payload,
+    etag,
+    dataSource: result.dataSource,
+    timestamp: now,
+  });
+
+  const headers: Record<string, string> = {
+    "Cache-Control": CACHE_CONTROL_VALUE,
+    ETag: etag,
+    "X-Curriculum-Version": curriculumVersion,
+    "X-Data-Source": result.dataSource,
+    "X-Response-Time-Ms": latencyMs.toString(),
+  };
+
+  if (ifNoneMatch && (ifNoneMatch === etag || ifNoneMatch === "*")) {
+    return new Response(null, {
+      status: 304,
+      headers,
+    });
+  }
+
+  return ApiResponse.json(payload, {
+    status: 200,
+    headers,
+  });
+}
+
+/**
+ * GET /api/curriculum/topic/:topicSlug
+ * Returns complete 8-layer detail for any topic, including questions and graph relationships.
+ */
+export async function handleGetCurriculumTopicDetail(
+  req: ApiRequest,
+  topicSlug: string
+): Promise<Response> {
+  const cleanSlug = (topicSlug || "").trim().toLowerCase();
+  const curriculumVersion = process.env.CURRICULUM_VERSION || "v42";
+  const cacheKey = `curriculum:topic:${cleanSlug}:${curriculumVersion}`;
+  const now = Date.now();
+  const ifNoneMatch =
+    req.headers.get("if-none-match") || req.headers.get("If-None-Match");
+
+  // Check L0 Edge Memory Cache
+  const cached = memoryCache.get(cacheKey);
+  if (cached && now - cached.timestamp < MEMORY_CACHE_TTL_MS) {
+    const headers: Record<string, string> = {
+      "Cache-Control": CACHE_CONTROL_VALUE,
+      ETag: cached.etag,
+      "X-Curriculum-Version": curriculumVersion,
+      "X-Data-Source": `${cached.dataSource}_EDGE_CACHE`,
+      "X-Response-Time-Ms": "0",
+    };
+
+    if (ifNoneMatch && (ifNoneMatch === cached.etag || ifNoneMatch === "*")) {
+      return new Response(null, {
+        status: 304,
+        headers,
+      });
+    }
+
+    return ApiResponse.json(cached.payload, {
+      status: 200,
+      headers,
+    });
+  }
+
+  const startTime = Date.now();
+  const result = await curriculumRepositoryService.getTopicDetail(cleanSlug);
+  const latencyMs = Date.now() - startTime;
+
+  if (!result.data) {
+    return ApiResponse.json(
+      {
+        success: false,
+        error: {
+          code: "TOPIC_NOT_FOUND",
+          message: `The curriculum topic '${topicSlug}' was not found.`,
+          requestId: `req_${Date.now().toString(36)}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`,
+          timestamp: new Date().toISOString(),
+        },
+      },
+      {
+        status: 404,
+        headers: {
+          "Cache-Control": "public, max-age=60, s-maxage=60",
+          "X-Data-Source": result.dataSource,
+          "X-Response-Time-Ms": latencyMs.toString(),
+        },
+      }
+    );
+  }
+
+  const payload: TopicDetailResponse & { success: boolean } = {
+    success: true,
+    ...result.data,
+  };
+
+  const etag = generateETag(curriculumVersion, payload);
+
+  // Store in L0 Edge Memory Cache
+  memoryCache.set(cacheKey, {
+    payload,
+    etag,
+    dataSource: result.dataSource,
+    timestamp: now,
+  });
+
+  const headers: Record<string, string> = {
+    "Cache-Control": CACHE_CONTROL_VALUE,
+    ETag: etag,
+    "X-Curriculum-Version": curriculumVersion,
+    "X-Data-Source": result.dataSource,
+    "X-Response-Time-Ms": latencyMs.toString(),
+  };
+
+  if (ifNoneMatch && (ifNoneMatch === etag || ifNoneMatch === "*")) {
+    return new Response(null, {
+      status: 304,
+      headers,
+    });
+  }
+
+  return ApiResponse.json(payload, {
+    status: 200,
+    headers,
+  });
+}
+
+/**
+ * GET /api/curriculum/topic/:topicSlug/questions
+ * Returns dynamic question collection with optional query filtering (targetLevel, difficulty, limit).
+ */
+export async function handleGetCurriculumTopicQuestions(
+  req: ApiRequest,
+  topicSlug: string
+): Promise<Response> {
+  const cleanSlug = (topicSlug || "").trim().toLowerCase();
+  const targetLevel = req.nextUrl.searchParams.get("targetLevel") || undefined;
+  const difficulty = req.nextUrl.searchParams.get("difficulty") || undefined;
+  const limitParam = req.nextUrl.searchParams.get("limit");
+  const limit = limitParam
+    ? Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 100)
+    : 20;
+
+  const curriculumVersion = process.env.CURRICULUM_VERSION || "v42";
+  const cacheKey = `curriculum:questions:${cleanSlug}:${targetLevel || "all"}:${
+    difficulty || "all"
+  }:${limit}:${curriculumVersion}`;
+  const now = Date.now();
+  const ifNoneMatch =
+    req.headers.get("if-none-match") || req.headers.get("If-None-Match");
+
+  // Check L0 Edge Memory Cache
+  const cached = memoryCache.get(cacheKey);
+  if (cached && now - cached.timestamp < MEMORY_CACHE_TTL_MS) {
+    const headers: Record<string, string> = {
+      "Cache-Control": CACHE_CONTROL_VALUE,
+      ETag: cached.etag,
+      "X-Curriculum-Version": curriculumVersion,
+      "X-Data-Source": `${cached.dataSource}_EDGE_CACHE`,
+      "X-Response-Time-Ms": "0",
+    };
+
+    if (ifNoneMatch && (ifNoneMatch === cached.etag || ifNoneMatch === "*")) {
+      return new Response(null, {
+        status: 304,
+        headers,
+      });
+    }
+
+    return ApiResponse.json(cached.payload, {
+      status: 200,
+      headers,
+    });
+  }
+
+  const startTime = Date.now();
+  const result = await curriculumRepositoryService.getTopicQuestions(cleanSlug, {
+    targetLevel,
+    difficulty,
+    limit,
+  });
+  const latencyMs = Date.now() - startTime;
+
+  if (!result.data) {
+    return ApiResponse.json(
+      {
+        success: false,
+        error: {
+          code: "TOPIC_NOT_FOUND",
+          message: `The curriculum topic '${topicSlug}' was not found.`,
+          requestId: `req_${Date.now().toString(36)}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`,
+          timestamp: new Date().toISOString(),
+        },
+      },
+      {
+        status: 404,
+        headers: {
+          "Cache-Control": "public, max-age=60, s-maxage=60",
+          "X-Data-Source": result.dataSource,
+          "X-Response-Time-Ms": latencyMs.toString(),
+        },
+      }
+    );
+  }
+
+  const payload: TopicQuestionsResponse & { success: boolean } = {
     success: true,
     ...result.data,
   };

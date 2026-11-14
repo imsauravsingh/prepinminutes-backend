@@ -6,6 +6,10 @@ import {
   CurriculumCategoryHierarchy,
   CurriculumTopicSummary,
   ICurriculumRepository,
+  TopicDetailResponse,
+  TopicQuestionsResponse,
+  TopicQuestionsQueryOptions,
+  BaseQuestionNode,
 } from "./types";
 
 // Canonical metadata mapping for all 10 domains
@@ -357,6 +361,218 @@ export class Neo4jCurriculumRepository implements ICurriculumRepository {
       await session.close();
     }
   }
+
+  public async getTopicDetail(
+    topicSlug: string
+  ): Promise<TopicDetailResponse | null> {
+    const driver = getNeo4jDriver();
+    const session = driver.session();
+
+    try {
+      const cypher = `
+        MATCH (t:Topic {slug: $topicSlug})
+        MATCH (c:Category)-[:HAS_TOPIC]->(t)
+        MATCH (d:Domain)-[:CONTAINS]->(c)
+
+        // Inbound Prerequisites
+        OPTIONAL MATCH (prereq:Topic)-[:PREREQUISITE_OF]->(t)
+
+        // Outbound Dependents
+        OPTIONAL MATCH (t)-[:PREREQUISITE_OF]->(dependent:Topic)
+
+        // Domain-Specific Cross Edges
+        OPTIONAL MATCH (t)-[:USES_COMPONENT]->(component:Topic)
+        OPTIONAL MATCH (t)-[:FOUNDED_ON]->(principle:Topic)
+        OPTIONAL MATCH (t)-[:USES_PATTERN]->(pattern)
+
+        // Questions
+        OPTIONAL MATCH (t)-[:HAS_QUESTION]->(q:Question)
+
+        WITH d, c, t,
+             collect(DISTINCT {slug: prereq.slug, title: prereq.title, topicId: prereq.topicId}) AS rawPrereqs,
+             collect(DISTINCT {slug: dependent.slug, title: dependent.title, topicId: dependent.topicId}) AS rawDependents,
+             collect(DISTINCT {slug: component.slug, title: component.title}) AS rawComponents,
+             collect(DISTINCT {slug: principle.slug, title: principle.title}) AS rawPrinciples,
+             collect(DISTINCT {slug: pattern.slug, name: pattern.name}) AS rawPatterns,
+             collect(DISTINCT {
+               id: q.id,
+               title: q.title,
+               difficulty: coalesce(q.difficulty, 'INTERMEDIATE'),
+               learningLevel: coalesce(q.learningLevel, 'L1'),
+               archetype: coalesce(q.archetype, 'conceptual'),
+               prompt: q.prompt,
+               scaleAnchor: coalesce(q.scaleAnchor, ''),
+               rubricGuide: q.rubricGuide,
+               rubricAtoms: coalesce(q.rubricAtoms, []),
+               hints: coalesce(q.hints, []),
+               followUpProbes: coalesce(q.followUpProbes, []),
+               expectedKeywords: coalesce(q.expectedKeywords, []),
+               antiPatterns: coalesce(q.antiPatterns, [])
+             }) AS rawQuestions
+
+        RETURN {
+          domain: { slug: d.slug, name: d.name },
+          category: { slug: c.slug, name: c.name, pillar: coalesce(c.pillar, 'Core Curriculum') },
+          topic: {
+            slug: t.slug,
+            topicId: coalesce(t.topicId, t.slug),
+            title: t.title,
+            pillar: coalesce(t.pillar, c.pillar, 'Core Curriculum'),
+            priority: coalesce(t.priority, 'P0'),
+            difficulty: coalesce(t.difficulty, 'INTERMEDIATE'),
+            durationMin: coalesce(t.durationMin, 15),
+            frequency: coalesce(t.frequency, 80),
+            weight: coalesce(t.weight, 1.0),
+            trend: coalesce(t.trend, 'STABLE'),
+            description: coalesce(t.description, ''),
+            rubricAtoms: coalesce(t.rubricAtoms, [])
+          },
+          graphRelationships: {
+            prerequisites: [p IN rawPrereqs WHERE p.slug IS NOT NULL],
+            dependents: [dep IN rawDependents WHERE dep.slug IS NOT NULL],
+            usedComponents: [uc IN rawComponents WHERE uc.slug IS NOT NULL],
+            foundedOn: [fo IN rawPrinciples WHERE fo.slug IS NOT NULL],
+            algorithmPatterns: [ap IN rawPatterns WHERE ap.slug IS NOT NULL]
+          },
+          questions: [qn IN rawQuestions WHERE qn.id IS NOT NULL]
+        } AS topicDetail
+      `;
+
+      const result = await session.run(cypher, { topicSlug });
+      if (result.records.length === 0) return null;
+
+      const raw = result.records[0].get("topicDetail");
+      if (!raw || !raw.topic) return null;
+
+      const sanitized = sanitizeNeo4jValue(raw);
+
+      return {
+        domain: sanitized.domain,
+        category: sanitized.category,
+        topic: {
+          slug: sanitized.topic.slug,
+          topicId: sanitized.topic.topicId,
+          title: sanitized.topic.title,
+          pillar: sanitized.topic.pillar,
+          priority: normalizePriority(sanitized.topic.priority),
+          difficulty: normalizeDifficulty(sanitized.topic.difficulty),
+          durationMin: Number(sanitized.topic.durationMin) || 15,
+          frequency: Number(sanitized.topic.frequency) || 80,
+          weight: Number(sanitized.topic.weight) || 1.0,
+          trend: normalizeTrend(sanitized.topic.trend) as any,
+          description: sanitized.topic.description || "",
+          rubricAtoms: sanitized.topic.rubricAtoms || [],
+          updatedAt: sanitized.topic.updatedAt || new Date().toISOString(),
+        },
+        graphRelationships: sanitized.graphRelationships || {
+          prerequisites: [],
+          dependents: [],
+          usedComponents: [],
+          foundedOn: [],
+          algorithmPatterns: [],
+        },
+        questions: (sanitized.questions || []).map((q: any): BaseQuestionNode => ({
+          id: q.id,
+          title: q.title,
+          difficulty: normalizeDifficulty(q.difficulty),
+          learningLevel: (q.learningLevel || "L1") as any,
+          archetype: q.archetype || "conceptual",
+          prompt: q.prompt || "",
+          scaleAnchor: q.scaleAnchor || "",
+          rubricGuide: q.rubricGuide || "",
+          rubricAtoms: q.rubricAtoms || [],
+          hints: q.hints || [],
+          followUpProbes: q.followUpProbes || [],
+          expectedKeywords: q.expectedKeywords || [],
+          antiPatterns: q.antiPatterns || [],
+        })),
+      };
+    } finally {
+      await session.close();
+    }
+  }
+
+  public async getTopicQuestions(
+    topicSlug: string,
+    options: TopicQuestionsQueryOptions = {}
+  ): Promise<TopicQuestionsResponse | null> {
+    const driver = getNeo4jDriver();
+    const session = driver.session();
+
+    try {
+      const cypher = `
+        MATCH (t:Topic {slug: $topicSlug})
+        MATCH (c:Category)-[:HAS_TOPIC]->(t)
+        MATCH (d:Domain)-[:CONTAINS]->(c)
+        OPTIONAL MATCH (t)-[:HAS_QUESTION]->(q:Question)
+        WHERE ($targetLevel IS NULL OR q.learningLevel = $targetLevel)
+          AND ($difficulty IS NULL OR q.difficulty = $difficulty)
+        WITH d, t, q
+        ORDER BY q.learningLevel, q.id
+        LIMIT toInteger($limit)
+        WITH d, t, collect(CASE WHEN q IS NOT NULL THEN {
+          id: q.id,
+          title: q.title,
+          difficulty: coalesce(q.difficulty, 'INTERMEDIATE'),
+          learningLevel: coalesce(q.learningLevel, 'L1'),
+          archetype: coalesce(q.archetype, 'conceptual'),
+          prompt: q.prompt,
+          scaleAnchor: coalesce(q.scaleAnchor, ''),
+          rubricGuide: q.rubricGuide,
+          rubricAtoms: coalesce(q.rubricAtoms, []),
+          hints: coalesce(q.hints, []),
+          followUpProbes: coalesce(q.followUpProbes, []),
+          expectedKeywords: coalesce(q.expectedKeywords, []),
+          antiPatterns: coalesce(q.antiPatterns, [])
+        } ELSE null END) AS rawQuestions
+        RETURN {
+          topicSlug: t.slug,
+          topicTitle: t.title,
+          domainSlug: d.slug,
+          totalQuestions: size([qn IN rawQuestions WHERE qn IS NOT NULL]),
+          questions: [qn IN rawQuestions WHERE qn IS NOT NULL]
+        } AS result
+      `;
+
+      const result = await session.run(cypher, {
+        topicSlug,
+        targetLevel: options.targetLevel || null,
+        difficulty: options.difficulty || null,
+        limit: options.limit || 50,
+      });
+
+      if (result.records.length === 0) return null;
+
+      const raw = result.records[0].get("result");
+      if (!raw || !raw.topicSlug) return null;
+
+      const sanitized = sanitizeNeo4jValue(raw);
+
+      return {
+        topicSlug: sanitized.topicSlug,
+        topicTitle: sanitized.topicTitle,
+        domainSlug: sanitized.domainSlug,
+        totalQuestions: Number(sanitized.totalQuestions) || (sanitized.questions ? sanitized.questions.length : 0),
+        questions: (sanitized.questions || []).map((q: any): BaseQuestionNode => ({
+          id: q.id,
+          title: q.title,
+          difficulty: normalizeDifficulty(q.difficulty),
+          learningLevel: (q.learningLevel || "L1") as any,
+          archetype: q.archetype || "conceptual",
+          prompt: q.prompt || "",
+          scaleAnchor: q.scaleAnchor || "",
+          rubricGuide: q.rubricGuide || "",
+          rubricAtoms: q.rubricAtoms || [],
+          hints: q.hints || [],
+          followUpProbes: q.followUpProbes || [],
+          expectedKeywords: q.expectedKeywords || [],
+          antiPatterns: q.antiPatterns || [],
+        })),
+      };
+    } finally {
+      await session.close();
+    }
+  }
 }
 
 // ============================================================
@@ -485,6 +701,119 @@ export class PostgresCurriculumRepository implements ICurriculumRepository {
       categories,
     };
   }
+
+  public async getTopicDetail(
+    topicSlug: string
+  ): Promise<TopicDetailResponse | null> {
+    const t = await db.curriculumTopic.findUnique({
+      where: { slug: topicSlug },
+      include: {
+        domain: true,
+        category: true,
+        questions: true,
+      },
+    });
+
+    if (!t) return null;
+
+    const questions: BaseQuestionNode[] = t.questions.map((q) => ({
+      id: q.id,
+      title: q.title,
+      difficulty: normalizeDifficulty(t.difficulty),
+      learningLevel: (q.targetLevel ? q.targetLevel.toUpperCase() : "L1") as any,
+      archetype: "scenario-based",
+      prompt: q.prompt,
+      scaleAnchor: "",
+      rubricGuide: q.rubricGuide,
+      rubricAtoms: t.rubricAtoms || [],
+      hints: q.hints || [],
+      followUpProbes: [],
+      expectedKeywords: [],
+      antiPatterns: [],
+    }));
+
+    return {
+      domain: {
+        slug: t.domain.slug,
+        name: t.domain.name,
+      },
+      category: {
+        slug: t.category.slug,
+        name: t.category.name,
+        pillar: t.category.description || "Core Curriculum",
+      },
+      topic: {
+        slug: t.slug,
+        topicId: t.topicId || t.slug,
+        title: t.title,
+        pillar: t.category.description || "Core Curriculum",
+        priority: normalizePriority(t.priority),
+        difficulty: normalizeDifficulty(t.difficulty),
+        durationMin: t.durationMin || 15,
+        frequency: 85,
+        weight: 1.0,
+        trend: "HOT" as any,
+        description: t.description || "",
+        rubricAtoms: t.rubricAtoms || [],
+        updatedAt: t.createdAt.toISOString(),
+      },
+      graphRelationships: {
+        prerequisites: [],
+        dependents: [],
+        usedComponents: [],
+        foundedOn: [],
+        algorithmPatterns: [],
+      },
+      questions,
+    };
+  }
+
+  public async getTopicQuestions(
+    topicSlug: string,
+    options: TopicQuestionsQueryOptions = {}
+  ): Promise<TopicQuestionsResponse | null> {
+    const t = await db.curriculumTopic.findUnique({
+      where: { slug: topicSlug },
+      include: {
+        domain: true,
+        questions: true,
+      },
+    });
+
+    if (!t) return null;
+
+    let filtered = t.questions;
+    if (options.targetLevel) {
+      filtered = filtered.filter(
+        (q) => q.targetLevel?.toLowerCase() === options.targetLevel!.toLowerCase()
+      );
+    }
+
+    const limit = options.limit || 50;
+    const questions: BaseQuestionNode[] = filtered.slice(0, limit).map((q) => ({
+      id: q.id,
+      title: q.title,
+      difficulty: normalizeDifficulty(t.difficulty),
+      learningLevel: (q.targetLevel ? q.targetLevel.toUpperCase() : "L1") as any,
+      archetype: "scenario-based",
+      prompt: q.prompt,
+      scaleAnchor: "",
+      rubricGuide: q.rubricGuide,
+      rubricAtoms: t.rubricAtoms || [],
+      hints: q.hints || [],
+      followUpProbes: [],
+      expectedKeywords: [],
+      antiPatterns: [],
+    }));
+
+    return {
+      topicSlug: t.slug,
+      topicTitle: t.title,
+      domainSlug: t.domain.slug,
+      totalQuestions: questions.length,
+      questions,
+    };
+  }
 }
 
 // ============================================================
@@ -593,6 +922,71 @@ export class CurriculumRepositoryService {
     // Postgres Fallback
     const fallbackStart = Date.now();
     const data = await this.pgRepo.getDomainHierarchy(domainSlug);
+    return {
+      data,
+      dataSource: "POSTGRES_FALLBACK",
+      latencyMs: Date.now() - fallbackStart,
+    };
+  }
+
+  public async getTopicDetail(
+    topicSlug: string
+  ): Promise<CurriculumQueryResult<TopicDetailResponse | null>> {
+    const startTime = Date.now();
+
+    if (this.shouldAttemptNeo4j()) {
+      try {
+        const data = await this.executeWithTimeout(
+          this.neo4jRepo.getTopicDetail(topicSlug),
+          this.TIMEOUT_MS,
+          `Neo4j getTopicDetail timed out after ${this.TIMEOUT_MS}ms`
+        );
+        return {
+          data,
+          dataSource: "NEO4J",
+          latencyMs: Date.now() - startTime,
+        };
+      } catch (err: any) {
+        this.tripCircuit(err?.message || `Neo4j topic detail failed for ${topicSlug}`);
+      }
+    }
+
+    // Postgres Fallback
+    const fallbackStart = Date.now();
+    const data = await this.pgRepo.getTopicDetail(topicSlug);
+    return {
+      data,
+      dataSource: "POSTGRES_FALLBACK",
+      latencyMs: Date.now() - fallbackStart,
+    };
+  }
+
+  public async getTopicQuestions(
+    topicSlug: string,
+    options?: TopicQuestionsQueryOptions
+  ): Promise<CurriculumQueryResult<TopicQuestionsResponse | null>> {
+    const startTime = Date.now();
+
+    if (this.shouldAttemptNeo4j()) {
+      try {
+        const data = await this.executeWithTimeout(
+          this.neo4jRepo.getTopicQuestions(topicSlug, options),
+          this.TIMEOUT_MS,
+          `Neo4j getTopicQuestions timed out after ${this.TIMEOUT_MS}ms`
+        );
+        return {
+          data,
+          dataSource: "NEO4J",
+          latencyMs: Date.now() - startTime,
+        };
+      } catch (err: any) {
+        this.tripCircuit(err?.message || `Neo4j topic questions failed for ${topicSlug}`);
+      }
+    }
+
+    // Postgres Fallback
+    const fallbackStart = Date.now();
+    const data = await this.pgRepo.getTopicQuestions(topicSlug, options);
     return {
       data,
       dataSource: "POSTGRES_FALLBACK",

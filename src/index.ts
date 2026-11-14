@@ -82,6 +82,8 @@ import {
 import {
   handleGetCurriculumDomains,
   handleGetCurriculumHierarchy,
+  handleGetCurriculumTopicDetail,
+  handleGetCurriculumTopicQuestions,
 } from "./routes/curriculum";
 
 export type BackendEnv = Record<string, string | undefined>;
@@ -311,6 +313,12 @@ const worker = {
       } else if (pathname.startsWith("/api/curriculum/hierarchy/") && method === "GET") {
         const domainSlug = pathname.replace("/api/curriculum/hierarchy/", "").replace(/\/$/, "");
         response = await handleGetCurriculumHierarchy(req, domainSlug);
+      } else if (pathname.startsWith("/api/curriculum/topic/") && pathname.endsWith("/questions") && method === "GET") {
+        const topicSlug = pathname.replace("/api/curriculum/topic/", "").replace("/questions", "").replace(/\/$/, "");
+        response = await handleGetCurriculumTopicQuestions(req, topicSlug);
+      } else if (pathname.startsWith("/api/curriculum/topic/") && method === "GET") {
+        const topicSlug = pathname.replace("/api/curriculum/topic/", "").replace(/\/$/, "");
+        response = await handleGetCurriculumTopicDetail(req, topicSlug);
       } else {
         response = ApiResponse.json(
           { error: "NOT_FOUND", path: pathname, method },

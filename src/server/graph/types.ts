@@ -58,7 +58,7 @@ export interface BaseTopicNode {
   trend: TrendDirection;
   description: string;
   rubricAtoms: string[];
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface BaseQuestionNode {
@@ -205,9 +205,29 @@ export interface CurriculumDomainsResponse {
   };
 }
 
+export interface TopicQuestionsQueryOptions {
+  targetLevel?: string;
+  difficulty?: string;
+  limit?: number;
+}
+
+export interface TopicQuestionsResponse {
+  topicSlug: string;
+  topicTitle: string;
+  domainSlug: string;
+  totalQuestions: number;
+  questions: BaseQuestionNode[];
+}
+
 export interface ICurriculumRepository {
   getDomains(): Promise<DomainCatalogItem[]>;
   getDomainHierarchy(domainSlug: string): Promise<CurriculumHierarchyResponse | null>;
+  getTopicDetail(topicSlug: string): Promise<TopicDetailResponse | null>;
+  getTopicQuestions(
+    topicSlug: string,
+    options?: TopicQuestionsQueryOptions
+  ): Promise<TopicQuestionsResponse | null>;
 }
+
 
 

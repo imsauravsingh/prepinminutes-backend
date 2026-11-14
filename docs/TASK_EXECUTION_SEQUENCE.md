@@ -15,13 +15,13 @@
 |  **Phase 1**  | **Curriculum Knowledge Graph (Neo4j AuraDB)**          |     10      |        10         |          0          |        0        |  🟢 **100% COMPLETE**   |
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         1         |          0          |        2        |  🟡 **IN PROGRESS (33.3%)**  |
+|  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         2         |          0          |        1        |  🟡 **IN PROGRESS (66.7%)**  |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **21**       |        **0**        |     **17**      |    **55.3% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **22**       |        **0**        |     **16**      |    **57.9% OVERALL**     |
 
 ---
 
@@ -354,15 +354,31 @@ flowchart TD
     - Implemented structured HTTP 404 taxonomy with `DOMAIN_NOT_FOUND`, list of all 10 valid domains, and request tracing metadata.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-curriculum-api.ts`) passed 64/64 tests with exit code 0; warm responses clocked at an average of 0.10ms (min 0.06ms), far exceeding the sub-35ms target.
 
-- [ ] **TASK-P3-02: Expose Comprehensive Topic Detail & Question Bundle API**
+- [x] **TASK-P3-02: Expose Comprehensive Topic Detail & Question Bundle API**
+  - **Status**: Completed (November 15, 2026)
+  - **Priority**: **P0 (Blocking Core API)**
   - **Dependencies**: `TASK-P3-01`
   - **Target Files**:
+    - `prepinminutes-backend/src/server/graph/types.ts`
+    - `prepinminutes-backend/src/server/graph/curriculum-repository.ts`
     - `prepinminutes-backend/src/routes/curriculum.ts`
+    - `prepinminutes-backend/src/index.ts`
+    - `prepinminutes-backend/scripts/test-curriculum-api.ts`
   - **Scope**:
-    - `GET /api/curriculum/topic/:topicSlug` — Calls `KnowledgeGraphRepository.fetchTopicDetail(topicSlug)` returning 8-layer metadata:
-      - Topic basics, prerequisites, dependent topics, cross-domain component edges.
-      - Full list of 20 questions with difficulty, learning levels, rubricAtoms, hints, follow-up probes, and expected keywords.
-  - **Acceptance Criteria**: Validated for topics across all 10 domains; returns HTTP 404 for unknown topic slug with descriptive error JSON.
+    - Extended `ICurriculumRepository` with `getTopicDetail(topicSlug)` and `getTopicQuestions(topicSlug, options)`.
+    - Implemented `Neo4jCurriculumRepository` topic detail query fetching 8-layer metadata:
+      - Domain & Category references (`slug`, `name`, `pillar`).
+      - Topic attributes (`slug`, `topicId`, `title`, `pillar`, `priority`, `difficulty`, `durationMin`, `frequency`, `weight`, `trend`, `description`, `rubricAtoms`).
+      - Graph relationships (`prerequisites`, `dependents`, `usedComponents`, `foundedOn`, `algorithmPatterns`).
+      - Questions collection with 20 questions (`id`, `title`, `difficulty`, `learningLevel`, `archetype`, `prompt`, `rubricGuide`, `hints`, `followUpProbes`, `expectedKeywords`, `antiPatterns`).
+    - Implemented `PostgresCurriculumRepository` topic detail and questions methods providing strict 1:1 schema parity.
+    - Integrated circuit breaker with 2,500ms timeout guard, gracefully failing over to PostgreSQL on Neo4j partition.
+    - Implemented `GET /api/curriculum/topic/:topicSlug` returning complete 8-layer metadata with ETag and Cache-Control headers.
+    - Implemented `GET /api/curriculum/topic/:topicSlug/questions` supporting dynamic query filtering: `?targetLevel`, `?difficulty`, and `?limit`.
+    - Integrated L0 Edge Memory Cache with 60s TTL delivering sub-1ms warm latency.
+    - Implemented HTTP 304 `Not Modified` on `If-None-Match` for both endpoints.
+    - Implemented structured HTTP 404 taxonomy with `TOPIC_NOT_FOUND` and request correlation tracking.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-curriculum-api.ts`) passed 105/105 tests with exit code 0; warm responses clocked between 0.04ms and 0.05ms across all endpoints, far exceeding the sub-35ms target.
 
 - [ ] **TASK-P3-03: Upstash Redis Edge Caching for Knowledge Graph Queries**
   - **Dependencies**: `TASK-P3-01`, `TASK-P3-02`
