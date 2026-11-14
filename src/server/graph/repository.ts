@@ -253,3 +253,6 @@ export class KnowledgeGraphRepository {
     }
   }
 }
+
+export * from './curriculum-repository';
+

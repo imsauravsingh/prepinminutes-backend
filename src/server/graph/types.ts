@@ -141,3 +141,73 @@ export interface TopicDetailResponse {
   questions: BaseQuestionNode[];
 }
 
+// ============================================================
+// 3. Phase 3: Unified Curriculum API & Edge Gateway Contracts
+// ============================================================
+
+export interface CurriculumTopicSummary {
+  slug: string;
+  topicId: string;
+  title: string;
+  priority: "P0" | "P1";
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
+  durationMin: number;
+  frequency: number;
+  trend: "SURGING" | "HOT" | "STABLE" | "COOLING";
+  rubricAtomsCount: number;
+  questionsCount: number;
+  practiceHref: string;
+}
+
+export interface CurriculumCategoryHierarchy {
+  slug: string;
+  name: string;
+  pillar: string;
+  sortOrder: number;
+  topicsCount: number;
+  topics: CurriculumTopicSummary[];
+}
+
+export interface CurriculumHierarchyResponse {
+  domainSlug: string;
+  domainName: string;
+  description: string;
+  version: string;
+  totalCategories: number;
+  totalTopics: number;
+  totalQuestions: number;
+  categories: CurriculumCategoryHierarchy[];
+}
+
+export interface DomainCatalogItem {
+  slug: string;
+  name: string;
+  shortName: string;
+  description: string;
+  version: string;
+  sortOrder: number;
+  categoriesCount: number;
+  topicsCount: number;
+  questionsCount: number;
+  icon: string;
+  colorTheme: string;
+}
+
+export interface CurriculumDomainsResponse {
+  domains: DomainCatalogItem[];
+  meta: {
+    curriculumVersion: string;
+    totalDomains: number;
+    totalCategories: number;
+    totalTopics: number;
+    totalQuestions: number;
+    dataSource: string;
+  };
+}
+
+export interface ICurriculumRepository {
+  getDomains(): Promise<DomainCatalogItem[]>;
+  getDomainHierarchy(domainSlug: string): Promise<CurriculumHierarchyResponse | null>;
+}
+
+

@@ -79,6 +79,10 @@ import {
   handlePostAdminTeamUnblock,
   handleGetAdminAuditLogs,
 } from "./routes/admin-team";
+import {
+  handleGetCurriculumDomains,
+  handleGetCurriculumHierarchy,
+} from "./routes/curriculum";
 
 export type BackendEnv = Record<string, string | undefined>;
 
@@ -300,6 +304,13 @@ const worker = {
       else if (pathname.startsWith("/api/evaluation/") && method === "GET") {
         const reportId = pathname.replace("/api/evaluation/", "").replace(/\/$/, "");
         response = await handleGetEvaluationReport(req, reportId);
+      }
+      // Public Curriculum Knowledge Graph Endpoints (Phase 3)
+      else if (pathname === "/api/curriculum/domains" && method === "GET") {
+        response = await handleGetCurriculumDomains(req);
+      } else if (pathname.startsWith("/api/curriculum/hierarchy/") && method === "GET") {
+        const domainSlug = pathname.replace("/api/curriculum/hierarchy/", "").replace(/\/$/, "");
+        response = await handleGetCurriculumHierarchy(req, domainSlug);
       } else {
         response = ApiResponse.json(
           { error: "NOT_FOUND", path: pathname, method },
