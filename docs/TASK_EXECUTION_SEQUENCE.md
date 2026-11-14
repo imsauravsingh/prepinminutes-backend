@@ -404,6 +404,8 @@ flowchart TD
 
 ### Phase 4: Frontend Dynamic Integration with Knowledge Graph
 
+> **Governing Specification**: [`docs/FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md`](./FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md) (v1.0.0)
+
 - [ ] **TASK-P4-01: Connect `ChooseTopicWorkspace` to Live Curriculum API**
   - **Dependencies**: `TASK-P3-01`
   - **Target Files**:
