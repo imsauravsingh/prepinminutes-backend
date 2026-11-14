@@ -16,12 +16,12 @@
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
+|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         1         |          0          |        2        |  🟡 **33.3% IN PROGRESS** |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **23**       |        **0**        |     **15**      |    **60.5% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **24**       |        **0**        |     **14**      |    **63.2% OVERALL**     |
 
 ---
 
@@ -404,17 +404,24 @@ flowchart TD
 
 ### Phase 4: Frontend Dynamic Integration with Knowledge Graph
 
-> **Governing Specification**: [`docs/FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md`](./FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md) (v1.0.0)
+> **Governing Specification**: [`docs/FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md`](./FRONTEND_KNOWLEDGE_GRAPH_INTEGRATION_SPEC.md) (v1.1.0)
 
-- [ ] **TASK-P4-01: Connect `ChooseTopicWorkspace` to Live Curriculum API**
-  - **Dependencies**: `TASK-P3-01`
+- [x] **TASK-P4-01: Connect ChooseTopicWorkspace to Live Curriculum API & Practice Router**
+  - **Status**: Completed (November 15, 2026)
+  - **Priority**: **P0 (Blocking Frontend Integration)**
+  - **Dependencies**: `TASK-P3-01`, `TASK-P3-02`, `TASK-P3-03`
   - **Target Files**:
+    - `prep-in-minutes/src/types/curriculum.ts`
+    - `prep-in-minutes/src/lib/practice-router.ts`
     - `prep-in-minutes/src/lib/api-client.ts`
-    - `prep-in-minutes/src/components/practice/ChooseTopicWorkspace.tsx`
+    - `prep-in-minutes/src/hooks/useCurriculum.ts`
+    - `prep-in-minutes/scripts/test-frontend-curriculum-client.ts`
   - **Scope**:
-    - Replace static `ALL_TOPICS` array in `ChooseTopicWorkspace.tsx` with dynamic fetching from `backendApi.getCurriculumHierarchy()`.
-    - Provide fallback to local cached topics on network failure.
-  - **Acceptance Criteria**: Navigating to `/practice/choose-topic` dynamically renders live topics loaded directly from the backend.
+    - Defined end-to-end TypeScript interfaces in `src/types/curriculum.ts` mirroring backend Edge and Neo4j contracts (`DomainCatalogItem`, `CurriculumHierarchyResponse`, `TopicDetailResponse`, etc.).
+    - Implemented Practice Session Archetype Router in `src/lib/practice-router.ts` (`getPracticeSessionUrl`, `getDomainWorkspaceArchetype`) mapping all 10 canonical domains to the 4 established workspace shells without 404 errors.
+    - Extended `backendApi` in `src/lib/api-client.ts` with typed curriculum client methods: `getCurriculumDomains`, `getCurriculumHierarchy`, `getCurriculumTopicDetail`, `getCurriculumTopicQuestions`, structured 404 handling (`DOMAIN_NOT_FOUND`, `TOPIC_NOT_FOUND`), and ETag 304 validation.
+    - Authored custom Stale-While-Revalidate hooks in `src/hooks/useCurriculum.ts` (`useCurriculumDomains`, `useCurriculumHierarchy`, `useCurriculum`) with `localStorage` snapshot caching under `pim_curriculum_cache_v42_*` for instant 0ms startup, background revalidation with ETag 304, and client-side candidate readiness/starring overlays.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-frontend-curriculum-client.ts`) passed 69/69 tests with exit code 0; full TypeScript check and Next.js production build succeeded with zero errors.
 
 - [ ] **TASK-P4-02: Expand Topic Picker UI to Support All 10 Canonical Domains**
   - **Dependencies**: `TASK-P4-01`

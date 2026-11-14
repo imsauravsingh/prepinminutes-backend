@@ -119,6 +119,7 @@ export interface TopicGraphReference {
 }
 
 export interface TopicDetailResponse {
+  success?: boolean;
   domain: {
     slug: string;
     name: string;
@@ -212,6 +213,7 @@ export interface TopicQuestionsQueryOptions {
 }
 
 export interface TopicQuestionsResponse {
+  success?: boolean;
   topicSlug: string;
   topicTitle: string;
   domainSlug: string;

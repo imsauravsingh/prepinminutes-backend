@@ -1,7 +1,7 @@
 # PrepInMinutes — Dynamic Frontend Knowledge Graph Integration Specification (Phase 4)
 ## Real-Time Edge API Consumption, 10-Domain Topic Picker, Stale-While-Revalidate Caching & Zero-Layout-Shift UI
 
-> **Document Version:** 1.0.0 (Production Implementation Specification)  
+> **Document Version:** 1.1.0 (Production Implementation Specification with Route & Overlay Mitigations)  
 > **Target Application:** Next.js 14 App Router (`prep-in-minutes`)  
 > **Upstream Edge Gateway:** Cloudflare Workers / Hono Edge Backend (`prepinminutes-backend`)  
 > **Primary Data Sources:** `GET /api/curriculum/domains`, `GET /api/curriculum/hierarchy/:slug`, `GET /api/curriculum/topic/:slug`  
@@ -20,11 +20,13 @@ In Phases 1 through 3, PrepInMinutes engineered the **Knowledge Graph Foundation
 flowchart TD
   subgraph FRONTEND["Next.js 14 Frontend (prep-in-minutes)"]
     UI["ChooseTopicWorkspace<br/>10 Canonical Domain Tabs<br/>Search, Filter & Category Accordions"]
-    HOOK["useCurriculum(domainSlug)<br/>SWR Stale-While-Revalidate"]
+    ROUTER["Practice Session Archetype Router<br/>getPracticeSessionUrl(domain, topic)"]
+    HOOK["useCurriculum(domainSlug)<br/>SWR Stale-While-Revalidate<br/>Candidate Overlay Blending"]
     STORAGE["LocalStorage Fallback Cache<br/>Key: pim_curriculum_cache_v42_*"]
     CLIENT["backendApi (src/lib/api-client.ts)"]
 
     UI <--> HOOK
+    UI --> ROUTER
     HOOK <--> CLIENT
     HOOK -.->|"Offline / Network Failure"| STORAGE
   end
@@ -47,12 +49,15 @@ flowchart TD
   end
 ```
 
-### Key Architectural Invariants:
+### Key Architectural Invariants & Mitigations:
 1. **Zero Hardcoded Curriculum**: All 10 domains, 122 categories, and 371 topics are loaded dynamically from the backend Edge Gateway.
-2. **Sub-10ms UI Responsiveness**: Leveraging HTTP 304 `ETag` revalidation and client-side SWR caching (`stale-while-revalidate`), topics render instantly without blocking navigation.
-3. **Graceful Offline Degradation**: If the network is interrupted or the candidate is offline, the UI falls back seamlessly to `localStorage` cached snapshots, displaying a subtle indicator without crashing.
-4. **Zero Cumulative Layout Shift (CLS < 0.05)**: Skeleton placeholders precisely match the dimensions of domain tabs and topic cards during initial cold loads.
-5. **Exact 1:1 Schema Conformance**: Frontend TypeScript interfaces strictly mirror the backend contracts defined in [`src/server/graph/types.ts`](file:///Users/saurav/Desktop/development/prepinminutes-backend/src/server/graph/types.ts).
+2. **Practice Session Archetype Router**: Maps the 10 domains to existing practice shell workspaces (`system-design`, `coding`, `cloud`, `behavioral`) via query parameters (`?topic=${slug}&domain=${domain}`), eliminating 404 errors completely prior to Phase 5.
+3. **Decoupled Public Curriculum vs. Candidate Readiness**: Public cache tiers remain clean while the frontend merges candidate-specific mastery/readiness seamlessly.
+4. **Horizontally Scrollable 10-Domain Pill Bar**: Avoids broken multi-row tab wrapping on mobile and laptop screens with topic count badges and active indicators.
+5. **Category/Pillar Section Grouping**: Groups topics into visual category sections matching the 122 categories, eliminating infinite scrolling on large domains.
+6. **Sub-10ms UI Responsiveness**: Leveraging HTTP 304 `ETag` revalidation and client-side SWR caching (`stale-while-revalidate`), topics render instantly without blocking navigation.
+7. **Graceful Offline Degradation**: LocalStorage cache snapshot fallback (`pim_curriculum_cache_v42_*`) ensures offline resilience.
+8. **Zero Cumulative Layout Shift (CLS < 0.05)**: Skeleton placeholders precisely match dimensions during cold loads.
 
 ---
 
@@ -131,92 +136,67 @@ export interface CurriculumDomainsResponse {
 }
 ```
 
-### 2.2 Frontend API Client Extension (`src/lib/api-client.ts`)
+### 2.2 Practice Session Archetype Router (`src/lib/practice-router.ts`)
+
+To avoid 404 errors for the 6 newly added domains that do not yet have dedicated directory pages, this router maps the 10 domains to their appropriate interactive workspace shell:
 
 ```typescript
-// Append to backendApi in src/lib/api-client.ts:
+export type PracticeWorkspaceArchetype =
+  | "system-design"
+  | "coding"
+  | "cloud"
+  | "behavioral";
 
-/**
- * GET /api/curriculum/domains
- * Returns catalog summary of all 10 canonical domains
- */
-async getCurriculumDomains(options: RequestOptions = {}) {
-  const res = await fetch(`${API_BASE_URL}/api/curriculum/domains`, {
-    method: "GET",
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
-  return handleResponse<CurriculumDomainsResponse>(res);
-},
+export function getPracticeSessionUrl(
+  domainSlug: string,
+  topicSlug: string
+): string {
+  const cleanDomain = (domainSlug || "").toLowerCase();
+  const cleanTopic = (topicSlug || "").toLowerCase();
 
-/**
- * GET /api/curriculum/hierarchy/:domainSlug
- * Returns complete 3-tier hierarchy (Domain -> Categories -> Topics)
- */
-async getCurriculumHierarchy(domainSlug: string, options: RequestOptions = {}) {
-  const res = await fetch(`${API_BASE_URL}/api/curriculum/hierarchy/${domainSlug}`, {
-    method: "GET",
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
-  return handleResponse<CurriculumHierarchyResponse & { success: boolean }>(res);
-},
+  switch (cleanDomain) {
+    case "system-design":
+    case "ai-system-design":
+    case "data-engineering":
+      return `/practice/session/system-design?topic=${cleanTopic}&domain=${cleanDomain}`;
 
-/**
- * GET /api/curriculum/topic/:topicSlug
- * Returns full 8-layer metadata and question bundle
- */
-async getCurriculumTopicDetail(topicSlug: string, options: RequestOptions = {}) {
-  const res = await fetch(`${API_BASE_URL}/api/curriculum/topic/${topicSlug}`, {
-    method: "GET",
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
-  return handleResponse<TopicDetailResponse & { success: boolean }>(res);
-},
+    case "dsa":
+    case "backend-engineering":
+    case "frontend-engineering":
+    case "low-level-design":
+    case "mobile-engineering":
+      return `/practice/session/coding?topic=${cleanTopic}&domain=${cleanDomain}`;
 
-/**
- * GET /api/curriculum/topic/:topicSlug/questions
- * Returns dynamic question collection with optional filters
- */
-async getCurriculumTopicQuestions(
-  topicSlug: string,
-  params?: { targetLevel?: string; difficulty?: string; limit?: number },
-  options: RequestOptions = {}
-) {
-  const query = new URLSearchParams();
-  if (params?.targetLevel) query.set("targetLevel", params.targetLevel);
-  if (params?.difficulty) query.set("difficulty", params.difficulty);
-  if (params?.limit) query.set("limit", params.limit.toString());
+    case "cloud-devops":
+      return `/practice/session/cloud?topic=${cleanTopic}&domain=${cleanDomain}`;
 
-  const qs = query.toString() ? `?${query.toString()}` : "";
-  const res = await fetch(`${API_BASE_URL}/api/curriculum/topic/${topicSlug}/questions${qs}`, {
-    method: "GET",
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
-  return handleResponse<TopicQuestionsResponse & { success: boolean }>(res);
+    case "behavioral-leadership":
+      return `/practice/session/behavioral?topic=${cleanTopic}&domain=${cleanDomain}`;
+
+    default:
+      return `/practice/session/system-design?topic=${cleanTopic}&domain=${cleanDomain}`;
+  }
 }
 ```
 
 ---
 
-## 3. 10-Domain Taxonomy & UI Mapping
+## 3. 10-Domain Taxonomy & Visual Mapping
 
 The frontend dynamically visualizes all **10 canonical domains** using dedicated Lucide icons, color palettes, and short labels:
 
-| Domain Slug | Official Name | Short Label | Lucide Icon | Theme Color Palette | Border / Ring Accent |
-| :--- | :--- | :--- | :---: | :---: | :---: |
-| `system-design` | System Design & Distributed Systems | System Design | `Network` | `text-blue-500 bg-blue-500/10` | `border-blue-500/30` |
-| `ai-system-design` | AI System Design & GenAI Infra | AI System Design | `Cpu` | `text-purple-500 bg-purple-500/10` | `border-purple-500/30` |
-| `low-level-design` | Low-Level Design & Machine Coding | Low-Level Design | `Boxes` | `text-emerald-500 bg-emerald-500/10` | `border-emerald-500/30` |
-| `dsa` | Data Structures & Algorithms | DSA | `Binary` | `text-amber-500 bg-amber-500/10` | `border-amber-500/30` |
-| `backend-engineering` | Backend & Runtime Engineering | Backend | `Server` | `text-cyan-500 bg-cyan-500/10` | `border-cyan-500/30` |
-| `frontend-engineering` | Frontend & Web Architecture | Frontend | `Layout` | `text-rose-500 bg-rose-500/10` | `border-rose-500/30` |
-| `cloud-devops` | Cloud, DevOps & SRE | Cloud & DevOps | `Cloud` | `text-indigo-500 bg-indigo-500/10` | `border-indigo-500/30` |
-| `behavioral-leadership` | Behavioral, Leadership & Management | Behavioral | `Users` | `text-orange-500 bg-orange-500/10` | `border-orange-500/30` |
-| `data-engineering` | Data Engineering & Big Data Systems | Data Engineering | `Database` | `text-teal-500 bg-teal-500/10` | `border-teal-500/30` |
-| `mobile-engineering` | Mobile Engineering | Mobile | `Smartphone` | `text-violet-500 bg-violet-500/10` | `border-violet-500/30` |
+| Domain Slug | Official Name | Short Label | Lucide Icon | Theme Color Palette | Accent Border | Practice Shell |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: |
+| `system-design` | System Design & Distributed Systems | System Design | `Network` | `text-blue-500 bg-blue-500/10` | `border-blue-500/30` | System Design |
+| `ai-system-design` | AI System Design & GenAI Infra | AI System Design | `Cpu` | `text-purple-500 bg-purple-500/10` | `border-purple-500/30` | System Design |
+| `low-level-design` | Low-Level Design & Machine Coding | Low-Level Design | `Boxes` | `text-emerald-500 bg-emerald-500/10` | `border-emerald-500/30` | Coding Shell |
+| `dsa` | Data Structures & Algorithms | DSA | `Binary` | `text-amber-500 bg-amber-500/10` | `border-amber-500/30` | Coding Shell |
+| `backend-engineering` | Backend & Runtime Engineering | Backend | `Server` | `text-cyan-500 bg-cyan-500/10` | `border-cyan-500/30` | Coding Shell |
+| `frontend-engineering` | Frontend & Web Architecture | Frontend | `Layout` | `text-rose-500 bg-rose-500/10` | `border-rose-500/30` | Coding Shell |
+| `cloud-devops` | Cloud, DevOps & SRE | Cloud & DevOps | `Cloud` | `text-indigo-500 bg-indigo-500/10` | `border-indigo-500/30` | Cloud Shell |
+| `behavioral-leadership` | Behavioral, Leadership & Management | Behavioral | `Users` | `text-orange-500 bg-orange-500/10` | `border-orange-500/30` | Behavioral Shell |
+| `data-engineering` | Data Engineering & Big Data Systems | Data Engineering | `Database` | `text-teal-500 bg-teal-500/10` | `border-teal-500/30` | System Design |
+| `mobile-engineering` | Mobile Engineering | Mobile | `Smartphone` | `text-violet-500 bg-violet-500/10` | `border-violet-500/30` | Coding Shell |
 
 ---
 
@@ -227,7 +207,7 @@ The frontend dynamically visualizes all **10 canonical domains** using dedicated
 A specialized custom hook [`useCurriculumCurated(domainSlug)`](file:///Users/saurav/Desktop/development/prep-in-minutes/src/hooks/useCurriculum.ts) orchestrates:
 1. Fetching domain catalog via `backendApi.getCurriculumDomains()`.
 2. Fetching active domain hierarchy via `backendApi.getCurriculumHierarchy(domainSlug)`.
-3. Reading candidate mastery & readiness overlays from `/api/candidate/readiness`.
+3. Reading candidate mastery & readiness overlays from `/api/candidate/readiness` or local profile.
 4. Writing snapshots to `localStorage` under `pim_curriculum_cache_v42_*` for instant offline render.
 
 ```mermaid
@@ -269,7 +249,7 @@ The candidate can filter across all 371 topics in real time:
 4. **Priority Filter**:
    - `All` | `P0 (Core Interview Topics)` | `P1 (Advanced Topics)`.
 5. **Practice CTA Linkage**:
-   - Clicking **"Practice Now"** navigates to `/practice/session/[domain]?topic=[slug]` dynamically passing the canonical slug.
+   - Clicking **"Practice Now"** resolves via `getPracticeSessionUrl(domain, slug)`.
 
 ---
 
@@ -277,9 +257,9 @@ The candidate can filter across all 371 topics in real time:
 
 | Task Code | Focus Area | Detailed Scope | Target Latency / CLS | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **`TASK-P4-01`** | **Frontend Curriculum Client & SWR Hook** | Add typed curriculum methods to `src/lib/api-client.ts`, create `src/hooks/useCurriculum.ts` with SWR, ETag 304, and localStorage persistence. | **$< 10\text{ms}$ (cached)** | 🟡 **IN PROGRESS** |
-| **`TASK-P4-02`** | **10-Domain Responsive Tabs & Header Summary** | Expand domain navigation bar in `ChooseTopicWorkspace.tsx` from 4 to 10 domains with dynamic counts, theme colors, and skeleton loaders. | **CLS $< 0.05$** | ⚪ Pending |
-| **`TASK-P4-03`** | **Dynamic Topic Cards, Search, Filters & Practice Links** | Replace static topic rendering with dynamic category sections, real-time search, difficulty/priority filters, and dynamic practice URLs. | **$< 16\text{ms}$ input latency** | ⚪ Pending |
+| **`TASK-P4-01`** | **Frontend Curriculum Client, SWR Hook & Practice Router** | Add typed curriculum methods to `src/lib/api-client.ts`, create `src/lib/practice-router.ts`, author `src/hooks/useCurriculum.ts` with SWR, ETag 304, and localStorage persistence. | **$< 10\text{ms}$ (cached)** | 🟡 **IN PROGRESS** |
+| **`TASK-P4-02`** | **10-Domain Responsive Tabs & Header Summary** | Expand domain navigation bar in `ChooseTopicWorkspace.tsx` from 4 to 10 domains with scrollable pills, dynamic counts, theme colors, and skeleton loaders. | **CLS $< 0.05$** | ⚪ Pending |
+| **`TASK-P4-03`** | **Dynamic Topic Cards, Search, Filters & Category Grouping** | Replace static topic rendering with category sections, real-time search, difficulty/priority filters, candidate readiness blending, and dynamic practice URLs. | **$< 16\text{ms}$ input latency** | ⚪ Pending |
 
 ---
 
@@ -292,5 +272,5 @@ To ensure zero regressions across both repositories:
    - `npm run build` in `prep-in-minutes` verifying clean static page generation.
 3. **E2E & Component Test Script (`scripts/test-frontend-curriculum-integration.ts`)**:
    - Verifies API client fetches 10 domains, hierarchy for all 10 domains, and returns conformant data contracts.
-   - Verifies URL route generation (`/practice/session/[domain]?topic=[slug]`) produces valid links matching all 371 topics.
+   - Verifies URL route generation (`getPracticeSessionUrl(domain, slug)`) produces valid links matching all 371 topics without any 404s.
    - Verifies localStorage serialization & deserialization resilience.
