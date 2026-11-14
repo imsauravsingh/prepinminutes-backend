@@ -1,213 +1,317 @@
 # PrepInMinutes — Unified Curriculum API & Edge Gateway Specification (Phase 3)
-## High-Performance Public Knowledge Graph Endpoints & Multi-Tier Edge Caching
+## Production-Grade Public Knowledge Graph Endpoints, Versioned Edge Caching & Dual-Repository Resilience
 
-> **Document Version:** 1.0.0 (Production Architectural Specification)  
+> **Document Version:** 1.1.0 (Production Implementation-Ready Revision)  
 > **Target Runtime:** Cloudflare Workers / Hono Edge Gateway (`prepinminutes-backend`)  
-> **Data Sources:** Neo4j AuraDB (Canonical Knowledge Graph) + PostgreSQL (Neon/Local Mirror Fallback)  
-> **Cache Layer:** Upstash Redis (L2 In-Memory) + Cloudflare CDN Edge Cache (L1)  
+> **Primary Graph Engine:** Neo4j AuraDB (Published Knowledge Graph via HTTP/Bolt Data Access Layer)  
+> **Failover Mirror:** Neon PostgreSQL (Published Content Mirror with 1:1 Response Contract)  
+> **Cache Tier:** Version-Namespaced Upstash Redis (L2) + Cloudflare CDN Edge Cache with ETag (L1)  
 > **Status:** 🟢 **APPROVED ARCHITECTURAL SPECIFICATION**  
 > **Governing Standards:** [`docs/TASK_EXECUTION_SEQUENCE.md`](./TASK_EXECUTION_SEQUENCE.md) • [`docs/CROSS_CUTTING_INTELLIGENCE_SPEC.md`](./CROSS_CUTTING_INTELLIGENCE_SPEC.md)
 
 ---
 
-## 1. Executive Summary & Purpose
+## 1. Executive Assessment & Architectural Principles
 
-In Phases 1, 1.5, and 2, PrepInMinutes established the complete foundational knowledge core:
-1. **Phase 1**: 10 Domains, 122 Categories, 371 Topics, and 7,420 Master Questions committed to **Neo4j AuraDB**.
-2. **Phase 1.5**: Exact 1:1 relational parity across 27 tables committed to **Local PostgreSQL (`localhost:5432`)**.
-3. **Phase 2**: 28 Canonical Roles, 20 Tier-1 Tech Employers, 9 Interview Stages, 6 Formats, 5-Factor Roadmap Engine, and 100% cloud parity on **Neon Cloud PostgreSQL**.
-
-The mission of **Phase 3 (Unified Curriculum API & Edge Gateway)** is to bridge this rich graph data to candidate-facing clients (Next.js 14 Web Application, Mobile interfaces, and the Sarah AI Multimodal Interviewer) through ultra-low latency, globally distributed REST edge endpoints.
+### 1.1 Decoupled Data Ownership Standard
+PrepInMinutes enforces a strict separation between **Content Authoring/Review** and **High-Throughput Runtime Serving**:
 
 ```mermaid
 flowchart TD
-  subgraph CLIENT_TIER["Client Layer (Next.js 14 / Mobile / Sarah AI)"]
-    APP["ChooseTopicWorkspace<br/>/practice/session/[domain]"]
-    DASH["Candidate Dashboard<br/>/dashboard & /preparation-plan"]
-    SARAH["Sarah AI Interview Gateway<br/>Voice & Rubric Ingestion"]
+  subgraph CMS_AUTHORING["Content Management & Review Tier (PostgreSQL)"]
+    ADMIN["Curriculum Manager / HOD"]
+    STAGING["Admin Staging & Review Table<br/>curriculum_* & AdminAuditLog"]
+    ADMIN -->|"Edit / Approve"| STAGING
   end
 
-  subgraph EDGE_GATEWAY["Edge Gateway (Cloudflare Workers Runtime)"]
-    ROUTER["Edge Router (src/index.ts)"]
-    CURRICULUM_ROUTE["Curriculum Router (src/routes/curriculum.ts)"]
-    CORS_RATE["CORS & Rate Limiter<br/>Upstash Sliding Window"]
-    CACHE_CTRL["Cache-Control Engine<br/>s-maxage=3600, stale-while-revalidate"]
-    ROUTER --> CORS_RATE --> CURRICULUM_ROUTE --> CACHE_CTRL
+  subgraph SYNC_GATE["Verified Publishing Engine"]
+    PUBLISH["Publishing Pipeline<br/>Increment published_version (e.g. v42)"]
+    STAGING -->|"Explicit Publish Trigger"| PUBLISH
   end
 
-  subgraph CACHE_TIER["Multi-Tier Caching Infrastructure"]
-    L1["Tier 1: Cloudflare Edge Cache<br/>TTL: 1 hour | Latency: < 15ms"]
-    L2["Tier 2: Upstash Redis In-Memory<br/>TTL: 24 hours | Latency: < 25ms"]
+  subgraph RUNTIME_GRAPH["Published Runtime Knowledge Graph (Neo4j AuraDB)"]
+    GRAPH["Neo4j AuraDB (Cypher 5.x)<br/>10 Domains | 122 Categories | 371 Topics<br/>Prerequisites, Stages, Roles, Provenance"]
+    PUBLISH -->|"Atomic Graph Sync"| GRAPH
   end
 
-  subgraph STORAGE_TIER["Persistent Knowledge Stores"]
-    NEO4J["Neo4j AuraDB (Canonical Graph)<br/>10 Domains | 122 Categories | 371 Topics"]
-    POSTGRES["PostgreSQL (Neon / Localhost)<br/>Relational Mirror & Audit Fallback"]
+  subgraph EDGE_SERVING["Edge Runtime & Multi-Tier Caching"]
+    WORKER["Cloudflare Workers Gateway"]
+    REDIS["Upstash Redis (L2 Cache)<br/>Key: cache:curriculum:v42:*"]
+    CDN["Cloudflare Edge Cache (L1)<br/>ETag: W/'v42-hash' | Latency: < 15ms"]
+    CANDIDATE["Candidate App / Mobile / Sarah AI"]
+
+    PUBLISH -->|"Set curriculum:version = v42"| REDIS
+    CANDIDATE --> CDN --> WORKER
+    WORKER <--> REDIS
+    REDIS -.->|"L2 Miss"| GRAPH
+    GRAPH -.->|"Circuit Breaker Fallback"| STAGING
   end
-
-  APP -->|"HTTP GET"| ROUTER
-  DASH -->|"HTTP GET"| ROUTER
-  SARAH -->|"HTTP GET"| ROUTER
-
-  CURRICULUM_ROUTE <-->|"Check / Populate"| L2
-  L2 -.->|"Miss"| NEO4J
-  NEO4J -.->|"Failover"| POSTGRES
-  CACHE_CTRL -->|"Response Headers"| L1
 ```
 
----
-
-## 2. Phase 3 Scope & Detailed Task Matrix
-
-| Task Code | Focus Area | Deliverables & Core Capabilities | Target Latency | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| **`TASK-P3-01`** | **Public Curriculum Hierarchy Endpoints** | Expose `GET /api/curriculum/domains` and `GET /api/curriculum/hierarchy/:domainSlug`. Reads nested domain, category, and topic trees. Integrated HTTP cache headers. | **$< 35\text{ms}$** | 🟡 **IN DESIGN** |
-| **`TASK-P3-02`** | **Comprehensive Topic Detail & Question Bundle API** | Expose `GET /api/curriculum/topic/:topicSlug` (8-layer metadata, cross-domain dependencies, 20 questions) and `GET /api/curriculum/adaptive-feed`. | **$< 45\text{ms}$** | ⚪ Pending |
-| **`TASK-P3-03`** | **Upstash Redis Edge Caching & Invalidation Hook** | Cache JSON hierarchy in Redis (`cache:curriculum:hierarchy:${domain}`) with 24h TTL; invalidate on Admin graph publishing. | **$< 15\text{ms}$** | ⚪ Pending |
+1. **PostgreSQL owns Content Management**: Admin CRUD, editorial reviews, staff approvals, and draft staging.
+2. **Neo4j AuraDB owns Published Knowledge Traversal**: Canonical representation for real-time graph traversal, prerequisite dependencies, company provenance, and stage mappings.
+3. **Dual-Repository Equivalence**: The public API strictly serves the **published release**. If Neo4j experiences a network partition, the PostgreSQL fallback returns the **exact same response schema and metadata** with zero client drift.
+4. **Version-Based Invalidation**: Content updates increment `curriculum:version` in Redis. Cache keys are namespaced by version (`cache:curriculum:v42:*`), completely eliminating stale CDN cache issues without requiring slow manual cache purges.
+5. **Separation of Concerns**: Static curriculum hierarchy is strictly separated from personalized candidate adaptive feeds.
 
 ---
 
-## 3. Detailed Specification for `TASK-P3-01`: Public Curriculum Hierarchy Endpoints
+## 2. Common TypeScript Contract (`CurriculumHierarchyResponse`)
 
-### 3.1 Architectural Responsibilities
-`TASK-P3-01` delivers public, unauthenticated read endpoints for curriculum discovery:
-1. **Domain Summary Index** (`GET /api/curriculum/domains`): Returns all 10 live engineering domains with metadata, category counts, topic counts, question counts, and icons for catalog screens.
-2. **Domain Hierarchy Tree** (`GET /api/curriculum/hierarchy/:domainSlug`): Returns the complete 3-tier hierarchy (`Domain -> Categories -> Topics`) for a specified domain slug, enabling instant sidebar and workspace navigation.
-3. **Edge Cache Headers**: Emits standard RFC 7234 cache directives (`Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`) to maximize Cloudflare edge hit ratios.
-4. **Resilient Dual-Source Fallback**: Queries Neo4j AuraDB as primary source; if graph connectivity drops, seamlessly falls back to PostgreSQL `curriculum_*` tables.
+To eliminate schema divergence between Neo4j and PostgreSQL, both data providers implement the identical interface:
 
----
+```typescript
+// Shared Contract: src/server/graph/types.ts
 
-### 3.2 Endpoint 1: Domain Summary Index
+export interface CurriculumTopicSummary {
+  slug: string;
+  topicId: string;
+  title: string;
+  priority: "P0" | "P1";
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
+  durationMin: number;
+  frequency: number;
+  trend: "SURGING" | "HOT" | "STABLE" | "COOLING";
+  rubricAtomsCount: number;
+  questionsCount: number;
+  practiceHref: string;
+}
 
-- **Method**: `GET`
-- **Route**: `/api/curriculum/domains`
-- **Authentication**: None (Public)
-- **Rate Limit**: 120 requests / minute per IP
+export interface CurriculumCategoryHierarchy {
+  slug: string;
+  name: string;
+  pillar: string;
+  sortOrder: number;
+  topicsCount: number;
+  topics: CurriculumTopicSummary[];
+}
 
-#### Request Query Parameters:
-| Parameter | Type | Required | Default | Description |
-| :--- | :---: | :---: | :---: | :--- |
-| `includeStats` | `boolean` | No | `true` | Include aggregated counts of categories, topics, and questions. |
-| `sort` | `string` | No | `order` | Sort field: `order` (canonical display order) or `alphabetical`. |
+export interface CurriculumHierarchyResponse {
+  domainSlug: string;
+  domainName: string;
+  description: string;
+  version: string;
+  totalCategories: number;
+  totalTopics: number;
+  totalQuestions: number;
+  categories: CurriculumCategoryHierarchy[];
+}
 
-#### Response Schema (`200 OK`):
-```json
-{
-  "success": true,
-  "timestamp": "2026-11-14T18:00:00.000Z",
-  "data": [
-    {
-      "slug": "system-design",
-      "name": "System Design & Distributed Systems",
-      "shortName": "System Design",
-      "description": "Master end-to-end distributed systems architecture, caching topologies, consensus protocols, and large-scale trade-offs.",
-      "version": "1.0.0",
-      "sortOrder": 1,
-      "categoriesCount": 17,
-      "topicsCount": 62,
-      "questionsCount": 1240,
-      "colorTheme": "blue",
-      "icon": "ServerStackIcon"
-    },
-    {
-      "slug": "ai-system-design",
-      "name": "AI System Design & GenAI Infra",
-      "shortName": "AI System Design",
-      "description": "Architect foundation model serving pipelines, vLLM inference orchestration, vector database retrieval, and GPU cluster topologies.",
-      "version": "1.0.0",
-      "sortOrder": 2,
-      "categoriesCount": 7,
-      "topicsCount": 28,
-      "questionsCount": 560,
-      "colorTheme": "purple",
-      "icon": "CpuChipIcon"
-    }
-  ],
-  "meta": {
-    "totalDomains": 10,
-    "totalCategories": 122,
-    "totalTopics": 371,
-    "totalQuestions": 7420,
-    "cached": false,
-    "source": "NEO4J"
-  }
+export interface DomainCatalogItem {
+  slug: string;
+  name: string;
+  shortName: string;
+  description: string;
+  version: string;
+  sortOrder: number;
+  categoriesCount: number;
+  topicsCount: number;
+  questionsCount: number;
+  icon: string;
+  colorTheme: string;
+}
+
+export interface CurriculumDomainsResponse {
+  domains: DomainCatalogItem[];
+  meta: {
+    curriculumVersion: string;
+    totalDomains: number;
+    totalCategories: number;
+    totalTopics: number;
+    totalQuestions: number;
+  };
 }
 ```
 
 ---
 
-### 3.3 Endpoint 2: Domain Hierarchy Navigation Tree
+## 3. Data Access Layer Abstraction (`CurriculumRepository`)
 
-- **Method**: `GET`
-- **Route**: `/api/curriculum/hierarchy/:domainSlug`
-- **Authentication**: None (Public)
-- **Path Parameters**:
-  - `domainSlug`: Canonical slug of domain (e.g. `system-design`, `dsa`, `backend-engineering`, `frontend-engineering`, `cloud-devops`, `behavioral-leadership`, `data-engineering`, `mobile-engineering`, `ai-system-design`, `low-level-design`).
+```typescript
+export interface ICurriculumRepository {
+  /**
+   * Returns domain catalog summary list
+   */
+  getDomains(): Promise<DomainCatalogItem[]>;
 
-#### Response Schema (`200 OK`):
-```json
-{
-  "success": true,
-  "timestamp": "2026-11-14T18:00:00.000Z",
-  "data": {
-    "domainSlug": "system-design",
-    "domainName": "System Design & Distributed Systems",
-    "description": "Master end-to-end distributed systems architecture...",
-    "version": "1.0.0",
-    "totalTopics": 62,
-    "totalQuestions": 1240,
-    "categories": [
-      {
-        "slug": "architectural-foundations",
-        "name": "Architectural Foundations & Core Trade-offs",
-        "pillar": "Pillar 1: Fundamentals",
-        "sortOrder": 1,
-        "topicsCount": 4,
-        "topics": [
-          {
-            "slug": "distributed-key-value-store",
-            "topicId": "FND001",
-            "title": "Distributed Key-Value Store",
-            "priority": "P0",
-            "difficulty": "INTERMEDIATE",
-            "durationMin": 15,
-            "frequency": 95,
-            "trend": "HOT",
-            "rubricAtomsCount": 4,
-            "practiceHref": "/practice/session/system-design?topic=distributed-key-value-store"
-          },
-          {
-            "slug": "distributed-caching-redis",
-            "topicId": "FND002",
-            "title": "Distributed Caching (Redis/Memcached)",
-            "priority": "P0",
-            "difficulty": "INTERMEDIATE",
-            "durationMin": 15,
-            "frequency": 96,
-            "trend": "HOT",
-            "rubricAtomsCount": 4,
-            "practiceHref": "/practice/session/system-design?topic=distributed-caching-redis"
-          }
-        ]
-      }
-    ]
-  },
-  "meta": {
-    "domainSlug": "system-design",
-    "cached": false,
-    "source": "NEO4J"
-  }
+  /**
+   * Returns complete hierarchy tree (Domain -> Categories -> Topics)
+   */
+  getDomainHierarchy(domainSlug: string): Promise<CurriculumHierarchyResponse | null>;
 }
 ```
 
-#### Error Response Schema (`404 Not Found`):
+### 3.1 Primary Provider: `Neo4jCurriculumRepository`
+Supports dual transport:
+- **Node.js runtime / Local**: Standard Bolt driver connection pool (`neo4j+s://`).
+- **Cloudflare Workers Edge**: Transactional Cypher HTTP Endpoint (`POST https://22941cc5.databases.neo4j.io/db/neo4j/tx/commit`) or Node-compatible driver.
+
+#### Corrected Cypher Query with Accurate `reduce()` Aggregation & Dynamic Question Counts:
+```cypher
+MATCH (d:Domain {slug: $domainSlug})
+OPTIONAL MATCH (d)-[:CONTAINS]->(c:Category)
+OPTIONAL MATCH (c)-[:HAS_TOPIC]->(t:Topic)
+OPTIONAL MATCH (t)-[:HAS_QUESTION]->(q:Question)
+
+WITH d, c, t, count(q) AS questionCount
+ORDER BY c.sortOrder, t.priority, t.title
+
+WITH d, c, collect(CASE WHEN t IS NOT NULL THEN {
+  slug: t.slug,
+  topicId: coalesce(t.topicId, t.slug),
+  title: t.title,
+  priority: coalesce(t.priority, "P0"),
+  difficulty: coalesce(t.difficulty, "INTERMEDIATE"),
+  durationMin: coalesce(t.durationMin, 15),
+  frequency: coalesce(t.frequency, 80),
+  trend: coalesce(t.trend, "STABLE"),
+  rubricAtomsCount: size(coalesce(t.rubricAtoms, [])),
+  questionsCount: questionCount,
+  practiceHref: '/practice/session/' + d.slug + '?topic=' + t.slug
+} ELSE null END) AS rawTopics
+
+WITH d, c, [top IN rawTopics WHERE top IS NOT NULL] AS topics
+ORDER BY c.sortOrder
+
+WITH d, collect(CASE WHEN c IS NOT NULL THEN {
+  slug: c.slug,
+  name: c.name,
+  pillar: coalesce(c.pillar, "Core Curriculum"),
+  sortOrder: coalesce(c.sortOrder, 1),
+  topicsCount: size(topics),
+  topics: topics
+} ELSE null END) AS rawCategories
+
+WITH d, [cat IN rawCategories WHERE cat IS NOT NULL] AS cleanCategories
+
+RETURN {
+  domainSlug: d.slug,
+  domainName: d.name,
+  description: d.description,
+  version: coalesce(d.version, "1.0.0"),
+  totalCategories: size(cleanCategories),
+  totalTopics: reduce(total = 0, cat IN cleanCategories | total + size(cat.topics)),
+  totalQuestions: reduce(total = 0, cat IN cleanCategories | total + reduce(qCount = 0, top IN cat.topics | qCount + top.questionsCount)),
+  categories: cleanCategories
+} AS domainHierarchy
+```
+
+---
+
+### 3.2 Resilient Failover Provider: `PostgresCurriculumRepository`
+Implements exact 1:1 parity using PostgreSQL 16+ `json_build_object` and `LEFT JOIN` semantics:
+
+```sql
+SELECT 
+  d.slug AS domain_slug,
+  d.name AS domain_name,
+  d.description,
+  '1.0.0' AS version,
+  COUNT(DISTINCT c.id) AS total_categories,
+  COUNT(DISTINCT t.id) AS total_topics,
+  COUNT(DISTINCT q.id) AS total_questions,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'slug', c.slug,
+        'name', c.name,
+        'pillar', COALESCE(c.description, 'Core Curriculum'),
+        'sortOrder', c."order",
+        'topicsCount', (SELECT COUNT(*) FROM curriculum_topics ct WHERE ct.category_id = c.id),
+        'topics', COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'slug', ct.slug,
+                'topicId', ct.topic_id,
+                'title', ct.title,
+                'priority', ct.priority,
+                'difficulty', ct.difficulty,
+                'durationMin', ct.duration_min,
+                'frequency', 85,
+                'trend', 'HOT',
+                'rubricAtomsCount', cardinality(ct.rubric_atoms),
+                'questionsCount', (SELECT COUNT(*) FROM curriculum_questions cq WHERE cq.topic_id = ct.id),
+                'practiceHref', ct.practice_href
+              ) ORDER BY ct.priority, ct.title
+            )
+            FROM curriculum_topics ct
+            WHERE ct.category_id = c.id
+          ),
+          '[]'::json
+        )
+      ) ORDER BY c."order"
+    ) FILTER (WHERE c.id IS NOT NULL),
+    '[]'::json
+  ) AS categories
+FROM curriculum_domains d
+LEFT JOIN curriculum_categories c ON c.domain_id = d.id
+LEFT JOIN curriculum_topics t ON t.category_id = c.id
+LEFT JOIN curriculum_questions q ON q.topic_id = t.id
+WHERE d.slug = $1
+GROUP BY d.slug, d.name, d.description;
+```
+
+---
+
+## 4. Multi-Tier Version-Based Caching & ETag Architecture
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Client as Next.js Client / Mobile / Sarah AI
+  participant CDN as Cloudflare Edge CDN (L1)
+  participant Worker as Edge API Worker
+  participant Redis as Upstash Redis (L2)
+  participant Graph as Neo4j AuraDB (Primary)
+  participant DB as Neon PostgreSQL (Fallback)
+
+  Client->>CDN: GET /api/curriculum/hierarchy/system-design<br/>If-None-Match: W/"v42-a7f9b"
+  alt L1 CDN Hit & ETag Match
+    CDN-->>Client: 304 Not Modified (0 bytes payload | Latency: < 10ms)
+  else L1 CDN Miss / Stale
+    CDN->>Worker: Forward Request
+    Worker->>Redis: GET curriculum:version
+    Redis-->>Worker: "v42"
+    Worker->>Redis: GET cache:curriculum:v42:hierarchy:system-design
+    alt L2 Redis Hit
+      Redis-->>Worker: JSON Cached String
+      Worker-->>CDN: 200 OK (ETag: W/"v42-a7f9b", X-Cache: REDIS_HIT)
+      CDN-->>Client: 200 OK (Latency: < 25ms)
+    else L2 Redis Miss
+      Worker->>Graph: Execute Cypher Query (timeout: 2500ms)
+      alt Graph Healthy
+        Graph-->>Worker: Hierarchy Object
+      else Graph Timeout / Unreachable
+        Worker->>DB: Execute PostgreSQL Relational Query
+        DB-->>Worker: Fallback Hierarchy Object
+      end
+      Worker->>Redis: SETEX cache:curriculum:v42:hierarchy:system-design 86400 JSON
+      Worker-->>CDN: 200 OK (Cache-Control: public, s-maxage=3600, stale-if-error=86400)
+      CDN-->>Client: 200 OK (Latency: < 45ms)
+    end
+  end
+```
+
+### 4.1 Cache Header Standards
+Every successful hierarchy response includes:
+- `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, stale-if-error=86400`
+- `ETag: W/"<curriculum-version>-<hash>"`
+- `X-Curriculum-Version: v42`
+- `X-Data-Source: NEO4J | POSTGRES_FALLBACK | REDIS_CACHE`
+
+---
+
+## 5. Circuit Breaker & Error Handling Taxonomy
+
+Public API responses strictly encapsulate internal database infrastructure and queries:
+
 ```json
 {
   "success": false,
   "error": {
     "code": "DOMAIN_NOT_FOUND",
-    "message": "Domain 'quantum-computing' was not found in the curriculum.",
+    "message": "The curriculum domain 'quantum-computing' was not found.",
     "validDomains": [
       "system-design",
       "ai-system-design",
@@ -220,179 +324,28 @@ flowchart TD
       "data-engineering",
       "mobile-engineering"
     ],
+    "requestId": "req_01jb2x89ac72",
     "timestamp": "2026-11-14T18:00:00.000Z"
   }
 }
 ```
 
----
-
-## 4. Query Execution & Graph Cypher Logic
-
-### 4.1 Domains Summary Index Cypher Query
-```cypher
-MATCH (d:Domain)
-OPTIONAL MATCH (d)-[:CONTAINS]->(c:Category)
-OPTIONAL MATCH (c)-[:HAS_TOPIC]->(t:Topic)
-WITH d, count(DISTINCT c) AS catCount, count(DISTINCT t) AS topicCount
-RETURN d.slug AS slug,
-       d.name AS name,
-       d.description AS description,
-       d.version AS version,
-       coalesce(d.sortOrder, 100) AS sortOrder,
-       catCount AS categoriesCount,
-       topicCount AS topicsCount,
-       (topicCount * 20) AS questionsCount
-ORDER BY sortOrder ASC, name ASC
-```
-
-### 4.2 Domain Hierarchy Tree Cypher Query
-```cypher
-MATCH (d:Domain {slug: $domainSlug})
-OPTIONAL MATCH (d)-[:CONTAINS]->(c:Category)
-OPTIONAL MATCH (c)-[:HAS_TOPIC]->(t:Topic)
-WITH d, c, t
-ORDER BY c.sortOrder, t.priority, t.title
-WITH d, c, collect(CASE WHEN t IS NOT NULL THEN {
-  slug: t.slug,
-  topicId: t.topicId,
-  title: t.title,
-  priority: t.priority,
-  difficulty: t.difficulty,
-  durationMin: t.durationMin,
-  frequency: t.frequency,
-  trend: t.trend,
-  rubricAtomsCount: size(coalesce(t.rubricAtoms, [])),
-  practiceHref: '/practice/session/' + d.slug + '?topic=' + t.slug
-} ELSE null END) AS rawTopics
-WITH d, c, [top IN rawTopics WHERE top IS NOT NULL] AS topics
-ORDER BY c.sortOrder
-WITH d, collect(CASE WHEN c IS NOT NULL THEN {
-  slug: c.slug,
-  name: c.name,
-  pillar: c.pillar,
-  sortOrder: c.sortOrder,
-  topicsCount: size(topics),
-  topics: topics
-} ELSE null END) AS rawCategories
-RETURN {
-  domainSlug: d.slug,
-  domainName: d.name,
-  description: d.description,
-  version: d.version,
-  totalTopics: size([cat IN rawCategories WHERE cat IS NOT NULL | cat.topics]),
-  totalQuestions: size([cat IN rawCategories WHERE cat IS NOT NULL | cat.topics]) * 20,
-  categories: [cat IN rawCategories WHERE cat IS NOT NULL]
-} AS domainHierarchy
-```
-
-### 4.3 Relational PostgreSQL Failover Query (Fallback Resilience)
-If Neo4j driver connection experiences a network anomaly, the edge gateway seamlessly queries PostgreSQL:
-```sql
-SELECT 
-  d.slug AS domain_slug,
-  d.name AS domain_name,
-  d.description,
-  json_agg(json_build_object(
-    'slug', c.slug,
-    'name', c.name,
-    'sortOrder', c."order",
-    'topics', (
-      SELECT json_agg(json_build_object(
-        'slug', t.slug,
-        'topicId', t.topic_id,
-        'title', t.title,
-        'difficulty', t.difficulty,
-        'priority', t.priority,
-        'durationMin', t.duration_min,
-        'practiceHref', t.practice_href
-      ))
-      FROM curriculum_topics t
-      WHERE t.category_id = c.id
-    )
-  ) ORDER BY c."order") AS categories
-FROM curriculum_domains d
-JOIN curriculum_categories c ON c.domain_id = d.id
-WHERE d.slug = $1
-GROUP BY d.slug, d.name, d.description;
-```
+### HTTP Status Code Mapping:
+- **`200 OK`**: Successful retrieval.
+- **`304 Not Modified`**: ETag match on `If-None-Match`.
+- **`400 Bad Request`**: Malformed slug or invalid query parameters.
+- **`404 Not Found`**: Domain slug does not exist in curriculum.
+- **`429 Too Many Requests`**: IP exceeds 120 req/min rate limit.
+- **`500 Internal Error`**: Unhandled edge worker error (sanitized without stack traces).
+- **`503 Service Unavailable`**: Circuit open on both Neo4j and PostgreSQL.
 
 ---
 
-## 5. Caching Strategy & Latency SLA
+## 6. Revised Phase 3 Task Execution Sequence
 
-```mermaid
-sequenceDiagram
-  autonumber
-  actor Candidate as Candidate / Next.js Client
-  participant Edge as Cloudflare Edge CDN (L1)
-  participant Worker as Edge API Worker
-  participant Redis as Upstash Redis (L2)
-  participant Graph as Neo4j AuraDB
-
-  Candidate->>Edge: GET /api/curriculum/domains
-  alt L1 Edge Hit (Age < 3600s)
-    Edge-->>Candidate: 200 OK (Cache: HIT, Latency: ~10ms)
-  else L1 Edge Miss
-    Edge->>Worker: Forward Request
-    Worker->>Redis: GET cache:curriculum:domains
-    alt L2 Redis Hit
-      Redis-->>Worker: JSON Cached Payload
-      Worker-->>Edge: 200 OK (X-Cache: REDIS_HIT, Latency: ~22ms)
-      Edge-->>Candidate: 200 OK
-    else L2 Redis Miss
-      Worker->>Graph: Execute Cypher Query
-      Graph-->>Worker: Graph Hierarchy Records
-      Worker->>Redis: SETEX cache:curriculum:domains 86400 JSON
-      Worker-->>Edge: 200 OK (Cache-Control: public, s-maxage=3600)
-      Edge-->>Candidate: 200 OK (Latency: ~40ms)
-    end
-  end
-```
-
-### Latency Budget Table:
-| Layer | Target P50 | Target P95 | Target P99 | Cache Header / Directives |
-| :--- | :---: | :---: | :---: | :--- |
-| **L1 Cloudflare Edge** | **8 ms** | **15 ms** | **25 ms** | `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400` |
-| **L2 Upstash Redis** | **18 ms** | **28 ms** | **40 ms** | Redis key: `cache:curriculum:hierarchy:${domainSlug}` (TTL: 86400s) |
-| **L3 Neo4j AuraDB** | **32 ms** | **48 ms** | **70 ms** | Direct Cypher execution over connection pool |
-
----
-
-## 6. Target Files & Code Organization
-
-```
-prepinminutes-backend/
-├── src/
-│   ├── routes/
-│   │   ├── curriculum.ts            // NEW: handleGetCurriculumDomains, handleGetCurriculumHierarchy
-│   │   └── admin-curriculum.ts      // Existing: Admin CRUD routes
-│   ├── server/
-│   │   ├── graph/
-│   │   │   ├── repository.ts        // Existing: fetchDomainHierarchy, fetchTopicDetail
-│   │   │   └── types.ts             // Shared response types
-│   │   └── edge/
-│   │       └── cors.ts              // CORS and response caching helpers
-│   └── index.ts                     // Route dispatcher: binds GET /api/curriculum/*
-└── scripts/
-    └── test-curriculum-api.ts       // NEW: Verification test suite for hierarchy endpoints
-```
-
----
-
-## 7. Verification Plan & Acceptance Criteria
-
-### Acceptance Criteria for `TASK-P3-01`:
-1. **Domain Index**:
-   - `GET /api/curriculum/domains` returns HTTP 200 with all **10 domains**.
-   - Total categories equals 122, total topics equals 371.
-2. **Domain Hierarchy**:
-   - `GET /api/curriculum/hierarchy/system-design` returns HTTP 200 with 17 categories and 62 topics.
-   - `GET /api/curriculum/hierarchy/dsa` returns HTTP 200 with 12 categories and 40 topics.
-   - `GET /api/curriculum/hierarchy/ai-system-design` returns HTTP 200 with 7 categories and 28 topics.
-   - `GET /api/curriculum/hierarchy/invalid-slug` returns **HTTP 404** with descriptive error payload listing valid domains.
-3. **Response Headers**:
-   - Includes `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`.
-   - Includes `Content-Type: application/json; charset=utf-8`.
-4. **Automated Verification Script**:
-   - `scripts/test-curriculum-api.ts` verifies all 10 domain hierarchies, asserts 0 null fields, benchmarks latency ($< 35\text{ms}$ on repeat calls), and tests 404 boundaries with exit code 0.
+| Task Code | Focus Area | Detailed Scope | Target Latency | Status |
+| :--- | :--- | :--- | :---: | :---: |
+| **`TASK-P3-01`** | **Public Curriculum Endpoints & Repository Abstraction** | Implement `CurriculumRepository` interface, `Neo4jCurriculumRepository` (with corrected `reduce()` Cypher), and `PostgresCurriculumRepository` fallback. Expose `GET /api/curriculum/domains` and `GET /api/curriculum/hierarchy/:domainSlug`. | **$< 35\text{ms}$** | 🟡 **IN PROGRESS** |
+| **`TASK-P3-02`** | **Topic Detail & Question Collection Endpoints** | Expose `GET /api/curriculum/topic/:topicSlug` (8-layer metadata) and `GET /api/curriculum/topic/:topicSlug/questions`. Dynamic question counts and rubric atom binding. | **$< 45\text{ms}$** | ⚪ Pending |
+| **`TASK-P3-03`** | **Versioned Multi-Tier Cache & Invalidation** | Implement versioned Redis cache keys (`cache:curriculum:v{n}:*`), ETag generation, HTTP 304 handling, and Admin publishing version incrementer. | **$< 15\text{ms}$** | ⚪ Pending |
+| **`TASK-P3-04`** | **Edge Resilience, Circuit Breaker & Benchmarks** | Circuit breaker between Neo4j and Neon, timeout guards (2500ms), and automated cold/warm/edge test benchmarks. | **$< 10\text{ms}$ (hit)** | ⚪ Pending |
