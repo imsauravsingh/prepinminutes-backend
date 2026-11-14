@@ -84,6 +84,7 @@ import {
   handleGetCurriculumHierarchy,
   handleGetCurriculumTopicDetail,
   handleGetCurriculumTopicQuestions,
+  handlePostCurriculumPublish,
 } from "./routes/curriculum";
 
 export type BackendEnv = Record<string, string | undefined>;
@@ -186,6 +187,11 @@ const worker = {
         response = await handlePostNeo4jApprove(req);
       } else if (pathname === "/api/admin/neo4j/reject" && method === "POST") {
         response = await handlePostNeo4jReject(req);
+      } else if (
+        (pathname === "/api/admin/curriculum/publish" || pathname === "/api/admin/neo4j/publish") &&
+        method === "POST"
+      ) {
+        response = await handlePostCurriculumPublish(req);
       }
       // Module A: Admin Candidate Directory & Subscriptions
       else if (pathname === "/api/admin/candidates" && method === "GET") {
