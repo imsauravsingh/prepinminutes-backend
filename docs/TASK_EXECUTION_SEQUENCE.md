@@ -329,6 +329,8 @@ flowchart TD
 
 ### Phase 3: Unified Curriculum API & Edge Gateway
 
+> **Governing Specification**: [`docs/CURRICULUM_API_AND_EDGE_GATEWAY_SPEC.md`](./CURRICULUM_API_AND_EDGE_GATEWAY_SPEC.md) (v1.0.0)
+
 - [ ] **TASK-P3-01: Expose Public Curriculum Hierarchy Endpoints in Edge Gateway**
   - **Dependencies**: `TASK-P1-10`
   - **Target Files**:
