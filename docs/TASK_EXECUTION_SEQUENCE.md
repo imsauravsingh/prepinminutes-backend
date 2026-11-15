@@ -17,11 +17,11 @@
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         2         |          0          |        2        |  🟡 **50% IN PROGRESS**  |
+|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         2         |          1          |        1        |  🟡 **50% IN PROGRESS**  |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **28**       |        **0**        |     **10**      |    **73.7% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **28**       |        **1**        |      **9**      |    **73.7% OVERALL**     |
 
 ---
 
@@ -496,15 +496,23 @@ flowchart TD
     - Connected practice workspaces (`SystemDesignWorkspace.tsx`) to submit candidate turns via `backendApi.submitPracticeSessionTurn` and reflect live rubric atom progress, badges, and dynamic interviewer identity.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-ai-interview-agent.ts`) passed with 0 failures; TypeScript typecheck (`npx tsc --noEmit`) and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
-- [ ] **TASK-P5-03: Multi-Domain Code Editor & Whiteboard Workspace Synchronization**
-  - **Dependencies**: `TASK-P5-01`
+- [-] **TASK-P5-03: Multi-Domain Code Editor & Whiteboard Workspace Synchronization**
+  - **Status**: In Progress (November 15, 2026)
+  - **Dependencies**: `TASK-P5-01`, `TASK-P5-02`
   - **Target Files**:
+    - `prep-in-minutes/src/lib/code-templates.ts`
+    - `prep-in-minutes/src/hooks/useWhiteboardState.ts`
     - `prep-in-minutes/src/components/practice/PracticeCodingWorkspace.tsx`
     - `prep-in-minutes/src/components/practice/WhiteboardModal.tsx`
+    - `prep-in-minutes/scripts/test-code-editor-whiteboard-sync.ts`
+    - `docs/TASK_P5_03_CODE_EDITOR_WHITEBOARD_SYNC_SPEC.md`
+    - `docs/TASK_P5_03_RATIONALE_AND_ARCHITECTURE_EXPLAINER.md`
   - **Scope**:
-    - Support starter code templates for DSA (TypeScript, Python, Java, C++), LLD machine coding, and Frontend components.
-    - Whiteboard state persistence per session with snapshot exports.
-  - **Acceptance Criteria**: Candidate can switch languages, run test cases, and attach whiteboard diagrams to session submissions.
+    - Universal starter code generator supporting **TypeScript**, **Python**, **Java**, **C++**, and **Go** with domain-calibrated skeletons (DSA, LLD, Frontend).
+    - Session-aware per-language code buffer preserving candidate code when switching languages.
+    - Whiteboard session synchronization hook with debounced auto-save (`pim_whiteboard_${topicSlug}_${questionId}`) preventing canvas data loss.
+    - Whiteboard state serialization and high-res snapshot export ready for session submission.
+  - **Acceptance Criteria**: Candidate can switch between all 5 languages without code loss; starter code accurately matches question prompt; whiteboard canvas persists across modal toggles and page reloads; automated test suite passes with 0 failures; TypeScript and Next.js build pass with 0 errors.
 
 - [ ] **TASK-P5-04: Session Submission & Transcript Ingestion Pipeline**
   - **Dependencies**: `TASK-P5-03`
