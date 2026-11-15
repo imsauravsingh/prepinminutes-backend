@@ -479,22 +479,22 @@ flowchart TD
       - Behavioral (`BehavioralWorkspace.tsx`): Question prompt, STAR methodology hints, evaluation rubric.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-dynamic-question-loader.ts`) passed 18/18 tests with exit code 0; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
-- [x] **TASK-P5-02: Inject Rubric Atoms & Scale Anchors into Sarah AI Persona**
+- [x] **TASK-P5-02: Inject Rubric Atoms & Scale Anchors into AiInterviewAgent**
   - **Status**: Completed (November 15, 2026)
   - **Dependencies**: `TASK-P5-01`
   - **Target Files**:
-    - `prepinminutes-backend/src/server/ai/sarah-persona.ts`
+    - `prepinminutes-backend/src/server/ai/ai-interview-agent.ts`
     - `prepinminutes-backend/src/routes/practice-interviewer.ts`
-    - `prepinminutes-backend/scripts/test-sarah-rubric-injection.ts`
+    - `prepinminutes-backend/scripts/test-ai-interview-agent.ts`
     - `prep-in-minutes/src/lib/api-client.ts`
     - `prep-in-minutes/src/components/practice/SystemDesignWorkspace.tsx`
-    - `docs/TASK_P5_02_INJECT_RUBRIC_ATOMS_SARAH_AI_SPEC.md`
+    - `docs/TASK_P5_02_INJECT_RUBRIC_ATOMS_AI_INTERVIEW_AGENT_SPEC.md`
   - **Scope**:
-    - Authored `sarah-persona.ts` LLM inference service using Gemini to conduct technical turns.
-    - Bound question's `rubricAtoms`, `antiPatterns`, `followUpProbes`, `scaleAnchor`, and `expectedKeywords` into Sarah's system prompt.
-    - Implemented real-time turn endpoint `POST /api/practice/session/turn` returning Sarah's response, covered rubric atoms, remaining atoms, anti-pattern alerts, and mastery score.
-    - Connected practice workspaces (`SystemDesignWorkspace.tsx`) to submit candidate turns via `backendApi.submitPracticeSessionTurn` and reflect live rubric atom progress and badges.
-  - **Acceptance Criteria**: Automated test suite (`scripts/test-sarah-rubric-injection.ts`) passed 8/8 tests with 0 failures; TypeScript typecheck (`npx tsc --noEmit`) and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
+    - Authored generic `ai-interview-agent.ts` LLM inference service using Gemini to conduct technical turns with dynamic agent name/role configuration.
+    - Bound question's `rubricAtoms`, `antiPatterns`, `followUpProbes`, `scaleAnchor`, and `expectedKeywords` into the agent's system prompt.
+    - Implemented real-time turn endpoint `POST /api/practice/session/turn` returning agent response, covered rubric atoms, remaining atoms, anti-pattern alerts, and mastery score.
+    - Connected practice workspaces (`SystemDesignWorkspace.tsx`) to submit candidate turns via `backendApi.submitPracticeSessionTurn` and reflect live rubric atom progress, badges, and dynamic interviewer identity.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-ai-interview-agent.ts`) passed with 0 failures; TypeScript typecheck (`npx tsc --noEmit`) and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
 - [ ] **TASK-P5-03: Multi-Domain Code Editor & Whiteboard Workspace Synchronization**
   - **Dependencies**: `TASK-P5-01`

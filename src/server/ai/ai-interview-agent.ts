@@ -1,7 +1,8 @@
 /**
- * PrepInMinutes — Sarah AI Staff Interviewer Persona & Rubric Injection Engine
+ * PrepInMinutes — AiInterviewAgent & Rubric Injection Engine
  *
- * Calibrated LLM Persona:
+ * Generic, Calibrated LLM Interview Agent:
+ * - Decoupled from hardcoded personas: dynamically configurable (agentName, roleTitle, companyContext, strictness).
  * - Binds official question rubricAtoms, antiPatterns, followUpProbes, and scaleAnchor into Gemini system instructions.
  * - Tracks covered vs remaining rubric atoms across conversation turns.
  * - Actively challenges candidate anti-patterns and superficial answers.
@@ -12,6 +13,13 @@ import "dotenv/config";
 import { ai } from "./gemini";
 import { getDb } from "../db/client";
 
+export interface InterviewAgentConfig {
+  agentName?: string;       // default: "AI Interviewer"
+  roleTitle?: string;       // default: "Senior Staff Technical Interviewer"
+  companyContext?: string;  // default: "Tier-1 technology company"
+  strictness?: "lenient" | "standard" | "bar-raiser";
+}
+
 export interface PracticeTurnInput {
   topicSlug: string;
   questionId?: string;
@@ -21,6 +29,7 @@ export interface PracticeTurnInput {
     content: string;
   }>;
   candidateTargetLevel?: "L1" | "L2" | "L3" | "L4";
+  agentConfig?: InterviewAgentConfig;
   questionOverride?: {
     id?: string;
     title: string;
@@ -50,12 +59,20 @@ export interface PracticeTurnOutput {
     | "wrap-up";
   nextSuggestedProbe?: string;
   evaluatorNotes?: string;
+  agentInfo?: {
+    name: string;
+    role: string;
+  };
 }
 
-export async function executeSarahInterviewerTurn(
+export async function executeAiInterviewAgentTurn(
   input: PracticeTurnInput
 ): Promise<PracticeTurnOutput> {
   const prisma = getDb();
+
+  const agentName = input.agentConfig?.agentName || "AI Interviewer";
+  const roleTitle = input.agentConfig?.roleTitle || "Senior Staff Technical Interviewer";
+  const companyContext = input.agentConfig?.companyContext || "Tier-1 technology company";
 
   // 1. Resolve Question Details (from DB or fallback override)
   let question = input.questionOverride || null;
@@ -139,13 +156,13 @@ export async function executeSarahInterviewerTurn(
   // 2. Format Transcript History
   const historyText = Array.isArray(input.transcriptHistory) && input.transcriptHistory.length > 0
     ? input.transcriptHistory
-        .map((t) => `${t.sender === "user" ? "CANDIDATE" : "SARAH (INTERVIEWER)"}: ${t.content}`)
+        .map((t) => `${t.sender === "user" ? "CANDIDATE" : `${agentName.toUpperCase()} (INTERVIEWER)`}: ${t.content}`)
         .join("\n\n")
     : "No prior transcript.";
 
   // 3. Construct Calibrated Staff Interviewer Prompt
   const prompt = `
-You are Sarah, an expert Principal & Staff Technical Interviewer at a Tier-1 technology company.
+You are ${agentName}, an expert ${roleTitle} at a ${companyContext}.
 You are conducting a live, realistic technical interview.
 
 QUESTION UNDER EVALUATION:
@@ -169,12 +186,12 @@ ${historyText}
 CANDIDATE'S LATEST RESPONSE:
 "${input.candidateMessage}"
 
-YOUR OBJECTIVE AS SARAH:
+YOUR OBJECTIVE AS ${agentName.toUpperCase()}:
 1. Evaluate the candidate's latest response against the Official Rubric Atoms.
 2. Determine which Rubric Atoms the candidate has proved understanding of so far (coveredRubricAtoms).
 3. Determine which Rubric Atoms are still MISSING (remainingRubricAtoms).
 4. Check if the candidate exhibited any of the KNOWN ANTI-PATTERNS (detectedAntiPatterns).
-5. Generate your conversational reply as Sarah:
+5. Generate your conversational reply as ${agentName}:
    - Acknowledge good architectural decisions concisely (1 sentence).
    - If an anti-pattern was detected, immediately challenge it realistically (e.g. "What happens if that primary instance goes down while traffic is peaking?").
    - If no anti-pattern, select the most critical MISSING Rubric Atom and challenge the candidate with a targeted technical follow-up probe.
@@ -184,13 +201,13 @@ YOUR OBJECTIVE AS SARAH:
 
 Return strictly a valid JSON object matching this schema:
 {
-  "replyText": "Sarah's spoken response to the candidate",
+  "replyText": "${agentName}'s spoken response to the candidate",
   "coveredRubricAtoms": ["exact strings from the official rubric atoms list that are satisfied"],
   "remainingRubricAtoms": ["exact strings from the official rubric atoms list that are not yet covered"],
   "detectedAntiPatterns": ["any detected anti-patterns from the list, or empty array"],
   "currentMasteryScore": 75,
   "interviewPhase": "deep-dive",
-  "nextSuggestedProbe": "The follow-up probe question Sarah is steering towards",
+  "nextSuggestedProbe": "The follow-up probe question being steered towards",
   "evaluatorNotes": "Brief 1-sentence note on candidate's technical depth"
 }
 `;
@@ -240,9 +257,13 @@ Return strictly a valid JSON object matching this schema:
       interviewPhase: parsed.interviewPhase || "deep-dive",
       nextSuggestedProbe: parsed.nextSuggestedProbe || followUpProbes[0],
       evaluatorNotes: parsed.evaluatorNotes || "Candidate actively developing solution.",
+      agentInfo: {
+        name: agentName,
+        role: roleTitle,
+      },
     };
   } catch (error: any) {
-    console.error("Sarah Interviewer LLM generation error:", error);
+    console.error("AiInterviewAgent LLM generation error:", error);
 
     // Resilient fallback output if LLM times out or is unreachable
     const defaultCovered = [rubricAtoms[0]];
@@ -259,6 +280,17 @@ Return strictly a valid JSON object matching this schema:
       interviewPhase: "deep-dive",
       nextSuggestedProbe: followUpProbes[0] || "How does your system recover from network partitions?",
       evaluatorNotes: "Fallback response generated due to upstream latency.",
+      agentInfo: {
+        name: agentName,
+        role: roleTitle,
+      },
     };
   }
 }
+
+/**
+ * Universal AiInterviewAgent Namespace
+ */
+export const AiInterviewAgent = {
+  conductTurn: executeAiInterviewAgentTurn,
+};

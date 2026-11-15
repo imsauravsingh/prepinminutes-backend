@@ -2,12 +2,12 @@
  * PrepInMinutes — Live Practice Session Interviewer Turn Route
  *
  * POST /api/practice/session/turn
- * Processes a candidate response turn using the calibrated Sarah AI Persona,
- * returning Sarah's response, rubric atoms coverage, and targeted follow-up probes.
+ * Processes a candidate response turn using the calibrated AiInterviewAgent,
+ * returning the agent's response, rubric atoms coverage, and targeted follow-up probes.
  */
 
 import { ApiRequest, ApiResponse } from "../lib/http";
-import { executeSarahInterviewerTurn, PracticeTurnInput } from "../server/ai/sarah-persona";
+import { executeAiInterviewAgentTurn, PracticeTurnInput } from "../server/ai/ai-interview-agent";
 
 export async function handlePostPracticeSessionTurn(req: ApiRequest): Promise<Response> {
   try {
@@ -18,6 +18,7 @@ export async function handlePostPracticeSessionTurn(req: ApiRequest): Promise<Re
       candidateMessage,
       transcriptHistory = [],
       candidateTargetLevel = "L3",
+      agentConfig,
       questionOverride,
     } = body;
 
@@ -41,10 +42,11 @@ export async function handlePostPracticeSessionTurn(req: ApiRequest): Promise<Re
       candidateMessage: candidateMessage.trim(),
       transcriptHistory: Array.isArray(transcriptHistory) ? transcriptHistory : [],
       candidateTargetLevel,
+      agentConfig,
       questionOverride,
     };
 
-    const result = await executeSarahInterviewerTurn(input);
+    const result = await executeAiInterviewAgentTurn(input);
     return ApiResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Practice session turn processing failed:", error);

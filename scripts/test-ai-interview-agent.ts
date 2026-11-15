@@ -1,15 +1,16 @@
 /**
- * PrepInMinutes — TASK-P5-02: Sarah AI Persona & Rubric Injection Test Suite
+ * PrepInMinutes — TASK-P5-02: AiInterviewAgent & Rubric Injection Test Suite
  *
  * Verifies:
  * 1. Question lookup and rubric atom extraction
  * 2. Ingestion of anti-patterns, scale anchors, and follow-up probes
- * 3. Sarah interviewer turn execution (LLM inference or resilient fallback)
- * 4. Output schema validation (coveredRubricAtoms, remainingRubricAtoms, currentMasteryScore)
+ * 3. Dynamic agent configuration (agentName, roleTitle, companyContext)
+ * 4. AiInterviewAgent turn execution (LLM inference or resilient fallback)
+ * 5. Output schema validation (agentInfo, coveredRubricAtoms, remainingRubricAtoms, currentMasteryScore)
  */
 
 import "dotenv/config";
-import { executeSarahInterviewerTurn, PracticeTurnInput } from "../src/server/ai/sarah-persona";
+import { executeAiInterviewAgentTurn, PracticeTurnInput, AiInterviewAgent } from "../src/server/ai/ai-interview-agent";
 
 let passed = 0;
 let total = 0;
@@ -27,16 +28,21 @@ function assert(condition: boolean, testName: string, detail?: string) {
 
 async function runTests() {
   console.log("==================================================================");
-  console.log("🧪 Running TASK-P5-02: Sarah AI Persona & Rubric Injection Suite");
+  console.log("🧪 Running TASK-P5-02: AiInterviewAgent & Rubric Injection Suite");
   console.log("==================================================================\n");
 
-  console.log("👉 Test Suite 1: Rubric Atoms & Anti-Patterns Injection");
+  console.log("👉 Test Suite 1: Rubric Atoms & Dynamic Agent Identity");
   {
     const input: PracticeTurnInput = {
       topicSlug: "distributed-caching",
       candidateMessage:
         "I will use Redis as a cache-aside layer in front of PostgreSQL. When a read request comes in, we check Redis first. If it is a cache miss, we read from PostgreSQL, populate Redis with an expiration TTL of 3600 seconds, and return the response.",
       candidateTargetLevel: "L3",
+      agentConfig: {
+        agentName: "Alex",
+        roleTitle: "L6 Bar Raiser",
+        companyContext: "Google",
+      },
       questionOverride: {
         title: "Distributed Caching Architecture",
         prompt: "Design a high-throughput distributed caching tier for an e-commerce catalog.",
@@ -58,10 +64,10 @@ async function runTests() {
       },
     };
 
-    const result = await executeSarahInterviewerTurn(input);
+    const result = await AiInterviewAgent.conductTurn(input);
 
-    assert(result.success === true, "Sarah turn execution returns success: true");
-    assert(typeof result.replyText === "string" && result.replyText.length > 10, `Sarah generated realistic response: "${result.replyText.slice(0, 60)}..."`);
+    assert(result.success === true, "AiInterviewAgent turn execution returns success: true");
+    assert(typeof result.replyText === "string" && result.replyText.length > 10, `Agent generated realistic response: "${result.replyText.slice(0, 60)}..."`);
     assert(Array.isArray(result.coveredRubricAtoms), "Returns coveredRubricAtoms array");
     assert(Array.isArray(result.remainingRubricAtoms), "Returns remainingRubricAtoms array");
     assert(typeof result.currentMasteryScore === "number", `Returns currentMasteryScore: ${result.currentMasteryScore}%`);
@@ -69,6 +75,8 @@ async function runTests() {
       ["scoping", "high-level-design", "deep-dive", "failure-modes", "wrap-up"].includes(result.interviewPhase),
       `Interview phase is calibrated: ${result.interviewPhase}`
     );
+    assert(result.agentInfo?.name === "Alex", `Dynamic agent name preserved: ${result.agentInfo?.name}`);
+    assert(result.agentInfo?.role === "L6 Bar Raiser", `Dynamic agent role preserved: ${result.agentInfo?.role}`);
   }
 
   console.log("\n👉 Test Suite 2: Anti-Pattern Detection & Fallback Resilience");
@@ -87,9 +95,10 @@ async function runTests() {
       },
     };
 
-    const result = await executeSarahInterviewerTurn(riskyInput);
+    const result = await executeAiInterviewAgentTurn(riskyInput);
     assert(result.success === true, "Handles anti-pattern scenario cleanly");
     assert(result.replyText.length > 0, "Generates response probing durability / memory risks");
+    assert(result.agentInfo?.name === "AI Interviewer", "Default agent name fallback verified");
   }
 
   console.log("\n==================================================================");
