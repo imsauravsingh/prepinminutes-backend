@@ -17,11 +17,11 @@
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
+|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         1         |          0          |        3        |  🟡 **25% IN PROGRESS**  |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **26**       |        **0**        |     **12**      |    **68.4% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **27**       |        **0**        |     **11**      |    **71.1% OVERALL**     |
 
 ---
 
@@ -458,17 +458,26 @@ flowchart TD
 
 ### Phase 5: Interactive Practice & Live Question Injection
 
-- [ ] **TASK-P5-01: Dynamic Question Loader for Practice Workspaces**
+- [x] **TASK-P5-01: Dynamic Question Loader for Practice Workspaces**
   - **Dependencies**: `TASK-P3-02`, `TASK-P4-01`
   - **Target Files**:
+    - `prep-in-minutes/src/hooks/useCurriculumTopic.ts`
+    - `prep-in-minutes/src/components/practice/PracticeQuestionSelector.tsx`
     - `prep-in-minutes/src/components/practice/SystemDesignWorkspace.tsx`
     - `prep-in-minutes/src/components/practice/PracticeCodingWorkspace.tsx`
     - `prep-in-minutes/src/components/practice/CloudWorkspace.tsx`
     - `prep-in-minutes/src/components/practice/BehavioralWorkspace.tsx`
+    - `prep-in-minutes/scripts/test-dynamic-question-loader.ts`
+    - `docs/TASK_P5_01_DYNAMIC_QUESTION_LOADER_SPEC.md`
   - **Scope**:
-    - Pass `?topic=slug&q=id` query parameters into practice session routes.
-    - Fetch the specific question, prompt, hints, scaleAnchor, and expected keywords from `backendApi.getTopicDetail(topicSlug)`.
-  - **Acceptance Criteria**: Opening `/practice/session/system-design?topic=distributed-cache-redis&q=q-cmp001-001` renders the specific prompt and rubric anchors.
+    - Created `useCurriculumTopic` hook with SWR caching, URL search param synchronization (`?topic=slug&q=id`), circular bounds navigation, and resilient synthesized fallback.
+    - Built reusable `PracticeQuestionSelector` supporting canonical topic ID pills, Question X of Y dropdown switcher, and Previous/Next buttons.
+    - Integrated live topic and question prompts across all 4 practice workspace archetypes:
+      - Architecture (`SystemDesignWorkspace.tsx`): AI persona message, question hints, dynamic rubric criteria, circular progress ring.
+      - Coding (`PracticeCodingWorkspace.tsx`): Dynamic problem title, difficulty badge, learning level, rubric criteria, evaluation guide.
+      - Cloud (`CloudWorkspace.tsx`): Infrastructure prompt, Terraform IaC starter template, rubric criteria.
+      - Behavioral (`BehavioralWorkspace.tsx`): Question prompt, STAR methodology hints, evaluation rubric.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-dynamic-question-loader.ts`) passed 18/18 tests with exit code 0; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
 - [ ] **TASK-P5-02: Inject Rubric Atoms & Scale Anchors into Sarah AI Persona**
   - **Dependencies**: `TASK-P5-01`

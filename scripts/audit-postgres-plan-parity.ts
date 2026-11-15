@@ -107,10 +107,10 @@ async function runAudit() {
   } else {
     for (const c of candidates) {
       console.log(`   👤 Candidate: ${c.user?.fullName || "Unnamed"} (${c.user?.email || "No email"})`);
-      console.log(`      Role: ${c.targetRole || "N/A"} | Company: ${c.targetCompany || "N/A"} | Level: ${c.targetLevel || "N/A"}`);
+      console.log(`      Role: ${c.targetRole || "N/A"} | Companies: ${c.targetCompanies?.join(", ") || "N/A"} | Experience: ${c.experienceLevel || "N/A"}`);
       console.log(`      Total Plans: ${c.plans.length} | Mastered Topics: ${c.topicMasteries.length}`);
       for (const p of c.plans) {
-        console.log(`      ↳ Plan [${p.id}]: Active: ${p.isActive} | Phase: ${p.currentPhase || "N/A"} | Daily Tasks: ${p._count.dailyTasks}`);
+        console.log(`      ↳ Plan [${p.id}]: Active: ${p.isActive} | Status: ${p.status} | Daily Tasks: ${p._count.dailyTasks}`);
       }
     }
   }
