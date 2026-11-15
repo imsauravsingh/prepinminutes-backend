@@ -16,12 +16,12 @@
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         1         |          0          |        2        |  🟡 **33.3% IN PROGRESS** |
+|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         2         |          0          |        1        |  🟡 **66.7% IN PROGRESS** |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **24**       |        **0**        |     **14**      |    **63.2% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **25**       |        **0**        |     **13**      |    **65.8% OVERALL**     |
 
 ---
 
@@ -423,15 +423,20 @@ flowchart TD
     - Authored custom Stale-While-Revalidate hooks in `src/hooks/useCurriculum.ts` (`useCurriculumDomains`, `useCurriculumHierarchy`, `useCurriculum`) with `localStorage` snapshot caching under `pim_curriculum_cache_v42_*` for instant 0ms startup, background revalidation with ETag 304, and client-side candidate readiness/starring overlays.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-frontend-curriculum-client.ts`) passed 69/69 tests with exit code 0; full TypeScript check and Next.js production build succeeded with zero errors.
 
-- [ ] **TASK-P4-02: Expand Topic Picker UI to Support All 10 Canonical Domains**
+- [x] **TASK-P4-02: Expand Topic Picker UI to Support All 10 Canonical Domains**
+  - **Status**: Completed (November 15, 2026)
+  - **Priority**: **P0 (Core Candidate Navigation)**
   - **Dependencies**: `TASK-P4-01`
   - **Target Files**:
     - `prep-in-minutes/src/components/practice/ChooseTopicWorkspace.tsx`
+    - `prep-in-minutes/scripts/test-domain-picker-10-domains.ts`
   - **Scope**:
-    - Expand area tabs beyond 4 legacy items to all 10 canonical domains:
-      - System Design, AI System Design, Low-Level Design, DSA, Backend, Frontend, Cloud/DevOps, Behavioral, Data Engineering, Mobile Engineering.
-    - Add horizontal scrollable pills with active indicators and topic counts.
-  - **Acceptance Criteria**: Candidate can switch between all 10 domains seamlessly with zero layout shift or hydration mismatch.
+    - Replaced the legacy 4-card grid with a responsive, horizontally scrollable 10-domain pill track (`overflow-x-auto scrollbar-none`) with left/right chevron scroll controls and smooth scroll centering.
+    - Integrated `useCurriculum(selectedArea)` with live category and topic counts from the Edge API.
+    - Implemented `DOMAIN_VISUAL_MAP` for all 10 canonical domains with Lucide icons, theme badge backgrounds, and active ring/border accents.
+    - Added Active Domain Summary Banner displaying official domain description, version badge, category count, and topic count.
+    - Integrated zero-CLS skeleton placeholder pills for loading states.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-domain-picker-10-domains.ts`) passed 102/102 tests with exit code 0; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors.
 
 - [ ] **TASK-P4-03: Implement Advanced Search, Company Tags & Difficulty Filtering**
   - **Dependencies**: `TASK-P4-02`
