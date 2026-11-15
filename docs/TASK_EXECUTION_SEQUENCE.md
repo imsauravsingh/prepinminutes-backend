@@ -16,12 +16,12 @@
 | **Phase 1.5** | **Relational Schema & Curriculum Parity (PostgreSQL)** |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         2         |          0          |        1        |  🟡 **66.7% IN PROGRESS** |
+|  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         0         |          0          |        4        |      ⚪ **PENDING**      |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **25**       |        **0**        |     **13**      |    **65.8% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **26**       |        **0**        |     **12**      |    **68.4% OVERALL**     |
 
 ---
 
@@ -438,14 +438,21 @@ flowchart TD
     - Integrated zero-CLS skeleton placeholder pills for loading states.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-domain-picker-10-domains.ts`) passed 102/102 tests with exit code 0; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors.
 
-- [ ] **TASK-P4-03: Implement Advanced Search, Company Tags & Difficulty Filtering**
+- [x] **TASK-P4-03: Implement Category Grouping, Dynamic Topic Cards & Real-Time Search Engine**
   - **Dependencies**: `TASK-P4-02`
   - **Target Files**:
     - `prep-in-minutes/src/components/practice/ChooseTopicWorkspace.tsx`
+    - `prep-in-minutes/scripts/test-category-grouping-search.ts`
+    - `docs/TASK_P4_03_CATEGORY_GROUPING_AND_SEARCH_SPEC.md`
   - **Scope**:
-    - Fast client-side search across topic titles, descriptions, and rubric atoms.
-    - Multi-select filters for Priority (`P0`, `P1`), Difficulty (`Beginner`, `Intermediate`, `Advanced`, `Expert`), and Target Companies (Google, Amazon, Meta, etc.).
-  - **Acceptance Criteria**: Search input instantly narrows the 371 topics with debounced responsiveness ($< 50\text{ms}$).
+    - Grouped all 371 topics under their respective canonical category headers with pillar badges, collapsible accordion toggles, and topic count pills.
+    - Added dual-view toggle: "By Category" (`LayoutGrid`) for structured pedagogical browsing and "Flat List" (`ListFilter`) for paginated scanning (10 records/page).
+    - Multi-dimensional search engine querying topic title, canonical topicId (e.g. `SYS018`, `FND001`), and description keywords.
+    - Multi-criteria filter engine:
+      - Status filter chips: All Topics, Needs Practice, In Progress, Not Practiced, Practiced, and `★ Starred`.
+      - Secondary dropdowns: Difficulty (`BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `EXPERT`), Priority (`P0 Core`, `P1 Advanced`), Time (`≤ 10 min`, `10-20 min`, `≥ 20 min`), and Reset Filters shortcut.
+    - Upgraded topic cards rendering canonical Topic ID, Priority badge (`P0 Core` / `P1 Advanced`), Difficulty badge, Trend indicators (`Flame` Surging / `TrendingUp` Hot), Rubric Atom counts, Question counts, Duration, interactive Star toggle, Readiness progress bar, and Practice CTA routing to `/practice/session/{archetype}?topic={slug}&domain={area}`.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-category-grouping-search.ts`) passed 20/20 tests with exit code 0; `scripts/test-domain-picker-10-domains.ts` passed 102/102 tests; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
 ---
 
