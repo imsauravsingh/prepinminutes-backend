@@ -86,6 +86,7 @@ import {
   handleGetCurriculumTopicQuestions,
   handlePostCurriculumPublish,
 } from "./routes/curriculum";
+import { handlePostPracticeSessionTurn } from "./routes/practice-interviewer";
 
 export type BackendEnv = Record<string, string | undefined>;
 
@@ -307,6 +308,10 @@ const worker = {
         response = await handleGetRevisionItems(req);
       } else if (pathname === "/api/revision/items" && method === "POST") {
         response = await handlePostRevisionItems(req);
+      }
+      // Interactive Practice Turn Endpoint (Phase 5 - TASK-P5-02)
+      else if (pathname === "/api/practice/session/turn" && method === "POST") {
+        response = await handlePostPracticeSessionTurn(req);
       }
       // Evaluation Report Retrieval (/api/evaluation/:reportId)
       else if (pathname.startsWith("/api/evaluation/") && method === "GET") {

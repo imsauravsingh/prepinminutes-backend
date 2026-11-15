@@ -17,11 +17,11 @@
 |  **Phase 2**  | **Cross-Cutting Intelligence (L1–L4 Graph Nodes)**     |      5      |         5         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 3**  | **Unified Curriculum API & Edge Gateway**              |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
 |  **Phase 4**  | **Dynamic Frontend Knowledge Graph Integration**       |      3      |         3         |          0          |        0        |  🟢 **100% COMPLETE**   |
-|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         1         |          0          |        3        |  🟡 **25% IN PROGRESS**  |
+|  **Phase 5**  | **Interactive Practice & Live Question Injection**     |      4      |         2         |          0          |        2        |  🟡 **50% IN PROGRESS**  |
 |  **Phase 6**  | **Deterministic Evaluation, Scoring & Decay Engine**   |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
 |  **Phase 7**  | **Real-Time Voice AI Gateway & Media Streaming**       |      2      |         0         |          0          |        2        |      ⚪ **PENDING**      |
 |  **Phase 8**  | **End-to-End Platform Verification & Polish**          |      3      |         0         |          0          |        3        |      ⚪ **PENDING**      |
-|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **27**       |        **0**        |     **11**      |    **71.1% OVERALL**     |
+|   **TOTAL**   | **Entire PrepInMinutes Platform**                      |   **38**    |      **28**       |        **0**        |     **10**      |    **73.7% OVERALL**     |
 
 ---
 
@@ -479,15 +479,22 @@ flowchart TD
       - Behavioral (`BehavioralWorkspace.tsx`): Question prompt, STAR methodology hints, evaluation rubric.
   - **Acceptance Criteria**: Automated test suite (`scripts/test-dynamic-question-loader.ts`) passed 18/18 tests with exit code 0; TypeScript typecheck and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
-- [ ] **TASK-P5-02: Inject Rubric Atoms & Scale Anchors into Sarah AI Persona**
+- [x] **TASK-P5-02: Inject Rubric Atoms & Scale Anchors into Sarah AI Persona**
+  - **Status**: Completed (November 15, 2026)
   - **Dependencies**: `TASK-P5-01`
   - **Target Files**:
-    - `prepinminutes-backend/src/server/ai/gemini.ts`
-    - `prepinminutes-backend/src/routes/ai-assessment.ts`
+    - `prepinminutes-backend/src/server/ai/sarah-persona.ts`
+    - `prepinminutes-backend/src/routes/practice-interviewer.ts`
+    - `prepinminutes-backend/scripts/test-sarah-rubric-injection.ts`
+    - `prep-in-minutes/src/lib/api-client.ts`
+    - `prep-in-minutes/src/components/practice/SystemDesignWorkspace.tsx`
+    - `docs/TASK_P5_02_INJECT_RUBRIC_ATOMS_SARAH_AI_SPEC.md`
   - **Scope**:
-    - Bind the question's `rubricAtoms`, `antiPatterns`, and `followUpProbes` into the LLM system prompt.
-    - Sarah challenges candidate directly on specific missing atoms when candidate pauses.
-  - **Acceptance Criteria**: Sarah asks targeted follow-ups matching the question's rubric criteria instead of generic banter.
+    - Authored `sarah-persona.ts` LLM inference service using Gemini to conduct technical turns.
+    - Bound question's `rubricAtoms`, `antiPatterns`, `followUpProbes`, `scaleAnchor`, and `expectedKeywords` into Sarah's system prompt.
+    - Implemented real-time turn endpoint `POST /api/practice/session/turn` returning Sarah's response, covered rubric atoms, remaining atoms, anti-pattern alerts, and mastery score.
+    - Connected practice workspaces (`SystemDesignWorkspace.tsx`) to submit candidate turns via `backendApi.submitPracticeSessionTurn` and reflect live rubric atom progress and badges.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-sarah-rubric-injection.ts`) passed 8/8 tests with 0 failures; TypeScript typecheck (`npx tsc --noEmit`) and Next.js production build (`next build`) passed with 0 errors across all 63 static pages.
 
 - [ ] **TASK-P5-03: Multi-Domain Code Editor & Whiteboard Workspace Synchronization**
   - **Dependencies**: `TASK-P5-01`
