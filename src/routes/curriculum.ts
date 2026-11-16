@@ -352,9 +352,14 @@ export async function handleGetCurriculumTopicDetail(
   req: ApiRequest,
   topicSlug: string
 ): Promise<Response> {
-  const cleanSlug = (topicSlug || "").trim().toLowerCase();
+  let decodedSlug = (topicSlug || "").trim();
+  try {
+    decodedSlug = decodeURIComponent(decodedSlug).trim();
+  } catch {}
+
+  const cleanSlug = decodedSlug.toLowerCase();
   const curriculumVersion = await CurriculumCacheManager.getCurriculumVersion();
-  const cacheKey = `curriculum:topic:${cleanSlug}:${curriculumVersion}`;
+  const cacheKey = `curriculum:topic:${cleanSlug.replace(/[^a-z0-9]+/g, "-")}:${curriculumVersion}`;
   const now = Date.now();
   const ifNoneMatch =
     req.headers.get("if-none-match") || req.headers.get("If-None-Match");
@@ -487,7 +492,12 @@ export async function handleGetCurriculumTopicQuestions(
   req: ApiRequest,
   topicSlug: string
 ): Promise<Response> {
-  const cleanSlug = (topicSlug || "").trim().toLowerCase();
+  let decodedSlug = (topicSlug || "").trim();
+  try {
+    decodedSlug = decodeURIComponent(decodedSlug).trim();
+  } catch {}
+
+  const cleanSlug = decodedSlug.toLowerCase();
   const targetLevel = req.nextUrl.searchParams.get("targetLevel") || undefined;
   const difficulty = req.nextUrl.searchParams.get("difficulty") || undefined;
   const limitParam = req.nextUrl.searchParams.get("limit");

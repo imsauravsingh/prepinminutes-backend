@@ -1,7 +1,15 @@
 import "./server/edge/polyfills";
 import { ApiRequest, ApiResponse } from "./lib/http";
 import { getCorsHeaders, withCors } from "./server/edge/cors";
-import { handleGetProfile, handlePostProfile } from "./routes/onboarding-profile";
+import {
+  handleGetProfile,
+  handlePostProfile,
+  handleResetProfile,
+} from "./routes/onboarding-profile";
+import {
+  handleGetPlatformConfig,
+  handlePostPlatformConfig,
+} from "./routes/platform-config";
 import { handlePostResume } from "./routes/onboarding-resume";
 import { handlePostPlanGenerate } from "./routes/plan-generate";
 import { handlePostPracticeSubmit } from "./routes/practice-submit";
@@ -274,6 +282,19 @@ const worker = {
         response = await handleGetProfile(req);
       } else if (pathname === "/api/onboarding/profile" && method === "POST") {
         response = await handlePostProfile(req);
+      } else if (pathname === "/api/onboarding/profile/reset" && method === "POST") {
+        response = await handleResetProfile(req);
+      }
+      // Platform Configuration & Admin Settings
+      else if (pathname === "/api/platform/config" && method === "GET") {
+        response = await handleGetPlatformConfig(req);
+      } else if (
+        (pathname === "/api/admin/settings" ||
+          pathname === "/api/admin/platform-config" ||
+          pathname === "/api/platform/config") &&
+        method === "POST"
+      ) {
+        response = await handlePostPlatformConfig(req);
       }
       // Onboarding Resume PDF & pgvector Embeddings
       else if (pathname === "/api/onboarding/resume" && method === "POST") {
@@ -337,10 +358,12 @@ const worker = {
         const domainSlug = pathname.replace("/api/curriculum/hierarchy/", "").replace(/\/$/, "");
         response = await handleGetCurriculumHierarchy(req, domainSlug);
       } else if (pathname.startsWith("/api/curriculum/topic/") && pathname.endsWith("/questions") && method === "GET") {
-        const topicSlug = pathname.replace("/api/curriculum/topic/", "").replace("/questions", "").replace(/\/$/, "");
+        const rawTopic = pathname.replace("/api/curriculum/topic/", "").replace("/questions", "").replace(/\/$/, "");
+        const topicSlug = decodeURIComponent(rawTopic);
         response = await handleGetCurriculumTopicQuestions(req, topicSlug);
       } else if (pathname.startsWith("/api/curriculum/topic/") && method === "GET") {
-        const topicSlug = pathname.replace("/api/curriculum/topic/", "").replace(/\/$/, "");
+        const rawTopic = pathname.replace("/api/curriculum/topic/", "").replace(/\/$/, "");
+        const topicSlug = decodeURIComponent(rawTopic);
         response = await handleGetCurriculumTopicDetail(req, topicSlug);
       } else {
         response = ApiResponse.json(

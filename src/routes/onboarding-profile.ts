@@ -7,6 +7,7 @@ import { z } from "zod";
 const ProfileSchema = z.object({
   targetRole: z.string().min(2, "Target role must be at least 2 characters"),
   experienceLevel: z.string().default("3-5 years"),
+  fresherForte: z.string().optional().nullable(),
   targetCompanies: z
     .union([z.array(z.string()), z.string()])
     .transform((val) => {
@@ -242,6 +243,62 @@ export async function handleGetProfile(req: ApiRequest): Promise<Response> {
     });
   } catch (error) {
     console.error("Profile fetch error:", error);
+    return ApiResponse.json(
+      {
+        error: "INTERNAL_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function handleResetProfile(req: ApiRequest): Promise<Response> {
+  try {
+    const candidateId = resolveCandidateClerkId(req);
+    if (!candidateId) {
+      return ApiResponse.json({ error: "UNAUTHORIZED", message: "Sign in required." }, { status: 401 });
+    }
+
+    const user = await db.user.findFirst({
+      where: {
+        OR: [
+          { id: candidateId },
+          { googleId: candidateId },
+          { clerkId: candidateId },
+          { username: candidateId },
+          { email: candidateId },
+        ],
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (user && user.profile) {
+      // Archive current preparation plans
+      await db.preparationPlan.updateMany({
+        where: { candidateId: user.profile.id },
+        data: { isActive: false, status: "archived" },
+      });
+
+      // Clear profile active plan and reset onboarding step
+      await db.candidateProfile.update({
+        where: { id: user.profile.id },
+        data: {
+          activePlanId: null,
+          onboardingStep: 1,
+          isOnboardingDone: false,
+        },
+      });
+    }
+
+    return ApiResponse.json({
+      success: true,
+      message: "Candidate profile and active plan successfully reset.",
+    });
+  } catch (error) {
+    console.error("Profile reset error:", error);
     return ApiResponse.json(
       {
         error: "INTERNAL_ERROR",

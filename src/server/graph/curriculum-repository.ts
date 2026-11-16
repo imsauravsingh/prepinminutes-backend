@@ -702,17 +702,94 @@ export class PostgresCurriculumRepository implements ICurriculumRepository {
     };
   }
 
+  private async findTopicBySlugOrFuzzy(rawQuery: string) {
+    if (!rawQuery) return null;
+    const decoded = decodeURIComponent(rawQuery).trim();
+    const kebab = decoded
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    // Stage 1: Exact slug match
+    let topic = await db.curriculumTopic.findUnique({
+      where: { slug: decoded.toLowerCase() },
+      include: { domain: true, category: true, questions: true },
+    });
+    if (topic) return topic;
+
+    // Stage 2: Kebab-case normalized slug match
+    if (kebab && kebab !== decoded.toLowerCase()) {
+      topic = await db.curriculumTopic.findUnique({
+        where: { slug: kebab },
+        include: { domain: true, category: true, questions: true },
+      });
+      if (topic) return topic;
+    }
+
+    // Stage 3: Exact title match (case-insensitive)
+    topic = await db.curriculumTopic.findFirst({
+      where: { title: { equals: decoded, mode: "insensitive" } },
+      include: { domain: true, category: true, questions: true },
+    });
+    if (topic) return topic;
+
+    // Stage 4: Multi-keyword AND match
+    const words = decoded
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(
+        (w) =>
+          w.length >= 3 &&
+          !["and", "the", "for", "with", "strategies", "system", "overview", "deep", "dive"].includes(w)
+      );
+
+    if (words.length > 1) {
+      topic = await db.curriculumTopic.findFirst({
+        where: {
+          AND: words.map((word) => ({
+            OR: [
+              { slug: { contains: word, mode: "insensitive" } },
+              { title: { contains: word, mode: "insensitive" } },
+            ],
+          })),
+        },
+        include: { domain: true, category: true, questions: true },
+      });
+      if (topic) return topic;
+    }
+
+    if (words.length > 0) {
+      topic = await db.curriculumTopic.findFirst({
+        where: {
+          OR: words.flatMap((word) => [
+            { slug: { contains: word, mode: "insensitive" } },
+            { title: { contains: word, mode: "insensitive" } },
+          ]),
+        },
+        include: { domain: true, category: true, questions: true },
+      });
+      if (topic) return topic;
+    }
+
+    // Stage 5: Broad partial title/slug match
+    topic = await db.curriculumTopic.findFirst({
+      where: {
+        OR: [
+          { title: { contains: decoded, mode: "insensitive" } },
+          { slug: { contains: kebab, mode: "insensitive" } },
+        ],
+      },
+      include: { domain: true, category: true, questions: true },
+    });
+
+    return topic;
+  }
+
   public async getTopicDetail(
     topicSlug: string
   ): Promise<TopicDetailResponse | null> {
-    const t = await db.curriculumTopic.findUnique({
-      where: { slug: topicSlug },
-      include: {
-        domain: true,
-        category: true,
-        questions: true,
-      },
-    });
+    const t = await this.findTopicBySlugOrFuzzy(topicSlug);
 
     if (!t) return null;
 
@@ -772,13 +849,7 @@ export class PostgresCurriculumRepository implements ICurriculumRepository {
     topicSlug: string,
     options: TopicQuestionsQueryOptions = {}
   ): Promise<TopicQuestionsResponse | null> {
-    const t = await db.curriculumTopic.findUnique({
-      where: { slug: topicSlug },
-      include: {
-        domain: true,
-        questions: true,
-      },
-    });
+    const t = await this.findTopicBySlugOrFuzzy(topicSlug);
 
     if (!t) return null;
 
@@ -909,11 +980,13 @@ export class CurriculumRepositoryService {
           this.TIMEOUT_MS,
           `Neo4j getDomainHierarchy timed out after ${this.TIMEOUT_MS}ms`
         );
-        return {
-          data,
-          dataSource: "NEO4J",
-          latencyMs: Date.now() - startTime,
-        };
+        if (data) {
+          return {
+            data,
+            dataSource: "NEO4J",
+            latencyMs: Date.now() - startTime,
+          };
+        }
       } catch (err: any) {
         this.tripCircuit(err?.message || `Neo4j hierarchy failed for ${domainSlug}`);
       }
@@ -941,11 +1014,13 @@ export class CurriculumRepositoryService {
           this.TIMEOUT_MS,
           `Neo4j getTopicDetail timed out after ${this.TIMEOUT_MS}ms`
         );
-        return {
-          data,
-          dataSource: "NEO4J",
-          latencyMs: Date.now() - startTime,
-        };
+        if (data) {
+          return {
+            data,
+            dataSource: "NEO4J",
+            latencyMs: Date.now() - startTime,
+          };
+        }
       } catch (err: any) {
         this.tripCircuit(err?.message || `Neo4j topic detail failed for ${topicSlug}`);
       }
@@ -974,11 +1049,13 @@ export class CurriculumRepositoryService {
           this.TIMEOUT_MS,
           `Neo4j getTopicQuestions timed out after ${this.TIMEOUT_MS}ms`
         );
-        return {
-          data,
-          dataSource: "NEO4J",
-          latencyMs: Date.now() - startTime,
-        };
+        if (data) {
+          return {
+            data,
+            dataSource: "NEO4J",
+            latencyMs: Date.now() - startTime,
+          };
+        }
       } catch (err: any) {
         this.tripCircuit(err?.message || `Neo4j topic questions failed for ${topicSlug}`);
       }

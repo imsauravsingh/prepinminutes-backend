@@ -677,6 +677,117 @@ flowchart TD
 
 ---
 
+### Phase 9: Full UI Dynamic Data Binding & Flexible Topic Routing
+
+- [x] **TASK-P9-01: Flexible Backend Topic Slug & Title-Fuzzy Resolver**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P8-03`
+  - **Target Files**:
+    - `prepinminutes-backend/src/server/graph/curriculum-repository.ts`
+    - `prepinminutes-backend/src/routes/curriculum.ts`
+    - `prepinminutes-backend/src/index.ts`
+    - `prep-in-minutes/src/hooks/useCurriculumTopic.ts`
+    - `prep-in-minutes/scripts/test-phase9-topic-resolver.ts`
+    - `docs/UI_DYNAMIC_DATA_AUDIT_AND_MIGRATION_PLAN.md`
+  - **Scope**:
+    - Enhanced `getTopicDetail()` and `getTopicQuestions()` with multi-tiered resolution: exact slug -> kebab-case slugified string -> case-insensitive title search -> multi-keyword AND matching.
+    - Decoded URI component parameters in edge routes to support spaced, human-readable queries like `Load%20Balancing%20Strategies`.
+    - Resolved queries like `Load%20Balancing%20Strategies` directly to canonical topic `load-balancers-traffic` with full 20-question metadata and rubrics.
+  - **Acceptance Criteria**: Automated test suite (`scripts/test-phase9-topic-resolver.ts`) passed 5/5 assertions with 100% success rate across exact slugs, human-readable titles, and keywords; TypeScript clean.
+
+- [x] **TASK-P9-02: System Design & Practice Workspaces Dynamic Hydration**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-01`
+  - **Target Files**:
+    - `prep-in-minutes/src/components/practice/SystemDesignWorkspace.tsx`
+    - `prep-in-minutes/src/components/practice/PracticeCodingWorkspace.tsx`
+    - `prep-in-minutes/src/components/practice/CloudWorkspace.tsx`
+    - `prep-in-minutes/src/components/practice/BehavioralWorkspace.tsx`
+  - **Scope**:
+    - Removed hardcoded URL shortener and static mock bubbles from `SystemDesignWorkspace.tsx` and `CloudWorkspace.tsx`.
+    - Bound chat history directly to dynamic `messages` state initialized from `activeQuestion.prompt` and `activeQuestion.hints`.
+    - Dynamically initialized architectural code/IaC starter templates from `topic.title`.
+  - **Acceptance Criteria**: Navigating to `?topic=Load%20Balancing%20Strategies` displays dynamic Load Balancers architecture scenario, clarifying question hints, and rubric criteria; 0 hardcoded chat bubbles; TypeScript clean.
+
+- [x] **TASK-P9-03: AI Mock Interview End-to-End Dynamic Session & Evaluation Wiring**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-02`
+  - **Target Files**:
+    - `prep-in-minutes/src/components/mock-interview/configure/InterviewConfigurationForm.tsx`
+    - `prep-in-minutes/src/components/mock-interview/configure/ConfigurationPreviewCard.tsx`
+    - `prep-in-minutes/src/components/mock-interview/briefing/BriefingBottomBar.tsx`
+    - `prep-in-minutes/src/components/mock-interview/session/MockInterviewSessionWorkspace.tsx`
+    - `prep-in-minutes/src/components/mock-interview/evaluation/MockSystemDesignEvaluationWorkspace.tsx`
+  - **Scope**:
+    - Pass configured mock interview parameters (`interviewType`, `targetRole`, `difficulty`, `durationMinutes`, `focusAreas`) through configure -> briefing -> session.
+    - Start timer at 00:00 and load questions matching configured type and topic.
+    - Wire session submission to generate a real evaluation report and hydrate `MockSystemDesignEvaluationWorkspace.tsx` with dynamic scores ring, criteria breakdown, and percentile.
+  - **Acceptance Criteria**: Configured mock interview flows smoothly into the session workspace with dynamic initial prompt; evaluation report reflects actual candidate submission; TypeScript typecheck passes with 0 errors.
+
+- [x] **TASK-P9-04: Dashboard & Preparation Plan Dynamic Readiness Binding**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-03`
+  - **Target Files**:
+    - `prep-in-minutes/src/components/dashboard/StartPreparingWorkspace.tsx`
+    - `prep-in-minutes/src/components/preparation-plan/PreparationPlanWorkspace.tsx`
+    - `prep-in-minutes/src/components/preparation-plan/PlanHeader.tsx`
+    - `prep-in-minutes/src/components/preparation-plan/PreparationProgress.tsx`
+    - `prep-in-minutes/src/components/preparation-plan/ReadinessByArea.tsx`
+  - **Scope**:
+    - Fetch candidate's profile and active plan from `backendApi.getProfile()`.
+    - Dynamically bind target role, experience, timeline, and company name.
+    - Bind overall readiness score ring and domain readiness bars (Coding, System Design, Behavioral, Cloud) to the active plan.
+    - Connect today's preparation activities and roadmap links to canonical topic slugs.
+  - **Acceptance Criteria**: Dashboard and preparation plan reflect live candidate evaluation scores and plan milestones; completing a practice evaluation increments the score dynamically.
+
+- [x] **TASK-P9-05: Fresher Forte Specialization & Candidate Profile Reset Flow**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-04`
+  - **Target Files**:
+    - `prep-in-minutes/src/components/dashboard/OnboardingFormCard.tsx`
+    - `prep-in-minutes/src/components/dashboard/StartPreparingWorkspace.tsx`
+    - `prepinminutes-backend/src/routes/onboarding-profile.ts`
+  - **Scope**:
+    - Replaced free-form role input with a curated categorized dropdown (`TARGET_ROLE_CATEGORIES`) + custom role support.
+    - Added `"Fresher / Student (0 years)"` option with dynamic **Target Forte** selector (`FRESHER_FORTE_OPTIONS`) across Data Analytics, SDE, Cloud/DevOps, AI/ML, and QA.
+    - Added **"Reset Profile & Re-evaluate"** action with confirmation modal to archive active plan draft, reset onboarding step, and allow fresh re-evaluation.
+    - Implemented backend endpoint `POST /api/onboarding/profile/reset` to archive plan and reset `isOnboardingDone: false` in PostgreSQL.
+  - **Acceptance Criteria**: Selecting Fresher shows domain selection pills/dropdown; resetting profile clears setup and enables fresh evaluation with clean defaults; automated test passed.
+
+- [x] **TASK-P9-06: Admin Flag for Direct Plan Generation vs Next Step**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-05`
+  - **Target Files**:
+    - `prep-in-minutes/src/app/admin/page.tsx`
+    - `prepinminutes-backend/src/routes/platform-config.ts`
+    - `prepinminutes-backend/src/index.ts`
+    - `prep-in-minutes/src/components/dashboard/OnboardingFormCard.tsx`
+  - **Scope**:
+    - Implemented admin setting toggle: `"Enable 'Next Step' Assessment Flow"` (`enable_next_step_flow`).
+    - Stored flag in PostgreSQL `platform_configs` table via `GET /api/platform/config` and `POST /api/admin/settings`.
+    - In `OnboardingFormCard.tsx`: If disabled, primary CTA is `"Create My Preparation Plan"`, directly calling plan generation and jumping to Step 3 (`/dashboard?step=3`); if enabled, CTA is `"Next Step: Assessment →"`, advancing to Step 2 (`/dashboard/plan-ready`).
+  - **Acceptance Criteria**: Admin toggle immediately switches onboarding button label and navigation behavior without requiring code changes; automated test passed.
+
+- [x] **TASK-P9-07: End-to-End Verification & Production Build Suite**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-06`
+  - **Target Files**:
+    - `prep-in-minutes/scripts/test-phase9-comprehensive.ts`
+  - **Scope**:
+    - Verified full Next.js production build (`next build`) compiling 63 routes with 0 errors.
+    - Verified full backend TypeScript typecheck with 0 errors.
+    - Verified all end-to-end integration tests (`scripts/test-phase9-comprehensive.ts`) with 100% pass rate.
+  - **Acceptance Criteria**: Both repositories build and typecheck cleanly; all tests pass; ready for commit and push.
+  - **Dependencies**: `TASK-P9-06`
+  - **Target Files**:
+    - `prep-in-minutes/scripts/test-phase9-dynamic-flow.ts`
+  - **Scope**:
+    - Automated test verifying topic resolution with title queries, fresher forte plan customization, profile reset, and admin flag switching.
+    - Full `npm run build` and `tsc --noEmit` pass on both repositories.
+  - **Acceptance Criteria**: 100% test assertions pass; 0 build or lint errors.
+
+---
+
 ## 4. Execution Protocol & Status Tracking Rule
 
 Whenever any task from this sequence is picked up, implemented, or tested:
