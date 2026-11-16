@@ -9,9 +9,11 @@ import { handlePostMockInterviewEnd } from "./routes/mock-interview-end";
 import { handleGetEvaluationReport } from "./routes/evaluation-report";
 import { handleGetRevisionItems, handlePostRevisionItems } from "./routes/revision-items";
 import {
+  handleGetVoiceSessionConfig,
   handlePostMockInterviewStart,
   handlePostVoiceSynthesize,
   handlePostVoiceTranscribe,
+  handlePostVoiceInterrupt,
 } from "./routes/voice-gateway";
 import { handlePostAiAssessmentStart, handlePostAiAssessmentFinish } from "./routes/ai-assessment";
 import {
@@ -282,7 +284,10 @@ const worker = {
         response = await handlePostPlanGenerate(req);
       }
       // Practice Session Submission & Evaluation
-      else if (pathname === "/api/practice/session/submit" && method === "POST") {
+      else if (
+        (pathname === "/api/practice/session/submit" || pathname === "/api/practice/submit") &&
+        method === "POST"
+      ) {
         response = await handlePostPracticeSubmit(req);
       }
       // Mock Interview Start & End
@@ -297,8 +302,12 @@ const worker = {
       } else if (pathname === "/api/ai-assessment/finish" && method === "POST") {
         response = await handlePostAiAssessmentFinish(req);
       }
-      // Voice TTS Synthesis & STT Transcription
-      else if (pathname === "/api/voice/synthesize" && method === "POST") {
+      // Voice TTS Synthesis, STT Transcription & Config
+      else if (pathname === "/api/voice/session/config" && method === "GET") {
+        response = await handleGetVoiceSessionConfig(req);
+      } else if (pathname === "/api/voice/session/interrupt" && method === "POST") {
+        response = await handlePostVoiceInterrupt(req);
+      } else if (pathname === "/api/voice/synthesize" && method === "POST") {
         response = await handlePostVoiceSynthesize(req);
       } else if (pathname === "/api/voice/transcribe" && method === "POST") {
         response = await handlePostVoiceTranscribe(req);
@@ -306,7 +315,10 @@ const worker = {
       // Revision Queue Items
       else if (pathname === "/api/revision/items" && method === "GET") {
         response = await handleGetRevisionItems(req);
-      } else if (pathname === "/api/revision/items" && method === "POST") {
+      } else if (
+        (pathname === "/api/revision/items" || pathname === "/api/revision/item/recall") &&
+        method === "POST"
+      ) {
         response = await handlePostRevisionItems(req);
       }
       // Interactive Practice Turn Endpoint (Phase 5 - TASK-P5-02)

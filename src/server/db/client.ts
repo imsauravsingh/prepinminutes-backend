@@ -68,12 +68,13 @@ export async function withCandidateContext(candidateIdentifier: string) {
     where: {
       OR: [
         { id: trimmed },
+        { email: trimmed },
         { googleId: trimmed },
         { username: trimmed },
         { clerkId: trimmed },
       ],
     },
-    include: { profile: true },
+    include: { profile: true, subscription: true },
   });
 
   if (!user) {
@@ -84,11 +85,13 @@ export async function withCandidateContext(candidateIdentifier: string) {
 
   return {
     userId: user.id,
+    user,
     googleId: user.googleId ?? null,
     username: user.username ?? null,
     clerkId: user.clerkId,
     email: user.email,
     profile: user.profile,
+    subscription: user.subscription,
   };
 }
 

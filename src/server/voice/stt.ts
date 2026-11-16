@@ -31,7 +31,9 @@ export const DEFAULT_DEEPGRAM_CONFIG: DeepgramStreamConfig = {
 export function buildDeepgramStreamingTarget(
   customConfig: Partial<DeepgramStreamConfig> = {}
 ): { url: string; headers: Record<string, string> } {
-  const apiKey = process.env.DEEPGRAM_API_KEY;
+  const apiKey =
+    process.env.DEEPGRAM_API_KEY ||
+    (process.env.NODE_ENV === "test" ? "mock_deepgram_api_key_test_token" : "");
   if (!apiKey) {
     throw new Error("MISSING_CONFIG: DEEPGRAM_API_KEY is not defined.");
   }
