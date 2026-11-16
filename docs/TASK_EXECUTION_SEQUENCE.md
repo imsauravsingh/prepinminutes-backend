@@ -778,13 +778,19 @@ flowchart TD
     - Verified full backend TypeScript typecheck with 0 errors.
     - Verified all end-to-end integration tests (`scripts/test-phase9-comprehensive.ts`) with 100% pass rate.
   - **Acceptance Criteria**: Both repositories build and typecheck cleanly; all tests pass; ready for commit and push.
-  - **Dependencies**: `TASK-P9-06`
+
+- [x] **TASK-P9-08: Standalone Reusable AI Voice Interviewer & Live Practice Session Parity**
+  - **Status**: Completed (November 16, 2026)
+  - **Dependencies**: `TASK-P9-07`
   - **Target Files**:
-    - `prep-in-minutes/scripts/test-phase9-dynamic-flow.ts`
+    - `prep-in-minutes/src/hooks/useAiVoiceInterviewer.ts`
+    - `prep-in-minutes/src/components/voice/AiVoiceInterviewerDock.tsx`
+    - `prep-in-minutes/src/components/practice/SystemDesignWorkspace.tsx`
   - **Scope**:
-    - Automated test verifying topic resolution with title queries, fresher forte plan customization, profile reset, and admin flag switching.
-    - Full `npm run build` and `tsc --noEmit` pass on both repositories.
-  - **Acceptance Criteria**: 100% test assertions pass; 0 build or lint errors.
+    - Extracted the autonomous voice talking interviewer engine into a standalone, plug-and-play React hook (`useAiVoiceInterviewer.ts`) supporting Web Audio API RMS VAD, MediaRecorder WebM/Opus audio chunk compilation, Cartesia TTS synthesis, Deepgram STT transcription, silence auto-commit, 10ms barge-in interruption, and fallback text mode.
+    - Created modular reusable dock component (`AiVoiceInterviewerDock.tsx`) featuring browser permission lobby activation, real-time animated equalizer waveform, dynamic turn status pills, mic/pause/mute controls, and inline text drawer.
+    - Hydrated `SystemDesignWorkspace.tsx` with full live voice interviewer parity matching `/ai-assessment/session`. Practice sessions for any curriculum topic (e.g. `/practice/session/system-design?topic=Microservices%20vs%20Monoliths%20Architecture`) now speak aloud, listen autonomously, evaluate rubric atoms dynamically, and submit evaluation reports.
+  - **Acceptance Criteria**: Live voice talking interviewer operates anywhere plugged in; silence detection auto-commits spoken turns; barge-in cuts audio immediately; session ends with dynamic submission and routing to evaluation.
 
 ---
 
