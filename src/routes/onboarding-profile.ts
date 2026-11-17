@@ -136,7 +136,7 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
         jobDescriptionText: data.jobDescriptionText || null,
         weeklyGoalHours: data.weeklyGoalHours,
         onboardingStep: 2,
-        readinessScore: 45,
+        readinessScore: 0,
       },
     });
 
@@ -169,7 +169,7 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
           jobDescriptionText: data.jobDescriptionText || null,
           isActive: true,
           status: "active",
-          readinessScore: 45,
+          readinessScore: 0,
         },
       });
 
@@ -236,10 +236,48 @@ export async function handleGetProfile(req: ApiRequest): Promise<Response> {
 
     const activePlan = user.profile.plans?.[0] || null;
 
+    // Fetch count of completed practice sessions
+    const completedSessions = await db.practiceSession.findMany({
+      where: {
+        candidateId: user.profile.id,
+        status: { in: ["completed", "COMPLETED"] },
+      },
+      select: {
+        id: true,
+        domain: true,
+        topicSlug: true,
+        createdAt: true,
+      },
+    });
+
+    const completedCount = completedSessions.length;
+
+    // Calculate unique days with completed practice
+    const uniqueDays = new Set(
+      completedSessions
+        .map((s) => (s.createdAt ? new Date(s.createdAt).toISOString().slice(0, 10) : null))
+        .filter(Boolean)
+    );
+
+    // Initial onboarding starts at strictly 0% readiness if no practice sessions completed
+    const effectiveReadinessScore = completedCount === 0 ? 0 : (user.profile.readinessScore || 0);
+
     return ApiResponse.json({
       success: true,
-      profile: user.profile,
-      activePlan,
+      profile: {
+        ...user.profile,
+        readinessScore: effectiveReadinessScore,
+        completedActivities: completedCount,
+        completedDays: uniqueDays.size,
+      },
+      activePlan: activePlan
+        ? {
+            ...activePlan,
+            readinessScore: effectiveReadinessScore,
+            completedActivitiesCount: completedCount,
+            completedDays: uniqueDays.size,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Profile fetch error:", error);
@@ -289,6 +327,7 @@ export async function handleResetProfile(req: ApiRequest): Promise<Response> {
           activePlanId: null,
           onboardingStep: 1,
           isOnboardingDone: false,
+          readinessScore: 0,
         },
       });
     }

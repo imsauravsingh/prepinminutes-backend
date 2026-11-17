@@ -793,6 +793,23 @@ flowchart TD
     - Hydrated both `SystemDesignWorkspace.tsx` and `CloudWorkspace.tsx` (`/practice/session/cloud`) with full live voice interviewer parity matching `/ai-assessment/session`. Practice sessions for any curriculum topic now speak aloud, listen autonomously, evaluate rubric atoms dynamically, and submit evaluation reports.
   - **Acceptance Criteria**: Live voice talking interviewer operates anywhere plugged in; silence detection auto-commits spoken turns; barge-in cuts audio immediately; session ends with dynamic submission and routing to evaluation.
 
+- [x] **TASK-P9-09: Dashboard Step 3 Dynamic Preparation Workspace & Zero-State Calibration**
+  - **Status**: Completed (November 17, 2026)
+  - **Dependencies**: `TASK-P9-08`
+  - **Target Files**:
+    - `prep-in-minutes/src/components/dashboard/StartPreparingWorkspace.tsx`
+    - `prep-in-minutes/src/components/dashboard/OnboardingFormCard.tsx`
+    - `prepinminutes-backend/src/routes/onboarding-profile.ts`
+    - `prepinminutes-backend/src/routes/plan-generate.ts`
+  - **Scope**:
+    - Calibrated fresh candidate onboarding readiness to strictly start from 0% (replacing static default 45% / 18% fallbacks and hardcoded 3/24 activities).
+    - Made radial progress ring, activity count (`0 / 24`), days completed (`0`), topics in progress (`0`), and days remaining dynamic based on candidate's real timeline and practice activity.
+    - Rendered live formatted date replacing static September 16 date.
+    - Tailored today's 3-activity preparation roadmap dynamically based on candidate's target role and forte (Data Analytics/SQL, Cloud/DevOps, AI/ML, Frontend/Fullstack, and SDE/Backend).
+    - Dynamically mapped the 4 Preparation Area cards to relevant domains for candidate's track with progress starting at 0%.
+    - Updated backend `handleGetProfile` to compute real completed practice sessions and unique practice days.
+  - **Acceptance Criteria**: Freshly onboarded candidates see strictly 0% progress and 0 activities completed; role, forte, timeline, and company update dynamically; all TypeScript checks pass with 0 errors.
+
 ---
 
 ## 4. Execution Protocol & Status Tracking Rule

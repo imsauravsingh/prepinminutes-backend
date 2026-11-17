@@ -136,6 +136,7 @@ Ensure there are exactly ${profile.timelineWeeks} milestones (one per week). Ret
           },
           isActive: true,
           status: "active",
+          readinessScore: 0,
         },
       });
     }
