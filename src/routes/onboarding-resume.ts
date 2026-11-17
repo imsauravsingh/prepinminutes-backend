@@ -132,3 +132,51 @@ export async function handlePostResume(req: ApiRequest): Promise<Response> {
     );
   }
 }
+
+export async function handleDeleteResume(req: ApiRequest): Promise<Response> {
+  try {
+    const clerkId = resolveCandidateClerkId(req);
+    if (!clerkId) {
+      return ApiResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    }
+
+    const context = await withCandidateContext(clerkId);
+    if (!context.profile) {
+      return ApiResponse.json(
+        { error: "PROFILE_REQUIRED", message: "Candidate profile not found." },
+        { status: 400 }
+      );
+    }
+
+    const candidateId = context.profile.id;
+
+    // 1. Remove resume file metadata from CandidateProfile
+    await db.candidateProfile.update({
+      where: { id: candidateId },
+      data: {
+        resumeFileName: null,
+        resumeFileUrl: null,
+      },
+    });
+
+    // 2. Remove any resume embeddings from document_embeddings
+    await db.$executeRaw`
+      DELETE FROM document_embeddings
+      WHERE candidate_id = ${candidateId} AND doc_type = 'resume';
+    `;
+
+    return ApiResponse.json({
+      success: true,
+      message: "Resume cleared successfully.",
+    });
+  } catch (error) {
+    console.error("Resume deletion failed:", error);
+    return ApiResponse.json(
+      {
+        error: "RESUME_DELETION_FAILED",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}

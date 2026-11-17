@@ -10,7 +10,10 @@ import {
   handleGetPlatformConfig,
   handlePostPlatformConfig,
 } from "./routes/platform-config";
-import { handlePostResume } from "./routes/onboarding-resume";
+import {
+  handlePostResume,
+  handleDeleteResume,
+} from "./routes/onboarding-resume";
 import { handlePostPlanGenerate } from "./routes/plan-generate";
 import { handlePostPracticeSubmit } from "./routes/practice-submit";
 import { handlePostMockInterviewEnd } from "./routes/mock-interview-end";
@@ -299,6 +302,8 @@ const worker = {
       // Onboarding Resume PDF & pgvector Embeddings
       else if (pathname === "/api/onboarding/resume" && method === "POST") {
         response = await handlePostResume(req);
+      } else if (pathname === "/api/onboarding/resume" && method === "DELETE") {
+        response = await handleDeleteResume(req);
       }
       // Preparation Plan Synthesis
       else if (pathname === "/api/plan/generate" && method === "POST") {
