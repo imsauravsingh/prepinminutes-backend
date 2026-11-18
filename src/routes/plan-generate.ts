@@ -109,6 +109,7 @@ Ensure there are exactly ${profile.timelineWeeks} milestones (one per week). Ret
           targetRole: profile.targetRole,
           targetSeniority: profile.experienceLevel,
           timelineWeeks: profile.timelineWeeks,
+          timelineLabel: profile.timelineLabel,
           weeklyMilestones: planJson.weeklyMilestones || [],
           domainWeights: planJson.domainWeights || {
             "system-design": 0.35,
@@ -127,6 +128,7 @@ Ensure there are exactly ${profile.timelineWeeks} milestones (one per week). Ret
           targetRole: profile.targetRole,
           targetSeniority: profile.experienceLevel,
           timelineWeeks: profile.timelineWeeks,
+          timelineLabel: profile.timelineLabel,
           weeklyMilestones: planJson.weeklyMilestones || [],
           domainWeights: planJson.domainWeights || {
             "system-design": 0.35,

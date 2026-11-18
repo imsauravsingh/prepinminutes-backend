@@ -325,6 +325,8 @@ export async function handleResetProfile(req: ApiRequest): Promise<Response> {
         where: { id: user.profile.id },
         data: {
           activePlanId: null,
+          timelineLabel: "2-3 months",
+          timelineWeeks: 8,
           onboardingStep: 1,
           isOnboardingDone: false,
           readinessScore: 0,
