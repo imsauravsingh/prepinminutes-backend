@@ -15,6 +15,7 @@ import {
   handleDeleteResume,
 } from "./routes/onboarding-resume";
 import { handlePostPlanGenerate } from "./routes/plan-generate";
+import { handleGetSubscriptionPlans } from "./routes/subscription-plans";
 import { handlePostPracticeSubmit } from "./routes/practice-submit";
 import { handlePostMockInterviewEnd } from "./routes/mock-interview-end";
 import { handleGetEvaluationReport } from "./routes/evaluation-report";
@@ -289,6 +290,10 @@ const worker = {
         response = await handleResetProfile(req);
       }
       // Platform Configuration & Admin Settings
+      // Public pricing: active subscription plans from the admin panel
+      else if (pathname === "/api/plans" && method === "GET") {
+        response = await handleGetSubscriptionPlans(req);
+      }
       else if (pathname === "/api/platform/config" && method === "GET") {
         response = await handleGetPlatformConfig(req);
       } else if (
