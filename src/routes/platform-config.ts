@@ -22,12 +22,13 @@ export async function handleGetPlatformConfig(req: ApiRequest): Promise<Response
     });
 
     const configMap: Record<string, any> = {
-      enableNextStepFlow: true, // Default: next step assessment is enabled
+      // Default: Step 2 (AI assessment / plan choice) is hidden unless an admin turns it on.
+      enableNextStepFlow: false,
     };
 
     for (const c of configs) {
       if (c.key === "enable_next_step_flow") {
-        configMap.enableNextStepFlow = c.value !== "false";
+        configMap.enableNextStepFlow = c.value === "true";
       } else {
         configMap[c.key] = c.value;
       }
@@ -42,8 +43,8 @@ export async function handleGetPlatformConfig(req: ApiRequest): Promise<Response
     console.error("Platform config fetch error:", error);
     return ApiResponse.json({
       success: true,
-      config: { enableNextStepFlow: true },
-      enableNextStepFlow: true,
+      config: { enableNextStepFlow: false },
+      enableNextStepFlow: false,
     });
   }
 }
