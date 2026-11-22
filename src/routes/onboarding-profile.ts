@@ -29,6 +29,9 @@ const ProfileSchema = z.object({
 
 function deriveWeeksFromLabel(label: string, fallbackWeeks = 4): number {
   const clean = label.toLowerCase();
+  // Setup timeline options: "1-2 weeks", "1 month", "2-3 months", "3+ months".
+  if (clean.includes("2-3 month")) return 10;
+  if (clean.includes("3+ month")) return 16;
   if (clean.includes("2 week")) return 2;
   if (clean.includes("1 month") || clean.includes("4 week")) return 4;
   if (clean.includes("2 month") || clean.includes("8 week")) return 8;
