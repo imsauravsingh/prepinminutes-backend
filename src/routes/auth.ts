@@ -351,6 +351,7 @@ export async function handleGetAuthMe(req: ApiRequest): Promise<Response> {
           emailVerified: (user as { emailVerified?: boolean }).emailVerified ?? true,
           fullName: user.fullName,
           avatarUrl: (user as { avatarUrl?: string | null }).avatarUrl ?? null,
+          gender: (user as { gender?: string | null }).gender ?? null,
           authProvider:
             (user as { authProvider?: string }).authProvider ?? "google",
           createdAt: user.createdAt,

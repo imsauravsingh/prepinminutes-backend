@@ -8,9 +8,11 @@ import {
   verifyPassword,
 } from "../server/auth/credentials";
 
+const GENDER_OPTIONS = ["male", "female", "prefer_not_to_say"];
+
 /**
  * PATCH /api/user/profile
- * Updates the candidate's personal account info: fullName, username, avatarUrl.
+ * Updates the candidate's personal account info: fullName, username, avatarUrl, gender.
  */
 export async function handlePatchUserProfile(req: ApiRequest): Promise<Response> {
   try {
@@ -26,6 +28,7 @@ export async function handlePatchUserProfile(req: ApiRequest): Promise<Response>
       fullName?: string;
       username?: string;
       avatarUrl?: string | null;
+      gender?: string | null;
     } | null;
 
     if (!body) {
@@ -52,6 +55,7 @@ export async function handlePatchUserProfile(req: ApiRequest): Promise<Response>
       fullName?: string;
       username?: string;
       avatarUrl?: string | null;
+      gender?: string | null;
     } = {};
 
     // 1. Full name validation & update
@@ -104,6 +108,18 @@ export async function handlePatchUserProfile(req: ApiRequest): Promise<Response>
       dataToUpdate.avatarUrl = body.avatarUrl ? body.avatarUrl.trim() : null;
     }
 
+    // 4. Gender (optional; used to pick dashboard artwork). Empty / null clears it.
+    if (body.gender !== undefined) {
+      const g = body.gender ? String(body.gender).trim().toLowerCase() : null;
+      if (g !== null && !GENDER_OPTIONS.includes(g)) {
+        return ApiResponse.json(
+          { error: "INVALID_GENDER", message: "Gender must be male, female or prefer_not_to_say." },
+          { status: 400 }
+        );
+      }
+      dataToUpdate.gender = g;
+    }
+
     // Atomic update to avoid workerd transaction locks
     const updated = await db.user.update({
       where: { id: user.id },
@@ -122,6 +138,7 @@ export async function handlePatchUserProfile(req: ApiRequest): Promise<Response>
         emailVerified: updated.emailVerified,
         fullName: updated.fullName,
         avatarUrl: updated.avatarUrl,
+        gender: updated.gender ?? null,
         authProvider: updated.authProvider,
         createdAt: updated.createdAt,
         hasPassword: Boolean(updated.passwordHash),

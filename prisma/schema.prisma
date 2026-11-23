@@ -60,6 +60,7 @@ model User {
   emailVerified       Boolean              @default(false) @map("is_email_verified")
   fullName            String?              @map("full_name")
   avatarUrl           String?              @map("avatar_url")
+  gender              String?              @map("gender") // "male" | "female" | "prefer_not_to_say"; set from Edit Profile
   authProvider        String               @default("google") @map("auth_provider") // "google" | "credentials" | "clerk"
   role                AdminRole            @default(CANDIDATE) @map("role")
   adminApprovalStatus AdminApprovalStatus  @default(NONE) @map("admin_approval_status")
