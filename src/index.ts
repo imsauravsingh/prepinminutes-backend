@@ -14,6 +14,11 @@ import {
   handlePostResume,
   handleDeleteResume,
 } from "./routes/onboarding-resume";
+import {
+  handleGetDashboardProgress,
+  handlePostDashboardToday,
+  handlePostDashboardTaskToggle,
+} from "./routes/dashboard-progress";
 import { handlePostPlanGenerate } from "./routes/plan-generate";
 import { handleGetSubscriptionPlans } from "./routes/subscription-plans";
 import { handlePostPracticeSubmit } from "./routes/practice-submit";
@@ -309,6 +314,19 @@ const worker = {
         response = await handlePostResume(req);
       } else if (pathname === "/api/onboarding/resume" && method === "DELETE") {
         response = await handleDeleteResume(req);
+      }
+      // Dashboard progress (today's tasks, ticks, topic mastery)
+      else if (pathname === "/api/dashboard/progress" && method === "GET") {
+        response = await handleGetDashboardProgress(req);
+      } else if (pathname === "/api/dashboard/today" && method === "POST") {
+        response = await handlePostDashboardToday(req);
+      } else if (
+        pathname.startsWith("/api/dashboard/tasks/") &&
+        pathname.endsWith("/toggle") &&
+        method === "POST"
+      ) {
+        const taskId = pathname.replace("/api/dashboard/tasks/", "").replace("/toggle", "");
+        response = await handlePostDashboardTaskToggle(req, taskId);
       }
       // Preparation Plan Synthesis
       else if (pathname === "/api/plan/generate" && method === "POST") {
