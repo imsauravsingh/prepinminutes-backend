@@ -46,6 +46,8 @@ export function getCorsHeaders(originHeader: string | null): Record<string, stri
       "Content-Type, Authorization, x-candidate-id, x-candidate-clerk-id, idempotency-key",
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Max-Age": "86400",
+    // The allowed origin is echoed per request, so caches must key on Origin.
+    Vary: "Origin",
   };
 }
 
@@ -53,6 +55,12 @@ export function withCors(response: Response, originHeader: string | null): Respo
   const corsHeaders = getCorsHeaders(originHeader);
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(corsHeaders)) {
+    if (key === "Vary") {
+      // Keep any existing Vary values (e.g. Accept-Encoding) and add Origin.
+      const existing = headers.get("Vary");
+      headers.set("Vary", existing && !/\borigin\b/i.test(existing) ? `${existing}, Origin` : existing || value);
+      continue;
+    }
     headers.set(key, value);
   }
   return new Response(response.body, {
