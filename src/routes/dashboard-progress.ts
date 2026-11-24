@@ -106,7 +106,7 @@ export async function handleGetDashboardProgress(req: ApiRequest): Promise<Respo
     const [masteries, profile, weekTasks, todayTasks] = await Promise.all([
       db.candidateTopicMastery.findMany({
         where: { candidateId: c.profileId, status: { in: ["PRACTICED", "MASTERED"] } },
-        select: { topic: { select: { slug: true } } },
+        select: { lastPracticedAt: true, updatedAt: true, topic: { select: { slug: true } } },
       }),
       db.candidateProfile.findUnique({
         where: { id: c.profileId },
@@ -138,6 +138,11 @@ export async function handleGetDashboardProgress(req: ApiRequest): Promise<Respo
     return ApiResponse.json({
       success: true,
       practicedTopicSlugs: masteries.map((m) => m.topic.slug),
+      // When each topic was finished, so My Plan can place it in the right week.
+      practicedTopics: masteries.map((m) => ({
+        slug: m.topic.slug,
+        at: (m.lastPracticedAt ?? m.updatedAt)?.toISOString() ?? null,
+      })),
       todayTasks: todayTasks.map(taskView),
       week,
       completedHours: profile?.completedHours ?? 0,
