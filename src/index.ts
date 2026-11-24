@@ -19,6 +19,7 @@ import {
   handlePostDashboardToday,
   handlePostDashboardTaskToggle,
 } from "./routes/dashboard-progress";
+import { handleGetCompanyFocus } from "./routes/company-focus";
 import { handlePostPlanGenerate } from "./routes/plan-generate";
 import { handleGetSubscriptionPlans } from "./routes/subscription-plans";
 import { handlePostPracticeSubmit } from "./routes/practice-submit";
@@ -380,7 +381,9 @@ const worker = {
         response = await handleGetEvaluationReport(req, reportId);
       }
       // Public Curriculum Knowledge Graph Endpoints (Phase 3)
-      else if (pathname === "/api/curriculum/domains" && method === "GET") {
+      else if (pathname === "/api/companies/focus" && method === "GET") {
+        response = await handleGetCompanyFocus(req);
+      } else if (pathname === "/api/curriculum/domains" && method === "GET") {
         response = await handleGetCurriculumDomains(req);
       } else if (pathname.startsWith("/api/curriculum/hierarchy/") && method === "GET") {
         const domainSlug = pathname.replace("/api/curriculum/hierarchy/", "").replace(/\/$/, "");
