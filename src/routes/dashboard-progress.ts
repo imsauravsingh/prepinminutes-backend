@@ -105,8 +105,15 @@ export async function handleGetDashboardProgress(req: ApiRequest): Promise<Respo
 
     const [masteries, profile, weekTasks, todayTasks] = await Promise.all([
       db.candidateTopicMastery.findMany({
-        where: { candidateId: c.profileId, status: { in: ["PRACTICED", "MASTERED"] } },
-        select: { lastPracticedAt: true, updatedAt: true, topic: { select: { slug: true } } },
+        where: { candidateId: c.profileId },
+        select: {
+          status: true,
+          masteryScore: true,
+          totalAttempts: true,
+          lastPracticedAt: true,
+          updatedAt: true,
+          topic: { select: { slug: true } },
+        },
       }),
       db.candidateProfile.findUnique({
         where: { id: c.profileId },
@@ -127,6 +134,8 @@ export async function handleGetDashboardProgress(req: ApiRequest): Promise<Respo
         : Promise.resolve([]),
     ]);
 
+    const done = masteries.filter((m) => m.status === "PRACTICED" || m.status === "MASTERED");
+
     const week: Record<string, { total: number; done: number }> = {};
     for (const t of weekTasks) {
       const k = isoDay(t.scheduledDate);
@@ -137,12 +146,20 @@ export async function handleGetDashboardProgress(req: ApiRequest): Promise<Respo
 
     return ApiResponse.json({
       success: true,
-      practicedTopicSlugs: masteries.map((m) => m.topic.slug),
+      practicedTopicSlugs: done.map((m) => m.topic.slug),
       // When each topic was finished, so My Plan can place it in the right week.
-      practicedTopics: masteries.map((m) => ({
+      practicedTopics: done.map((m) => ({
         slug: m.topic.slug,
         at: (m.lastPracticedAt ?? m.updatedAt)?.toISOString() ?? null,
       })),
+      // Every topic with practice on record (status and score from the database, not the browser).
+      topicProgress: masteries
+        .filter((m) => m.status !== "NOT_STARTED" || m.totalAttempts > 0)
+        .map((m) => ({
+          slug: m.topic.slug,
+          status: m.status,
+          score: m.masteryScore > 0 ? Math.round(m.masteryScore) : null,
+        })),
       todayTasks: todayTasks.map(taskView),
       week,
       completedHours: profile?.completedHours ?? 0,
