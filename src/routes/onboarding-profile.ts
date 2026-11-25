@@ -25,6 +25,14 @@ const ProfileSchema = z.object({
   timelineLabel: z.string().default("1 month"),
   jobDescriptionText: z.string().optional().nullable(),
   weeklyGoalHours: z.number().min(1).max(60).default(6),
+  // Technologies the candidate works with (free text, short list).
+  languages: z
+    .array(z.string().trim().min(1).max(40))
+    .max(20)
+    .optional()
+    .transform((v) => (v ? Array.from(new Set(v)) : v)),
+  // The one language for coding / DSA rounds.
+  codingLanguage: z.string().trim().max(40).optional().nullable(),
 });
 
 function deriveWeeksFromLabel(label: string, fallbackWeeks = 4): number {
@@ -127,6 +135,8 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
         timelineLabel: data.timelineLabel,
         jobDescriptionText: data.jobDescriptionText || null,
         weeklyGoalHours: data.weeklyGoalHours,
+        ...(data.languages ? { languages: data.languages } : {}),
+        ...(data.codingLanguage !== undefined ? { codingLanguage: data.codingLanguage || null } : {}),
         onboardingStep: 2,
       },
       create: {
@@ -138,6 +148,8 @@ export async function handlePostProfile(req: ApiRequest): Promise<Response> {
         timelineLabel: data.timelineLabel,
         jobDescriptionText: data.jobDescriptionText || null,
         weeklyGoalHours: data.weeklyGoalHours,
+        ...(data.languages ? { languages: data.languages } : {}),
+        ...(data.codingLanguage !== undefined ? { codingLanguage: data.codingLanguage || null } : {}),
         onboardingStep: 2,
         readinessScore: 0,
       },

@@ -196,6 +196,8 @@ model CandidateProfile {
   isOnboardingDone   Boolean  @default(false) @map("is_onboarding_done")
   readinessScore     Int      @default(45) @map("readiness_score") // 0 - 100%
   weeklyGoalHours    Float    @default(6.0) @map("weekly_goal_hours")
+  languages          String[] @default([]) @map("languages") // technologies the candidate works with, e.g. ["Spring Boot", "React"]
+  codingLanguage     String?  @map("coding_language") // the one language for coding / DSA rounds, e.g. "Java"
   completedHours     Float    @default(0.0) @map("completed_hours")
   streakDays         Int      @default(1) @map("streak_days")
 
